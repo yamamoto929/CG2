@@ -1,5 +1,10 @@
 #include <Windows.h>
 #include <cstdint>
+#include <string>
+#include <format>
+#include "ConvertString.h"
+
+void Log(const std::string& message);
 // ウィンドウプロシージャ
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg,
 	WPARAM wparam, LPARAM lparam) {
@@ -49,12 +54,12 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 		CW_USEDEFAULT,			// 表示X座標(Windowsに任せる)
 		CW_USEDEFAULT,			// 表示Y座標(Windowsに任せる)
 		wrc.right - wrc.left,	// ウィンドウ横幅
-		wrc.bottom -wrc.top,	// ウィンドウ縦幅
+		wrc.bottom - wrc.top,	// ウィンドウ縦幅
 		nullptr,				// 親ウィンドウハンドル
 		nullptr,				// メニューハンドル
 		wc.hInstance,			// インスタンスハンドル
 		nullptr);				// オプション
-	
+
 	ShowWindow(hwnd, SW_SHOW);
 
 	MSG msg{};
@@ -64,14 +69,18 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
-		}
-		else {
+		} else {
 			// ゲームの処理
 		}
 	}
 
-	OutputDebugStringA("Hello,DirectX!\n");
+	std::string string{ "Hello World!\n" };
+	std::wstring wstring{ L"Hello World!\n" };
+	Log(std::format("{}", string));
+	Log(std::format("{}", ConvertString(wstring)));
 	return 0;
 }
 
-
+void Log(const std::string& message) {
+	OutputDebugStringA(message.c_str());
+}
