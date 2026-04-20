@@ -10,9 +10,13 @@
 #include <dxgi1_6.h>
 #pragma comment(lib,"dxgi.lib")
 #include <cassert>
+#include <dbghelp.h>
+#pragma comment(lib,"Dbghelp.lib")
+#include <strsafe.h>
 #include "ConvertString.h"
 
 void Log(const std::string& message);
+
 // ウィンドウプロシージャ
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg,
 	WPARAM wparam, LPARAM lparam) {
@@ -34,6 +38,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg,
 
 // Windowsアプリのエントリポイント(main関数)
 int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
+	SetUnhandledExceptionFilter(ExportDump);
 	// DXGIファクトリーの生成
 	IDXGIFactory7* dxgiFactory = nullptr;
 	// HRESULTはwindows系のエラーコードであり、
@@ -65,7 +70,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	ID3D12Device* device = nullptr;
 	// 機能レベルとログ出力用の文字列
 	D3D_FEATURE_LEVEL featureLevels[] = {
-		D3D_FEATURE_LEVEL_12_2, D3D_FEATURE_LEVEL_12_1, D3D_FEATURE_LEVEL_12_0
+		D3D_FEATURE_LEVEL_12_2, D3D_FEATURE_LEVEL_12_1, D3D_FEATURE_LEVEL_12_0,
 	};
 	const char* featureLevelStrings[] = { "12.2","12.1","12.0" };
 	// 高い順に生成できるか試していく
@@ -151,4 +156,15 @@ void Log(const std::string& message) {
 
 	logStream << message << std::endl;
 	OutputDebugStringA(message.c_str());
+}
+
+static LONG WINAPI ExportDump(EXCEPTION_POINTERS* exception) {
+	// 時刻を取得して、時刻を名前に入れたファイルを作成。Dumpsディレクトリ以下に出力
+	SYSTEMTIME time;
+	GetLocalTime(&time);
+	wchar_t filePath[MAX_PATH] = { 0 };
+	CreateDirectory(L"./Dumps", nullptr);
+	StringCchPrintfW(filePath, MAX_PATH, L"./Dumps/%04d-%02d%02d-%02d%02d.dmp", time.wYear, time.wMonth, time.wDay, time.wHour, time.wMinute);
+	HANDLE dumpFileHandle = CreateFile(filePath, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE | FILE_SHARE_READ, 0, CREATE_ALWAYS, 0, 0))
+	return EXCEPTION_EXECUTE_HANDLER;
 }
