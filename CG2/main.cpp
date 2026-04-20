@@ -8,7 +8,6 @@
 #include "ConvertString.h"
 
 void Log(const std::string& message);
-void Log(std::ostream& os, const std::string& message);
 // ウィンドウプロシージャ
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg,
 	WPARAM wparam, LPARAM lparam) {
