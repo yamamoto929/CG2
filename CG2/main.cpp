@@ -178,9 +178,8 @@ static LONG WINAPI ExportDump(EXCEPTION_POINTERS* exception) {
 		}
 	}
 
-	CreateDirectory(L"./Dumps", nullptr);
 	StringCchPrintfW(filePath, MAX_PATH, L"./Dumps/%04d-%02d%02d-%02d%02d.dmp", time.wYear, time.wMonth, time.wDay, time.wHour, time.wMinute);
-	HANDLE dumpFileHandle = CreateFile(filePath, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE | FILE_SHARE_READ, 0, CREATE_ALWAYS, 0, 0);
+	HANDLE dumpFileHandle = CreateFileW(filePath, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE | FILE_SHARE_READ, 0, CREATE_ALWAYS, 0, 0);
 	// ファイルが作れなかったら早期リターン
 	if (dumpFileHandle == INVALID_HANDLE_VALUE) {
 		OutputDebugStringW(L"Failed to create dump file.\n");
