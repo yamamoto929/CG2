@@ -169,9 +169,24 @@ static LONG WINAPI ExportDump(EXCEPTION_POINTERS* exception) {
 	SYSTEMTIME time;
 	GetLocalTime(&time);
 	wchar_t filePath[MAX_PATH] = { 0 };
+	// 作成失敗時は早期リターン
+	if (!CreateDirectoryW(L"./Dumps", nullptr)) {
+
+		if (GetLastError() != ERROR_ALREADY_EXISTS) {
+			OutputDebugStringW(L"Failed to create Dumps directory.\n");
+			return EXCEPTION_EXECUTE_HANDLER; 
+		}
+	}
+
 	CreateDirectory(L"./Dumps", nullptr);
 	StringCchPrintfW(filePath, MAX_PATH, L"./Dumps/%04d-%02d%02d-%02d%02d.dmp", time.wYear, time.wMonth, time.wDay, time.wHour, time.wMinute);
 	HANDLE dumpFileHandle = CreateFile(filePath, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE | FILE_SHARE_READ, 0, CREATE_ALWAYS, 0, 0);
+	// ファイルが作れなかったら早期リターン
+	if (dumpFileHandle == INVALID_HANDLE_VALUE) {
+		OutputDebugStringW(L"Failed to create dump file.\n");
+		return EXCEPTION_EXECUTE_HANDLER; 
+	}
+	
 	// processId(このexeのid)とクラッシュ(例外)の発生したthreadIdを取得
 	DWORD processId = GetCurrentProcessId();
 	DWORD threadId = GetCurrentThreadId();
@@ -180,8 +195,20 @@ static LONG WINAPI ExportDump(EXCEPTION_POINTERS* exception) {
 	minidumpInformation.ThreadId = threadId;
 	minidumpInformation.ExceptionPointers = exception;
 	minidumpInformation.ClientPointers = TRUE;
-	// Dumpを出力。MiniDumpNormalは最低限の情報を出力するフラグ
-	MiniDumpWriteDump(GetCurrentProcess(), processId, dumpFileHandle, MiniDumpNormal, &minidumpInformation, nullptr, nullptr);
+	BOOL isDumpSaved = MiniDumpWriteDump(
+		GetCurrentProcess(), processId, dumpFileHandle,
+		MiniDumpNormal, &minidumpInformation, nullptr, nullptr
+	);
+	// 成功失敗時のログ出力
+	if (!isDumpSaved) {
+		OutputDebugStringW(L"Failed to write minidump.\n");
+	} else {
+		OutputDebugStringW(L"Successfully saved minidump.\n");
+	}
+
+	// ハンドルのクローズ
+	CloseHandle(dumpFileHandle);
+
 	// ほかに関連付けられているSEH例外ハンドラがあれば実行。通常はプロセスを終了する
 	return EXCEPTION_EXECUTE_HANDLER;
 }
