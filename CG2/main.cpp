@@ -9,6 +9,7 @@
 
 std::ofstream gLogFile;
 void Log(const std::string& message);
+void InitLog();
 // ウィンドウプロシージャ
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg,
 	WPARAM wparam, LPARAM lparam) {
@@ -31,6 +32,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg,
 // Windowsアプリのエントリポイント(main関数)
 int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	std::filesystem::create_directory("logs");
+	InitLog();
 
 	// クライアント領域のサイズ
 	const int32_t kClientWidth = 1280;
