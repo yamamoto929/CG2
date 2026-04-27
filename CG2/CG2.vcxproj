@@ -102,15 +102,20 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <None Include=".editorconfig" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="AffineMatrix.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="ConvertString.cpp" />
+    <ClCompile Include="Matrix4x4.cpp" />
+    <ClCompile Include="WVPMatrix.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AffineMatrix.h" />
     <ClInclude Include="ConvertString.h" />
     <ClInclude Include="Matrix4x4.h" />
     <ClInclude Include="Transform.h" />
     <ClInclude Include="Vector3.h" />
     <ClInclude Include="Vector4.h" />
+    <ClInclude Include="WVPMatrix.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Object3d.VS.hlsl">
