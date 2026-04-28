@@ -491,7 +491,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			*wvpData = worldViewProjectionMatrix;
 		#ifdef USE_IMGUI
 			// UIの処理
-			ImGui::ShowDemoWindow();
+			ImGui::DragFloat3("CameraScale",&cameraTransform.scale.x);
+			ImGui::DragFloat3("CameraRotate",&cameraTransform.rotate.x);
+			ImGui::DragFloat3("CameraTranslate",&cameraTransform.translate.x);
 			// ImGuiの内部コマンドを生成
 			ImGui::Render();	
 		#endif
