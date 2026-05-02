@@ -1,5 +1,14 @@
 #include "AffineMatrix.h"
 #include <cmath>
+Matrix4x4 MakeScaleMatrix(Vector3 scale) {
+	Matrix4x4 result = { {
+		{scale.x,0.0f,   0.0f,   0.0f},
+		{0.0f,   scale.y,0.0f,   0.0f},
+		{0.0f,   0.0f,   scale.z,0.0f},
+		{0.0f,   0.0f,   0.0f,   1.0f}
+	} };
+	return result;
+}
 
 Matrix4x4 MakeRotateXMatrix(float radian) {
 	Matrix4x4 result = { {
@@ -27,6 +36,16 @@ Matrix4x4 MakeRotateZMatrix(float radian) {
 		{-std::sin(radian), std::cos(radian), 0.0f, 0.0f},
 		{0.0f,               0.0f,              1.0f, 0.0f},
 		{0.0f,               0.0f,              0.0f, 1.0f}
+	} };
+	return result;
+}
+
+Matrix4x4 MakeTranslateMatrix(Vector3 translate) {
+	Matrix4x4 result = { {
+		{1.0f,        0.0f,        0.0f,        0.0f},
+		{0.0f,        1.0f,        0.0f,        0.0f},
+		{0.0f,        0.0f,        1.0f,        0.0f},
+		{translate.x, translate.y, translate.z, 1.0f}
 	} };
 	return result;
 }
