@@ -22,6 +22,8 @@
 #include <cmath>
 #include <sstream>
 #include <wrl.h>
+#include <xaudio2.h>
+#pragma comment (lib,"xaudio2.lib")
 #include "externals\DirectXTex\DirectXTex.h"
 #include "externals\DirectXTex\d3dx12.h"
 #include "ConvertString.h"
@@ -43,6 +45,27 @@
 #include "externals/imgui/imgui_impl_win32.h"
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 #endif // USE_IMGUI
+
+struct ChunkHeader {
+	char id[4];
+	int32_t size;
+};
+
+struct RiffHeader {
+	ChunkHeader chunk;
+	char type[4];
+};
+
+struct FormatChunk {
+	ChunkHeader chunk;
+	WAVEFORMATEX fmt;
+};
+
+struct SoundData {
+	WAVEFORMATEX wfex;
+	BYTE* pBuffer;
+	unsigned int bufferSize;
+};
 
 
 void Log(const std::string& message);
@@ -74,8 +97,12 @@ D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescriptorHandle(const Microsoft::WRL::ComPtr<
 D3D12_GPU_DESCRIPTOR_HANDLE GetGPUDescriptorHandle(const Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>& descriptorHeap, uint32_t descriptorSize, uint32_t index);
 ModelData LoadObjFile(const std::string& directoryPath, const std::string& filename);
 MaterialData LoadMaterialTemplateFile(const std::string& directoryPath, const std::string& filename);
+SoundData SoundLoadWave(const char* filename);
+void SoundUnload(SoundData* soundData);
+void SoundPlayWave(IXAudio2* xAudio2, const SoundData& soundData);
 
 const Transform kDefaultCameraTransform{ {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,-10.0f} };
+
 
 // Windowsアプリのエントリポイント(main関数)
 int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
@@ -285,6 +312,14 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	// FenceもSignalを待つためのイベントを作成する
 	HANDLE fenceEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	assert(fenceEvent != nullptr);
+
+	Microsoft::WRL::ComPtr<IXAudio2> xAudio;
+	IXAudio2MasteringVoice* masterVoice = nullptr;
+	hr = XAudio2Create(xAudio.GetAddressOf(), 0, XAUDIO2_DEFAULT_PROCESSOR);
+	hr = xAudio->CreateMasteringVoice(&masterVoice);
+
+	SoundData soundData1 = SoundLoadWave("Resources/Alarm01.wav");
+	SoundPlayWave(xAudio.Get(), soundData1);
 
 	// dxcCompilerを初期化
 	IDxcUtils* dxcUtils = nullptr;
@@ -779,7 +814,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	}
 	// 解放
 	CloseHandle(fenceEvent);
-	
+
 #ifdef USE_IMGUI
 	ImGui_ImplDX12_Shutdown();
 	ImGui_ImplWin32_Shutdown();
@@ -787,6 +822,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 #endif
 	CoUninitialize();
 	CloseWindow(hwnd);
+	xAudio.Reset();
+	SoundUnload(&soundData1);
 	return 0;
 }
 
@@ -1221,4 +1258,77 @@ Microsoft::WRL::ComPtr<ID3D12Resource> UploadTextureData(
 	commandList->ResourceBarrier(1, &barrier);
 
 	return intermediateResource;
+}
+
+SoundData SoundLoadWave(const char* filename) {
+	std::ifstream file;
+	file.open(filename, std::ios_base::binary);
+	assert(file.is_open());
+
+	RiffHeader riff;
+	file.read((char*)&riff, sizeof(riff));
+
+	if (strncmp(riff.chunk.id, "RIFF", 4) != 0) {
+		assert(0);
+	}
+
+	if (strncmp(riff.type, "WAVE", 4) != 0) {
+		assert(0);
+	}
+
+	FormatChunk format{};
+	file.read((char*)&format, sizeof(ChunkHeader));
+	if (strncmp(format.chunk.id, "fmt", 4) != 0) {
+		assert(0);
+	}
+
+	assert(format.chunk.size <= sizeof(format.fmt));
+	file.read((char*)&format.fmt, format.chunk.size);
+
+	ChunkHeader data;
+	file.read((char*)&data, sizeof(data));
+	if (strncmp(data.id, "JUNK", 4) == 0) {
+		file.seekg(data.size, std::ios_base::cur);
+		file.read((char*)&data, sizeof(data));
+	}
+
+	if (strncmp(data.id, "data", 4) != 0) {
+		assert(0);
+	}
+
+	char* pBuffer = new char[data.size];
+	file.read(pBuffer, data.size);
+
+	file.close();
+
+	SoundData soundData = {};
+	soundData.wfex = format.fmt;
+	soundData.pBuffer = reinterpret_cast<BYTE*>(pBuffer);
+	soundData.bufferSize = data.size;
+
+	return soundData;
+}
+
+void SoundUnload(SoundData* soundData) {
+	delete[] soundData->pBuffer;
+
+	soundData->pBuffer = 0;
+	soundData->bufferSize = 0;
+	soundData->wfex = {};
+}
+
+void SoundPlayWave(IXAudio2* xAudio2, const SoundData& soundData) {
+	HRESULT result;
+	// 波形フォーマットを元にSource Voiceの生成
+	IXAudio2SourceVoice* pSourceVoice = nullptr;
+	result = xAudio2->CreateSourceVoice(&pSourceVoice, &soundData.wfex);
+	assert(SUCCEEDED(result));
+	// 再生する波形データの設定
+	XAUDIO2_BUFFER buf{};
+	buf.pAudioData = soundData.pBuffer;
+	buf.AudioBytes = soundData.bufferSize;
+	buf.Flags = XAUDIO2_END_OF_STREAM;
+	// 波形データの再生
+	result = pSourceVoice->SubmitSourceBuffer(&buf);
+	result = pSourceVoice->Start();
 }
