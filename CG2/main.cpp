@@ -104,9 +104,6 @@ D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescriptorHandle(const Microsoft::WRL::ComPtr<
 D3D12_GPU_DESCRIPTOR_HANDLE GetGPUDescriptorHandle(const Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>& descriptorHeap, uint32_t descriptorSize, uint32_t index);
 ModelData LoadObjFile(const std::string& directoryPath, const std::string& filename);
 MaterialData LoadMaterialTemplateFile(const std::string& directoryPath, const std::string& filename);
-SoundData SoundLoadWave(const char* filename);
-void SoundUnload(SoundData* soundData);
-void SoundPlayWave(IXAudio2* xAudio2, const SoundData& soundData);
 
 const Transform kDefaultCameraTransform{ {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,-10.0f} };
 
@@ -1328,77 +1325,4 @@ Microsoft::WRL::ComPtr<ID3D12Resource> UploadTextureData(
 	commandList->ResourceBarrier(1, &barrier);
 
 	return intermediateResource;
-}
-
-SoundData SoundLoadWave(const char* filename) {
-	std::ifstream file;
-	file.open(filename, std::ios_base::binary);
-	assert(file.is_open());
-
-	RiffHeader riff;
-	file.read((char*)&riff, sizeof(riff));
-
-	if (strncmp(riff.chunk.id, "RIFF", 4) != 0) {
-		assert(0);
-	}
-
-	if (strncmp(riff.type, "WAVE", 4) != 0) {
-		assert(0);
-	}
-
-	FormatChunk format{};
-	file.read((char*)&format, sizeof(ChunkHeader));
-	if (strncmp(format.chunk.id, "fmt ", 4) != 0) {
-		assert(0);
-	}
-
-	assert(format.chunk.size <= sizeof(format.fmt));
-	file.read((char*)&format.fmt, format.chunk.size);
-
-	ChunkHeader data;
-	file.read((char*)&data, sizeof(data));
-	if (strncmp(data.id, "JUNK", 4) == 0) {
-		file.seekg(data.size, std::ios_base::cur);
-		file.read((char*)&data, sizeof(data));
-	}
-
-	if (strncmp(data.id, "data", 4) != 0) {
-		assert(0);
-	}
-
-	char* pBuffer = new char[data.size];
-	file.read(pBuffer, data.size);
-
-	file.close();
-
-	SoundData soundData = {};
-	soundData.wfex = format.fmt;
-	soundData.pBuffer = reinterpret_cast<BYTE*>(pBuffer);
-	soundData.bufferSize = data.size;
-
-	return soundData;
-}
-
-void SoundUnload(SoundData* soundData) {
-	delete[] soundData->pBuffer;
-
-	soundData->pBuffer = 0;
-	soundData->bufferSize = 0;
-	soundData->wfex = {};
-}
-
-void SoundPlayWave(IXAudio2* xAudio2, const SoundData& soundData) {
-	HRESULT result;
-	// 波形フォーマットを元にSource Voiceの生成
-	IXAudio2SourceVoice* pSourceVoice = nullptr;
-	result = xAudio2->CreateSourceVoice(&pSourceVoice, &soundData.wfex);
-	assert(SUCCEEDED(result));
-	// 再生する波形データの設定
-	XAUDIO2_BUFFER buf{};
-	buf.pAudioData = soundData.pBuffer;
-	buf.AudioBytes = soundData.bufferSize;
-	buf.Flags = XAUDIO2_END_OF_STREAM;
-	// 波形データの再生
-	result = pSourceVoice->SubmitSourceBuffer(&buf);
-	result = pSourceVoice->Start();
 }
