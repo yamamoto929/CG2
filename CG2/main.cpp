@@ -24,6 +24,13 @@
 #include <wrl.h>
 #include <xaudio2.h>
 #pragma comment (lib,"xaudio2.lib")
+#include <mfapi.h>
+#include <mfidl.h>
+#include <mfreadwrite.h>
+#pragma comment(lib, "Mf.lib")
+#pragma comment(lib, "mfplat.lib")
+#pragma comment(lib, "Mfreadwrite.lib")
+#pragma comment(lib, "mfuuid.lib")
 #include "externals\DirectXTex\DirectXTex.h"
 #include "externals\DirectXTex\d3dx12.h"
 #include "ConvertString.h"
@@ -108,6 +115,7 @@ const Transform kDefaultCameraTransform{ {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f
 int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	D3DResourceLeakChecker leakChecker;
 	CoInitializeEx(0, COINIT_MULTITHREADED);
+	MFStartup(MF_VERSION, MFSTARTUP_NOSOCKET);
 	InitLog();
 	SetUnhandledExceptionFilter(ExportDump);
 	// クライアント領域のサイズ
@@ -313,13 +321,72 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	HANDLE fenceEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	assert(fenceEvent != nullptr);
 
-	Microsoft::WRL::ComPtr<IXAudio2> xAudio;
+	Microsoft::WRL::ComPtr<IXAudio2> xAudio2;
 	IXAudio2MasteringVoice* masterVoice = nullptr;
-	hr = XAudio2Create(xAudio.GetAddressOf(), 0, XAUDIO2_DEFAULT_PROCESSOR);
-	hr = xAudio->CreateMasteringVoice(&masterVoice);
+	hr = XAudio2Create(xAudio2.GetAddressOf(), 0, XAUDIO2_DEFAULT_PROCESSOR);
+	hr = xAudio2->CreateMasteringVoice(&masterVoice);
 
-	SoundData soundData1 = SoundLoadWave("Resources/Alarm01.wav");
-	SoundPlayWave(xAudio.Get(), soundData1);
+	std::wstring path = (L"Resources/Alarm01.wav");
+	IMFSourceReader* MFSourceReader{ nullptr };
+	MFCreateSourceReaderFromURL(path.c_str(), NULL, &MFSourceReader);
+
+	IMFMediaType* MFMediaType{ nullptr };
+	MFCreateMediaType(&MFMediaType);
+	MFMediaType->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Audio);
+	MFMediaType->SetGUID(MF_MT_SUBTYPE, MFAudioFormat_PCM);
+	MFSourceReader->SetCurrentMediaType(MF_SOURCE_READER_FIRST_AUDIO_STREAM, nullptr, MFMediaType);
+
+	MFMediaType->Release();
+	MFMediaType = nullptr;
+	MFSourceReader->GetCurrentMediaType(MF_SOURCE_READER_FIRST_AUDIO_STREAM, &MFMediaType);
+
+	WAVEFORMATEX* waveFormat{ nullptr };
+	MFCreateWaveFormatExFromMFMediaType(MFMediaType, &waveFormat, nullptr);
+
+	std::vector<BYTE> mediaData;
+	while (true){
+		IMFSample* MFSample{ nullptr };
+		DWORD dwStreamFlags{ 0 };
+		MFSourceReader->ReadSample(MF_SOURCE_READER_FIRST_AUDIO_STREAM, 0, nullptr, &dwStreamFlags, nullptr, &MFSample);
+
+		if (dwStreamFlags & MF_SOURCE_READERF_ENDOFSTREAM){
+			break;
+		}
+
+		if(MFSample){
+			IMFMediaBuffer* pMFMediaBuffer{ nullptr };
+			MFSample->ConvertToContiguousBuffer(&pMFMediaBuffer);
+
+			BYTE* pBuffer{ nullptr };
+			DWORD cbCurrentLength{ 0 };
+			pMFMediaBuffer->Lock(&pBuffer, nullptr, &cbCurrentLength);
+
+			mediaData.resize(mediaData.size() + cbCurrentLength);
+			memcpy(mediaData.data() + mediaData.size() - cbCurrentLength, pBuffer, cbCurrentLength);
+
+			pMFMediaBuffer->Unlock();
+
+			pMFMediaBuffer->Release();
+			MFSample->Release();
+		}
+	}
+
+	
+
+	IXAudio2SourceVoice* sourceVoice{ nullptr };
+	xAudio2->CreateSourceVoice(&sourceVoice, waveFormat);
+
+	XAUDIO2_BUFFER buffer{ 0 };
+	buffer.pAudioData = mediaData.data();
+	buffer.Flags = XAUDIO2_END_OF_STREAM;
+	buffer.AudioBytes = sizeof(BYTE) * static_cast<UINT32>(mediaData.size());
+	sourceVoice->SubmitSourceBuffer(&buffer);
+	sourceVoice->Start(0);
+
+	MFMediaType->Release();
+	MFSourceReader->Release();
+	CoTaskMemFree(waveFormat);
+
 
 	// dxcCompilerを初期化
 	IDxcUtils* dxcUtils = nullptr;
@@ -822,8 +889,11 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 #endif
 	CoUninitialize();
 	CloseWindow(hwnd);
-	xAudio.Reset();
-	SoundUnload(&soundData1);
+	xAudio2.Reset();
+	MFShutdown();
+
+	CoUninitialize();
+
 	return 0;
 }
 
@@ -1278,7 +1348,7 @@ SoundData SoundLoadWave(const char* filename) {
 
 	FormatChunk format{};
 	file.read((char*)&format, sizeof(ChunkHeader));
-	if (strncmp(format.chunk.id, "fmt", 4) != 0) {
+	if (strncmp(format.chunk.id, "fmt ", 4) != 0) {
 		assert(0);
 	}
 
