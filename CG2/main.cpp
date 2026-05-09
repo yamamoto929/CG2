@@ -31,6 +31,10 @@
 #pragma comment(lib, "mfplat.lib")
 #pragma comment(lib, "Mfreadwrite.lib")
 #pragma comment(lib, "mfuuid.lib")
+#define DIRECTINPUT_VERSION		0X0800
+#include <dinput.h>
+#pragma comment(lib,"dinput8.lib")
+#pragma comment(lib,"dxguid.lib")
 #include "externals\DirectXTex\DirectXTex.h"
 #include "externals\DirectXTex\d3dx12.h"
 #include "ConvertString.h"
@@ -104,6 +108,10 @@ D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescriptorHandle(const Microsoft::WRL::ComPtr<
 D3D12_GPU_DESCRIPTOR_HANDLE GetGPUDescriptorHandle(const Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>& descriptorHeap, uint32_t descriptorSize, uint32_t index);
 ModelData LoadObjFile(const std::string& directoryPath, const std::string& filename);
 MaterialData LoadMaterialTemplateFile(const std::string& directoryPath, const std::string& filename);
+bool IsPushkey(uint8_t key);
+
+bool IsTriggerkey(uint8_t key, uint8_t preKey);
+
 
 const Transform kDefaultCameraTransform{ {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,-10.0f} };
 
@@ -318,6 +326,21 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	HANDLE fenceEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	assert(fenceEvent != nullptr);
 
+	// DirectInput初期化
+	Microsoft::WRL::ComPtr<IDirectInput8> directInput = nullptr;
+	hr = DirectInput8Create(wc.hInstance, DIRECTINPUT_VERSION, IID_IDirectInput8, (void**)&directInput, nullptr);
+	assert(SUCCEEDED(hr));
+
+	Microsoft::WRL::ComPtr<IDirectInputDevice8> keyboard = nullptr;
+	hr = directInput->CreateDevice(GUID_SysKeyboard, &keyboard, NULL);
+	assert(SUCCEEDED(hr));
+
+	hr = keyboard->SetDataFormat(&c_dfDIKeyboard);
+	assert(SUCCEEDED(hr));
+
+	hr = keyboard->SetCooperativeLevel(hwnd, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE | DISCL_NOWINKEY);
+	assert(SUCCEEDED(hr));
+
 	Microsoft::WRL::ComPtr<IXAudio2> xAudio2;
 	IXAudio2MasteringVoice* masterVoice = nullptr;
 	hr = XAudio2Create(xAudio2.GetAddressOf(), 0, XAUDIO2_DEFAULT_PROCESSOR);
@@ -341,16 +364,16 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	MFCreateWaveFormatExFromMFMediaType(MFMediaType, &waveFormat, nullptr);
 
 	std::vector<BYTE> mediaData;
-	while (true){
+	while (true) {
 		IMFSample* MFSample{ nullptr };
 		DWORD dwStreamFlags{ 0 };
 		MFSourceReader->ReadSample(MF_SOURCE_READER_FIRST_AUDIO_STREAM, 0, nullptr, &dwStreamFlags, nullptr, &MFSample);
 
-		if (dwStreamFlags & MF_SOURCE_READERF_ENDOFSTREAM){
+		if (dwStreamFlags & MF_SOURCE_READERF_ENDOFSTREAM) {
 			break;
 		}
 
-		if(MFSample){
+		if (MFSample) {
 			IMFMediaBuffer* pMFMediaBuffer{ nullptr };
 			MFSample->ConvertToContiguousBuffer(&pMFMediaBuffer);
 
@@ -368,8 +391,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 		}
 	}
 
-	
-
 	IXAudio2SourceVoice* sourceVoice{ nullptr };
 	xAudio2->CreateSourceVoice(&sourceVoice, waveFormat);
 
@@ -383,7 +404,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	MFMediaType->Release();
 	MFSourceReader->Release();
 	CoTaskMemFree(waveFormat);
-
 
 	// dxcCompilerを初期化
 	IDxcUtils* dxcUtils = nullptr;
@@ -703,6 +723,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	// 球テクスチャ切り替え
 	bool useMonsterBall = true;
 
+	BYTE key[256] = {};
+	BYTE preKey[256] = {};
+
 	// ImGui初期化
 #ifdef USE_IMGUI
 	IMGUI_CHECKVERSION();
@@ -731,7 +754,10 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			ImGui_ImplWin32_NewFrame();
 			ImGui::NewFrame();
 		#endif // USE_IMGUI
-
+			// キーボート情報の取得開始
+			keyboard->Acquire();
+			std::memcpy(preKey, key, sizeof(key));
+			keyboard->GetDeviceState(sizeof(key), key);
 
 			// ゲームの処理
 			// transform.rotate.y += 0.03f;
@@ -1326,3 +1352,18 @@ Microsoft::WRL::ComPtr<ID3D12Resource> UploadTextureData(
 
 	return intermediateResource;
 }
+
+bool IsPushkey(uint8_t key) {
+	if ((key & 0x80) != 0) {
+		return true;
+	}
+	return false;
+}
+
+bool IsTriggerkey(uint8_t key, uint8_t preKey) {
+	if ((key & 0x80) != 0 && (preKey & 0x80) == 0) {
+		return true;
+	}
+	return false;
+}
+
