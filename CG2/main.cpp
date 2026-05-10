@@ -776,6 +776,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			Matrix4x4 worldViewProjectionMatrixSprite = Multiply(worldMatrixSprite, Multiply(viewMatrixSprite, projectionMatrixSprite));
 			*transformationMatrixDataSprite = worldViewProjectionMatrixSprite;
 		#ifdef USE_IMGUI
+			ImGui::Begin("Debug");
 			// UIの処理
 			ImGui::DragFloat3("CameraTranslate", &cameraTransform.translate.x, 0.01f, -2000.0f, 2000.0f);
 			ImGui::SliderAngle("CameraRotateX", &cameraTransform.rotate.x);
@@ -797,6 +798,15 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			ImGui::DragFloat2("UVTranslate", &uvTransformSprite.translate.x, 0.01f, -10.0f, 10.0f);
 			ImGui::DragFloat2("UVScale", &uvTransformSprite.scale.x, 0.01f, -10.0f, 10.0f);
 			ImGui::SliderAngle("UVRotate", &uvTransformSprite.rotate.z);
+
+			ImGui::End();
+
+			ImGui::Begin("Debug 2");
+			if (IsTriggerkey(key[DIK_SPACE],preKey[DIK_SPACE])) {
+				ImGui::Text("true");
+			}
+
+			ImGui::End();
 
 			// ImGuiの内部コマンドを生成
 			ImGui::Render();
