@@ -44,7 +44,7 @@ Matrix4x4 Inverse(const Matrix4x4& m) {
 	// 掃き出し法を行うために、左側の行列（元の行列のコピー）を用意
 	Matrix4x4 matrix = m;
 	// 右側の行列（単位行列からスタートし、最終的に逆行列になる）を用意
-	Matrix4x4 result = MakeIdentity4x4();
+	Matrix4x4 result = MakeIdentityMatrix();
 
 	for (size_t i = 0; i < 4; i++) {
 
@@ -65,7 +65,7 @@ Matrix4x4 Inverse(const Matrix4x4& m) {
 		// ※ここでは計算を打ち切って、安全のために単位行列を返す処理にしています
 		const float epsilon = 1e-6f;
 		if (maxVal < epsilon) {
-			return MakeIdentity4x4();
+			return MakeIdentityMatrix();
 		}
 
 		// 最大の絶対値を持つ行が現在の行(i)と違う場合、行全体を入れ替える
@@ -116,7 +116,7 @@ Matrix4x4 Transpose(const Matrix4x4& m) {
 };
 
 // 単位行列の作成
-Matrix4x4 MakeIdentity4x4() {
+Matrix4x4 MakeIdentityMatrix() {
 	Matrix4x4 identityMatrix;
 	for (size_t ai = 0; ai < 4; ai++) {
 		for (size_t bi = 0; bi < 4; bi++) {

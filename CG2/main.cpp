@@ -50,6 +50,7 @@
 #include "ModelData.h"
 #include "MaterialData.h"
 #include "D3DResourceLeakChecker.h"
+#include "DebugCamera.h"
 #ifdef USE_IMGUI
 #include "externals/imgui/imgui.h"
 #include "externals/imgui/imgui_impl_dx12.h"
@@ -341,6 +342,16 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	hr = keyboard->SetCooperativeLevel(hwnd, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE | DISCL_NOWINKEY);
 	assert(SUCCEEDED(hr));
 
+	Microsoft::WRL::ComPtr<IDirectInputDevice8> mouse = nullptr;
+	hr = directInput->CreateDevice(GUID_SysMouse, &mouse, NULL);
+	assert(SUCCEEDED(hr));
+
+	hr = mouse->SetDataFormat(&c_dfDIMouse);
+	assert(SUCCEEDED(hr));
+
+	hr = mouse->SetCooperativeLevel(hwnd, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE);
+	assert(SUCCEEDED(hr));
+
 	Microsoft::WRL::ComPtr<IXAudio2> xAudio2;
 	IXAudio2MasteringVoice* masterVoice = nullptr;
 	hr = XAudio2Create(xAudio2.GetAddressOf(), 0, XAUDIO2_DEFAULT_PROCESSOR);
@@ -556,13 +567,13 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	materialResource->Map(0, nullptr, reinterpret_cast<void**>(&materialData));
 	materialData->color = { 1.0f, 1.0f, 1.0f, 1.0f };
 	materialData->enableLighting = true;
-	materialData->uvTransform = MakeIdentity4x4();
+	materialData->uvTransform = MakeIdentityMatrix();
 
 	// WVP用のリソース
 	Microsoft::WRL::ComPtr<ID3D12Resource> transformationMatrixResource = CreateBufferResource(device, sizeof(TransformationMatrix));
 	TransformationMatrix* transformationMatrixData = nullptr;
 	transformationMatrixResource->Map(0, nullptr, reinterpret_cast<void**>(&transformationMatrixData));
-	transformationMatrixData->WVP = MakeIdentity4x4();
+	transformationMatrixData->WVP = MakeIdentityMatrix();
 
 	// 頂点バッファビューを作成
 	D3D12_VERTEX_BUFFER_VIEW vertexBufferView{};
@@ -617,7 +628,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	materialResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&materialDataSprite));
 	materialDataSprite->color = { 1.0f, 1.0f, 1.0f, 1.0f };
 	materialDataSprite->enableLighting = false;
-	materialDataSprite->uvTransform = MakeIdentity4x4();
+	materialDataSprite->uvTransform = MakeIdentityMatrix();
 
 	// Sprite用のTransformation Matrix用のリソースを作る。Matrix4x4 1つ分のサイズを用意する
 	Microsoft::WRL::ComPtr<ID3D12Resource> transformationMatrixResourceSprite = CreateBufferResource(device, sizeof(Matrix4x4));
@@ -626,7 +637,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	// 書き込むためのアドレスを取得
 	transformationMatrixResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&transformationMatrixDataSprite));
 	// 単位行列を書きこんでおく
-	*transformationMatrixDataSprite = MakeIdentity4x4();
+	*transformationMatrixDataSprite = MakeIdentityMatrix();
 	Transform transformSprite{ {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
 
 	// シザー矩形
@@ -723,8 +734,17 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	// 球テクスチャ切り替え
 	bool useMonsterBall = true;
 
+	// キー情報
 	BYTE key[256] = {};
 	BYTE preKey[256] = {};
+
+	// マウス情報
+	DIMOUSESTATE mouseState;
+
+	// デバッグカメラ
+	DebugCamera debugCamera;
+	debugCamera.Initialize();
+	bool useDebugCamera = false;
 
 	// ImGui初期化
 #ifdef USE_IMGUI
@@ -759,19 +779,28 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			std::memcpy(preKey, key, sizeof(key));
 			keyboard->GetDeviceState(sizeof(key), key);
 
+			// マウス
+			mouse->Acquire();
+			mouse->GetDeviceState(sizeof(DIMOUSESTATE), &mouseState);
+			
 			// ゲームの処理
-			// transform.rotate.y += 0.03f;
 			Matrix4x4 worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
 			transformationMatrixData->World = worldMatrix;
 			Matrix4x4 cameraMatrix = MakeAffineMatrix(cameraTransform.scale, cameraTransform.rotate, cameraTransform.translate);
 			Matrix4x4 viewMatrix = Inverse(cameraMatrix);
+		#ifdef _DEBUG
+			if (useDebugCamera) {
+				debugCamera.Update(key,mouseState);
+				viewMatrix = debugCamera.GetViewMatrix();
+			}
+		#endif
 			Matrix4x4 projectionMatrix = MakePerspectiveFovMatrix(0.45f, float(kClientWidth) / float(kClientHeight), 0.1f, 100.0f);
 			Matrix4x4 worldViewProjectionMatrix = Multiply(transformationMatrixData->World, Multiply(viewMatrix, projectionMatrix));
 			transformationMatrixData->WVP = worldViewProjectionMatrix;
 
 			// Sprite用のWorldViewProjectionMatrixを作る
 			Matrix4x4 worldMatrixSprite = MakeAffineMatrix(transformSprite.scale, transformSprite.rotate, transformSprite.translate);
-			Matrix4x4 viewMatrixSprite = MakeIdentity4x4();
+			Matrix4x4 viewMatrixSprite = MakeIdentityMatrix();
 			Matrix4x4 projectionMatrixSprite = MakeOrthographicMatrix(0.0f, 0.0f, float(kClientWidth), float(kClientHeight), 0.0f, 100.0f);
 			Matrix4x4 worldViewProjectionMatrixSprite = Multiply(worldMatrixSprite, Multiply(viewMatrixSprite, projectionMatrixSprite));
 			*transformationMatrixDataSprite = worldViewProjectionMatrixSprite;
@@ -801,13 +830,26 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 			ImGui::End();
 
-			ImGui::Begin("Debug 2");
-			if (IsTriggerkey(key[DIK_SPACE],preKey[DIK_SPACE])) {
-				ImGui::Text("true");
+			ImGui::Begin("DebugCamera");
+			ImGui::Checkbox("useDebugCamera", &useDebugCamera);
+			if(useDebugCamera){
+				ImGui::Text("rotate camera: arrow key or mouse");
+				ImGui::Text("LEFT : A");
+				ImGui::Text("RIGHT : D");
+				ImGui::Text("UP : SPACE");
+				ImGui::Text("DOWN : LEFT SHIFT");
+				ImGui::Text("FORWARD : W");
+				ImGui::Text("BACK : S");
+				ImGui::Text("CameraRotation");
+				ImGui::Text("x : %.2f", debugCamera.GetRotation().x);
+				ImGui::Text("y : %.2f", debugCamera.GetRotation().y);
+				ImGui::Text("z : %.2f", debugCamera.GetRotation().z);
+				ImGui::Text("CameraTranslation");
+				ImGui::Text("x : %.2f", debugCamera.GetTranslation().x);
+				ImGui::Text("y : %.2f", debugCamera.GetTranslation().y);
+				ImGui::Text("z : %.2f", debugCamera.GetTranslation().z);
 			}
-
 			ImGui::End();
-
 			// ImGuiの内部コマンドを生成
 			ImGui::Render();
 		#endif
