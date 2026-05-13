@@ -328,6 +328,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	assert(fenceEvent != nullptr);
 
 	// DirectInput初期化
+	// キーボード
 	Microsoft::WRL::ComPtr<IDirectInput8> directInput = nullptr;
 	hr = DirectInput8Create(wc.hInstance, DIRECTINPUT_VERSION, IID_IDirectInput8, (void**)&directInput, nullptr);
 	assert(SUCCEEDED(hr));
@@ -341,7 +342,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 	hr = keyboard->SetCooperativeLevel(hwnd, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE | DISCL_NOWINKEY);
 	assert(SUCCEEDED(hr));
-
+	// マウス
 	Microsoft::WRL::ComPtr<IDirectInputDevice8> mouse = nullptr;
 	hr = directInput->CreateDevice(GUID_SysMouse, &mouse, NULL);
 	assert(SUCCEEDED(hr));
@@ -956,7 +957,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	}
 	// 解放
 	CloseHandle(fenceEvent);
-
 #ifdef USE_IMGUI
 	ImGui_ImplDX12_Shutdown();
 	ImGui_ImplWin32_Shutdown();
