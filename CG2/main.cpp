@@ -59,28 +59,6 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg
 #endif // USE_IMGUI
 #include "WinApp.h"
 
-struct ChunkHeader {
-	char id[4];
-	int32_t size;
-};
-
-struct RiffHeader {
-	ChunkHeader chunk;
-	char type[4];
-};
-
-struct FormatChunk {
-	ChunkHeader chunk;
-	WAVEFORMATEX fmt;
-};
-
-struct SoundData {
-	WAVEFORMATEX wfex;
-	BYTE* pBuffer;
-	unsigned int bufferSize;
-};
-
-
 void Log(const std::string& message);
 void InitLog();
 std::ofstream gLogFile;
@@ -94,8 +72,6 @@ Microsoft::WRL::ComPtr<IDxcBlob> CompileShader(
 	const Microsoft::WRL::ComPtr<IDxcIncludeHandler>& includeHandler
 );
 static LONG WINAPI ExportDump(EXCEPTION_POINTERS* exception);
-LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg,
-	WPARAM wparam, LPARAM lparam);
 Microsoft::WRL::ComPtr<ID3D12Resource> CreateBufferResource(const Microsoft::WRL::ComPtr<ID3D12Device>& device,
 	size_t sizeInBytes);
 Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> CreateDescriptorHeap(
@@ -942,29 +918,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 	return 0;
 }
-
-// ウィンドウプロシージャ
-LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg,
-	WPARAM wparam, LPARAM lparam) {
-#ifdef USE_IMGUI
-	if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wparam, lparam)) {
-		return true;
-	}
-#endif
-	// メッセージに応じてゲーム固有の処理を行う
-	switch (msg) {
-
-		// ウィンドウが破棄された
-	case WM_DESTROY:
-
-		// OSに対して、アプリの終了を伝える
-		PostQuitMessage(0);
-		return 0;
-	}
-
-	// 標準のメッセージ処理を行う
-	return DefWindowProc(hwnd, msg, wparam, lparam);
-};
 
 void Log(const std::string& message) {
 	if (gLogFile.is_open()) {

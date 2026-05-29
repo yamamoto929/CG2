@@ -5,8 +5,8 @@
 
 class WinApp{
 private:
-	HWND hwnd_;
-	WNDCLASS windowClass_;
+	HWND hwnd_{};
+	WNDCLASS windowClass_{};
 public:
 	HWND GetHwnd() const{ return hwnd_; }
 	HINSTANCE GetHInstance()const { return windowClass_.hInstance; }
