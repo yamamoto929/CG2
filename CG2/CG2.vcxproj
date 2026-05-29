@@ -133,6 +133,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Matrix4x4.cpp" />
     <ClCompile Include="transformNormal.cpp" />
     <ClCompile Include="Vector3.cpp" />
+    <ClCompile Include="WinApp.cpp" />
     <ClCompile Include="WVPMatrix.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -161,6 +162,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Vector3.h" />
     <ClInclude Include="Vector4.h" />
     <ClInclude Include="VertexData.h" />
+    <ClInclude Include="WinApp.h" />
     <ClInclude Include="WVPMatrix.h" />
   </ItemGroup>
   <ItemGroup>
