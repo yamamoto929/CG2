@@ -108,23 +108,6 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t width, int32_t height) {
 	assert(fenceEvent_ != nullptr);
 }
 
-// =========================================================
-// CreateDescriptorHeap
-// =========================================================
-Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> DirectXCommon::CreateDescriptorHeap(
-	const Microsoft::WRL::ComPtr<ID3D12Device>& device, D3D12_DESCRIPTOR_HEAP_TYPE heapType, UINT numDescriptors, bool shaderVisible
-) {
-	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> descriptorHeap;
-	D3D12_DESCRIPTOR_HEAP_DESC descriptorHeapDesc{};
-	descriptorHeapDesc.Type = heapType;
-	descriptorHeapDesc.NumDescriptors = numDescriptors;
-	descriptorHeapDesc.Flags = shaderVisible ? D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE : D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-	HRESULT hr = device->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(&descriptorHeap));
-	// ディスクリプタヒープが作れなかったので起動できない
-	assert(SUCCEEDED(hr));
-	return descriptorHeap;
-}
-
 void DirectXCommon::CreateRenderTargetView() {
 	D3D12_RENDER_TARGET_VIEW_DESC rtvDesc{};
 	rtvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
