@@ -102,8 +102,8 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t width, int32_t height) {
 	assert(fenceEvent_ != nullptr);
 
 	// クライアント領域のサイズと一緒にして画面全体に表示
-	viewport_.Width = width;
-	viewport_.Height = height;
+	viewport_.Width = static_cast<float>(width);
+	viewport_.Height = static_cast<float>(height);
 	viewport_.TopLeftX = 0;
 	viewport_.TopLeftY = 0;
 	viewport_.MinDepth = 0.0f;
@@ -123,7 +123,7 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t width, int32_t height) {
 	dsvDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT; // Format。基本的にはResourceに合わせる
 	dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D; // 2dTexture
 	// DSVHeapの先頭にDSVを作る
-	dsvHandle_ = dsvDescriptorHeap_.GetCPUDescriptorHandleForHeapStart();
+	dsvHandle_ = dsvDescriptorHeap_.GetCPUDescriptorHandle(0); // 先頭
 	device_->CreateDepthStencilView(depthStencilResource_.Get(), &dsvDesc, dsvHandle_);
 }
 
@@ -147,7 +147,7 @@ void DirectXCommon::CreateRenderTargetView() {
 // =========================================================
 // CreateDepthStencilTextureResource
 // =========================================================
-Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateDepthStencilTextureResource( int32_t width, int32_t height) {
+Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateDepthStencilTextureResource(int32_t width, int32_t height) {
 	// 生成するResourceの設定
 	D3D12_RESOURCE_DESC resourceDesc{};
 	resourceDesc.Width = width; // Textureの幅
