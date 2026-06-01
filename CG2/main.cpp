@@ -2,9 +2,7 @@
 #include <cstdint>
 #include <string>
 #include <format>
-#include <filesystem>
 #include <fstream>
-#include <chrono>
 #include <d3d12.h>
 #pragma comment(lib,"d3d12.lib")
 #include <dxgi1_6.h>
@@ -58,10 +56,7 @@
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 #endif // USE_IMGUI
 #include "WinApp.h"
-
-void Log(const std::string& message);
-void InitLog();
-std::ofstream gLogFile;
+#include "Log.h"
 Microsoft::WRL::ComPtr<IDxcBlob> CompileShader(
 	// compilerするshaderファイルへのパス
 	const std::wstring& filepath,
@@ -90,9 +85,7 @@ bool IsPushkey(uint8_t key);
 
 bool IsTriggerkey(uint8_t key, uint8_t preKey);
 
-
 const Transform kDefaultCameraTransform{ {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,-10.0f} };
-
 
 // Windowsアプリのエントリポイント(main関数)
 int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
@@ -917,26 +910,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	CoUninitialize();
 
 	return 0;
-}
-
-void Log(const std::string& message) {
-	if (gLogFile.is_open()) {
-		gLogFile << message << std::endl;
-	}
-	OutputDebugStringA(message.c_str());
-}
-
-void InitLog() {
-	std::filesystem::create_directory("logs");
-
-	auto now = std::chrono::system_clock::now();
-	auto nowSec = std::chrono::time_point_cast<std::chrono::seconds>(now);
-	std::chrono::zoned_time localTime{ std::chrono::current_zone(), nowSec };
-
-	std::string date = std::format("{:%Y%m%d_%H%M%S}", localTime);
-	std::string path = "logs/" + date + ".log";
-
-	gLogFile.open(path, std::ios::app);
 }
 
 static LONG WINAPI ExportDump(EXCEPTION_POINTERS* exception) {
