@@ -41,6 +41,7 @@ private:
 
 	UINT backBufferIndex_ = 0;
 	uint64_t fenceValue_ = 0;
+	DXGI_SWAP_CHAIN_DESC1 swapChainDesc_{};
 public:
 	void Initialize(HWND hwnd, int32_t width, int32_t height);
 	void PreDraw();
@@ -48,5 +49,6 @@ public:
 	DXGI_FORMAT GetDXGIFormat()const { return rtvDescFormat_; }
 	ID3D12GraphicsCommandList* GetCommandList() const { return commandList_.Get(); }
 	ID3D12Device* GetDevice() const { return device_.Get(); }
+	DXGI_SWAP_CHAIN_DESC1 GetSwapChainDesc()const { return swapChainDesc_; }
 };
 
