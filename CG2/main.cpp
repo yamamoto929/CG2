@@ -58,6 +58,7 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg
 #include "WinApp.h"
 #include "Log.h"
 #include "DirectXCommon.h"
+#include "Input.h"
 Microsoft::WRL::ComPtr<IDxcBlob> CompileShader(
 	// compilerするshaderファイルへのパス
 	const std::wstring& filepath,
@@ -81,10 +82,6 @@ D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescriptorHandle(const Microsoft::WRL::ComPtr<
 D3D12_GPU_DESCRIPTOR_HANDLE GetGPUDescriptorHandle(const Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>& descriptorHeap, uint32_t descriptorSize, uint32_t index);
 ModelData LoadObjFile(const std::string& directoryPath, const std::string& filename);
 MaterialData LoadMaterialTemplateFile(const std::string& directoryPath, const std::string& filename);
-bool IsPushkey(uint8_t key);
-
-bool IsTriggerkey(uint8_t key, uint8_t preKey);
-
 const Transform kDefaultCameraTransform{ {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,-10.0f} };
 
 // Windowsアプリのエントリポイント(main関数)
@@ -142,35 +139,12 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	// SRV用のディスクリプタヒープ
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> srvDescriptorHeap = CreateDescriptorHeap(directXCommon.GetDevice(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 128, true);
 
-	// DirectInput初期化
-	// キーボード
-	Microsoft::WRL::ComPtr<IDirectInput8> directInput = nullptr;
-	HRESULT hr = DirectInput8Create(winApp.GetHInstance(), DIRECTINPUT_VERSION, IID_IDirectInput8, (void**)&directInput, nullptr);
-	assert(SUCCEEDED(hr));
-
-	Microsoft::WRL::ComPtr<IDirectInputDevice8> keyboard = nullptr;
-	hr = directInput->CreateDevice(GUID_SysKeyboard, &keyboard, NULL);
-	assert(SUCCEEDED(hr));
-
-	hr = keyboard->SetDataFormat(&c_dfDIKeyboard);
-	assert(SUCCEEDED(hr));
-
-	hr = keyboard->SetCooperativeLevel(winApp.GetHwnd(), DISCL_FOREGROUND | DISCL_NONEXCLUSIVE | DISCL_NOWINKEY);
-	assert(SUCCEEDED(hr));
-	// マウス
-	Microsoft::WRL::ComPtr<IDirectInputDevice8> mouse = nullptr;
-	hr = directInput->CreateDevice(GUID_SysMouse, &mouse, NULL);
-	assert(SUCCEEDED(hr));
-
-	hr = mouse->SetDataFormat(&c_dfDIMouse);
-	assert(SUCCEEDED(hr));
-
-	hr = mouse->SetCooperativeLevel(winApp.GetHwnd(), DISCL_FOREGROUND | DISCL_NONEXCLUSIVE);
-	assert(SUCCEEDED(hr));
+	Input input;
+	input.Initialize(winApp.GetHInstance(),winApp.GetHwnd());
 
 	Microsoft::WRL::ComPtr<IXAudio2> xAudio2;
 	IXAudio2MasteringVoice* masterVoice = nullptr;
-	hr = XAudio2Create(xAudio2.GetAddressOf(), 0, XAUDIO2_DEFAULT_PROCESSOR);
+	HRESULT hr = XAudio2Create(xAudio2.GetAddressOf(), 0, XAUDIO2_DEFAULT_PROCESSOR);
 	hr = xAudio2->CreateMasteringVoice(&masterVoice);
 
 	std::wstring path = (L"Resources/Alarm01.wav");
@@ -522,13 +496,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	// 球テクスチャ切り替え
 	bool useMonsterBall = true;
 
-	// キー情報
-	BYTE key[256] = {};
-	BYTE preKey[256] = {};
-
-	// マウス情報
-	DIMOUSESTATE mouseState;
-
 	// デバッグカメラ
 	DebugCamera debugCamera;
 	debugCamera.Initialize();
@@ -562,15 +529,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			ImGui_ImplWin32_NewFrame();
 			ImGui::NewFrame();
 		#endif // USE_IMGUI
-			// キーボート情報の取得開始
-			keyboard->Acquire();
-			std::memcpy(preKey, key, sizeof(key));
-			keyboard->GetDeviceState(sizeof(key), key);
-
-			// マウス
-			mouse->Acquire();
-			mouse->GetDeviceState(sizeof(DIMOUSESTATE), &mouseState);
-
+			input.Update();
 			// ゲームの処理
 			Matrix4x4 worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
 			transformationMatrixData->World = worldMatrix;
@@ -578,7 +537,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			Matrix4x4 viewMatrix = Inverse(cameraMatrix);
 		#ifdef _DEBUG
 			if (useDebugCamera) {
-				debugCamera.Update(key, mouseState);
+				debugCamera.Update(input.GetKey(), input.GetMouseState());
 				viewMatrix = debugCamera.GetViewMatrix();
 			}
 		#endif
@@ -1035,20 +994,6 @@ Microsoft::WRL::ComPtr<ID3D12Resource> UploadTextureData(
 	commandList->ResourceBarrier(1, &barrier);
 
 	return intermediateResource;
-}
-
-bool IsPushkey(uint8_t key) {
-	if ((key & 0x80) != 0) {
-		return true;
-	}
-	return false;
-}
-
-bool IsTriggerkey(uint8_t key, uint8_t preKey) {
-	if ((key & 0x80) != 0 && (preKey & 0x80) == 0) {
-		return true;
-	}
-	return false;
 }
 
 // =========================================================
