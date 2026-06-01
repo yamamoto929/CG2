@@ -29,10 +29,10 @@ void Input::Update() {
 	// キーボート情報の取得
 	std::memcpy(preKey_, key_, sizeof(key_));
 	keyboard_->Acquire();
-	HRESULT hr =keyboard_->GetDeviceState(sizeof(key_), key_);
+	HRESULT hr = keyboard_->GetDeviceState(sizeof(key_), key_);
 	if (FAILED(hr)) {
 		keyboard_->Acquire();
-		keyboard_->GetDeviceState(sizeof(DIMOUSESTATE), &key_);
+		keyboard_->GetDeviceState(sizeof(BYTE), &key_);
 	}
 
 	// マウス
@@ -60,14 +60,15 @@ bool Input::IsTriggerkey(uint8_t key, uint8_t preKey) {
 }
 
 bool Input::IsPressMouse(int button) const {
-	if (mouseState_.rgbButtons[button] & 0x80) {
+	if ((mouseState_.rgbButtons[button] & 0x80) != 0) {
 		return true;
 	}
 	return false;
 }
 
 bool Input::IsTriggerMouse(int button)const {
-	if (mouseState_.rgbButtons[button] & 0x80 && !preMouseState_.rgbButtons[button]) {
+	if ((mouseState_.rgbButtons[button] & 0x80) != 0 &&
+		(preMouseState_.rgbButtons[button] & 0x80) == 0) {
 		return true;
 	}
 	return false;
