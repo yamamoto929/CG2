@@ -38,8 +38,11 @@ private:
 	Microsoft::WRL::ComPtr<ID3D12Resource> depthStencilResource_ = nullptr;
 	D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle_;
 	Microsoft::WRL::ComPtr<ID3D12Resource>CreateDepthStencilTextureResource(int32_t width, int32_t height);
+
+	UINT backBufferIndex_ = 0;
 public:
 	void Initialize(HWND hwnd, int32_t width, int32_t height);
+	void PreDraw();
 	DXGI_FORMAT GetDXGIFormat()const { return rtvDescFormat_; }
 };
 
