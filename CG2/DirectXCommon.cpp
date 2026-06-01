@@ -109,9 +109,7 @@ void DirectXCommon::CreateRenderTargetView() {
 	rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
 
 	for (uint32_t i = 0; i < kSwapChainBufferCount; ++i) {
-		rtvHandles_[i] =rtvDescriptorHeap_.GetCPUDescriptorHandle(
-			device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV)
-		);
+		rtvHandles_[i] =rtvDescriptorHeap_.GetCPUDescriptorHandle(i);
 
 		device_->CreateRenderTargetView(
 			swapChainResources_[i].Get(),
