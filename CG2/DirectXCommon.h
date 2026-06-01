@@ -40,9 +40,13 @@ private:
 	Microsoft::WRL::ComPtr<ID3D12Resource>CreateDepthStencilTextureResource(int32_t width, int32_t height);
 
 	UINT backBufferIndex_ = 0;
+	uint64_t fenceValue_ = 0;
 public:
 	void Initialize(HWND hwnd, int32_t width, int32_t height);
 	void PreDraw();
+	void PostDraw();
 	DXGI_FORMAT GetDXGIFormat()const { return rtvDescFormat_; }
+	ID3D12GraphicsCommandList* GetCommandList() const { return commandList_.Get(); }
+	ID3D12Device* GetDevice() const { return device_.Get(); }
 };
 
