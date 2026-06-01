@@ -2,6 +2,13 @@
 #include "ConvertString.h"
 #include "Log.h"
 #include <format>
+DirectXCommon::~DirectXCommon() {
+	if (fenceEvent_) {
+		CloseHandle(fenceEvent_);
+		fenceEvent_ = nullptr;
+	}
+}
+
 void DirectXCommon::Initialize(HWND hwnd, int32_t width, int32_t height) {
 	HRESULT hr = CreateDXGIFactory(IID_PPV_ARGS(&dxgiFactory_));
 	// 初期化の根本的な部分でエラーが出た場合はプログラムが間違っているか、どうにもできない場合が多いのでassertにしておく

@@ -43,6 +43,7 @@ private:
 	uint64_t fenceValue_ = 0;
 	DXGI_SWAP_CHAIN_DESC1 swapChainDesc_{};
 public:
+	~DirectXCommon();
 	void Initialize(HWND hwnd, int32_t width, int32_t height);
 	void PreDraw();
 	void PostDraw();
