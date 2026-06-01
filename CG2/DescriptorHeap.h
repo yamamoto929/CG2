@@ -12,8 +12,8 @@ public:
 
 	ID3D12DescriptorHeap* Get() const { return descriptorHeap_.Get(); }
 
-	D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescriptorHandle(uint32_t descriptorSize, uint32_t index);
-	D3D12_GPU_DESCRIPTOR_HANDLE GetGPUDescriptorHandle(uint32_t descriptorSize, uint32_t index);
+	D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescriptorHandle(uint32_t index);
+	D3D12_GPU_DESCRIPTOR_HANDLE GetGPUDescriptorHandle(uint32_t index);
 private:
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> descriptorHeap_;
 	uint32_t descriptorSize_ = 0;

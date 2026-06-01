@@ -47,11 +47,6 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t width, int32_t height) {
 	assert(device_ != nullptr);
 	Log("Complete create D3D12Device!!!\n");
 
-	// DescriptorSizeを取得しておく
-	const uint32_t descriptorSizeSRV = device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	const uint32_t descriptorSizeRTV = device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-	const uint32_t descriptorSizeDSV = device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
-
 	// コマンドキューを生成する
 	D3D12_COMMAND_QUEUE_DESC commandQueueDesc{};
 	hr = device_->CreateCommandQueue(&commandQueueDesc,
@@ -90,11 +85,10 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t width, int32_t height) {
 	rtvDescriptorHeap_.Initialize(device_.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_RTV, kSwapChainBufferCount, false);
 
 	// SwapChainからResourceを引っ張ってくる
-	hr = swapChain_->GetBuffer(0, IID_PPV_ARGS(&swapChainResources_[0]));
-	assert(SUCCEEDED(hr));
-
-	hr = swapChain_->GetBuffer(1, IID_PPV_ARGS(&swapChainResources_[1]));
-	assert(SUCCEEDED(hr));
+	for (uint32_t i = 0; i < kSwapChainBufferCount; ++i) {
+		hr = swapChain_->GetBuffer(i, IID_PPV_ARGS(&swapChainResources_[i]));
+		assert(SUCCEEDED(hr));
+	}
 
 	CreateRenderTargetView();
 
@@ -114,16 +108,11 @@ void DirectXCommon::CreateRenderTargetView() {
 	rtvDescFormat_ = rtvDesc.Format;
 	rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
 
-	// まず一つ目を作る。一つ目は最初のところに作る。作る場所をこちらで指定してあげる必要がある
-	rtvHandles_[0] = rtvDescriptorHeap_.GetCPUDescriptorHandle(device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV), 0);
-	device_->CreateRenderTargetView(swapChainResources_[0].Get(), &rtvDesc, rtvHandles_[0]);
-
-	// 2つ目のディスクリプタハンドルを得る
-	rtvHandles_[1] = rtvDescriptorHeap_.GetCPUDescriptorHandle(device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV), 1);
-	// 2つ目を作る
-	device_->CreateRenderTargetView(swapChainResources_[1].Get(), &rtvDesc, rtvHandles_[1]);
-
 	for (uint32_t i = 0; i < kSwapChainBufferCount; ++i) {
+		rtvHandles_[i] =rtvDescriptorHeap_.GetCPUDescriptorHandle(
+			device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV)
+		);
+
 		device_->CreateRenderTargetView(
 			swapChainResources_[i].Get(),
 			&rtvDesc,
