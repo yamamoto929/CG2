@@ -107,6 +107,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
   <ItemGroup>
     <ClCompile Include="AffineMatrix.cpp" />
     <ClCompile Include="DebugCamera.cpp" />
+    <ClCompile Include="DescriptorHeap.cpp" />
     <ClCompile Include="DirectXCommon.cpp" />
     <ClCompile Include="externals\imgui\imgui.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
@@ -143,6 +144,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="ConvertString.h" />
     <ClInclude Include="D3DResourceLeakChecker.h" />
     <ClInclude Include="DebugCamera.h" />
+    <ClInclude Include="DescriptorHeap.h" />
     <ClInclude Include="DirectionalLight.h" />
     <ClInclude Include="DirectXCommon.h" />
     <ClInclude Include="externals\imgui\imconfig.h" />

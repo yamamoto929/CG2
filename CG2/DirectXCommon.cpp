@@ -88,11 +88,10 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t width, int32_t height) {
 	rtvDescriptorHeap_ = CreateDescriptorHeap(device_, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 2, false);
 	
 	// SwapChainからResourceを引っ張ってくる
-	Microsoft::WRL::ComPtr<ID3D12Resource> swapChainResources[2] = { nullptr };
-	hr = swapChain_->GetBuffer(0, IID_PPV_ARGS(&swapChainResources[0]));
+	hr = swapChain_->GetBuffer(0, IID_PPV_ARGS(&swapChainResources_[0]));
 	assert(SUCCEEDED(hr));
 
-	hr = swapChain_->GetBuffer(1, IID_PPV_ARGS(&swapChainResources[1]));
+	hr = swapChain_->GetBuffer(1, IID_PPV_ARGS(&swapChainResources_[1]));
 	assert(SUCCEEDED(hr));
 
 	CreateRenderTargetView();
@@ -129,6 +128,17 @@ void DirectXCommon::CreateRenderTargetView() {
 	rtvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
 	rtvDescFormat_ = rtvDesc.Format;
 	rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+
+	// ディスクリプタの先頭を取得する
+	D3D12_CPU_DESCRIPTOR_HANDLE rtvStartHandle = rtvDescriptorHeap_->GetCPUDescriptorHandleForHeapStart();
+	// まず一つ目を作る。一つ目は最初のところに作る。作る場所をこちらで指定してあげる必要がある
+	rtvHandles_[0] = GetCPUDescriptorHandle(rtvDescriptorHeap_, device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV), 0);
+	device_->CreateRenderTargetView(swapChainResources_[0].Get(), &rtvDesc, rtvHandles_[0]);
+
+	// 2つ目のディスクリプタハンドルを得る
+	rtvHandles_[1] = GetCPUDescriptorHandle(rtvDescriptorHeap_, device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV), 1);
+	// 2つ目を作る
+	device_->CreateRenderTargetView(swapChainResources_[1].Get(), &rtvDesc, rtvHandles_[1]);
 
 	for (uint32_t i = 0; i < kSwapChainBufferCount; ++i) {
 		device_->CreateRenderTargetView(

@@ -22,9 +22,6 @@ private:
 	static const uint32_t kSwapChainBufferCount = 2;
 	std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, kSwapChainBufferCount> swapChainResources_;
 	std::array<D3D12_CPU_DESCRIPTOR_HANDLE, kSwapChainBufferCount> rtvHandles_;
-	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> CreateDescriptorHeap(
-		const Microsoft::WRL::ComPtr<ID3D12Device>& device, D3D12_DESCRIPTOR_HEAP_TYPE heapType, UINT numDescriptors, bool shaderVisible
-	);
 
 	Microsoft::WRL::ComPtr<ID3D12Fence> fence_ = nullptr;
 	void CreateRenderTargetView();
