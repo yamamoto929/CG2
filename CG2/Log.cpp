@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <fstream>
 #include <Windows.h>
+#include <format>
 std::ofstream gLogFile;
 void Log(const std::string& message) {
 	if (gLogFile.is_open()) {

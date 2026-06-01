@@ -8,6 +8,7 @@
 #include <wrl.h>
 #include <array>
 #include <cstdint>
+#include "DescriptorHeap.h"
 
 class DirectXCommon {
 private:
@@ -18,7 +19,7 @@ private:
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList_ = nullptr;
 	Microsoft::WRL::ComPtr<IDXGISwapChain4> swapChain_ = nullptr;
 
-	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> rtvDescriptorHeap_ = nullptr;
+	DescriptorHeap rtvDescriptorHeap_;
 	static const uint32_t kSwapChainBufferCount = 2;
 	std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, kSwapChainBufferCount> swapChainResources_;
 	std::array<D3D12_CPU_DESCRIPTOR_HANDLE, kSwapChainBufferCount> rtvHandles_;
