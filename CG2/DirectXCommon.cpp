@@ -174,8 +174,8 @@ void DirectXCommon::PostDraw() {
 	HRESULT hr = commandList_->Close();
 	assert(SUCCEEDED(hr));
 	// GPUにコマンドリストの実行を行わせる
-	Microsoft::WRL::ComPtr<ID3D12CommandList> commandLists[] = { commandList_ };
-	commandQueue_->ExecuteCommandLists(1, commandLists->GetAddressOf());
+	ID3D12CommandList* commandLists[] = { commandList_.Get()};
+	commandQueue_->ExecuteCommandLists(1, commandLists);
 	// GPUにOSに画面の交換を行うよう通知する
 	swapChain_->Present(1, 0);
 	// Fenceの値を更新
