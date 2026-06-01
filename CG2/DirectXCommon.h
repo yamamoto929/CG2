@@ -29,6 +29,15 @@ private:
 	HANDLE fenceEvent_;
 
 	DXGI_FORMAT rtvDescFormat_;
+
+	D3D12_VIEWPORT viewport_{};
+
+	D3D12_RECT scissorRect_{};
+
+	DescriptorHeap dsvDescriptorHeap_;
+	Microsoft::WRL::ComPtr<ID3D12Resource> depthStencilResource_ = nullptr;
+	D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle_;
+	Microsoft::WRL::ComPtr<ID3D12Resource>CreateDepthStencilTextureResource(int32_t width, int32_t height);
 public:
 	void Initialize(HWND hwnd, int32_t width, int32_t height);
 	DXGI_FORMAT GetDXGIFormat()const { return rtvDescFormat_; }
