@@ -59,6 +59,7 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg
 #include "Log.h"
 #include "DirectXCommon.h"
 #include "Input.h"
+#include "ShaderCompiler.h"
 Microsoft::WRL::ComPtr<IDxcBlob> CompileShader(
 	// compilerするshaderファイルへのパス
 	const std::wstring& filepath,
@@ -206,6 +207,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	MFSourceReader->Release();
 	CoTaskMemFree(waveFormat);
 
+	ShaderCompiler shaderCompiler;
+	shaderCompiler.Initialize();
 	// dxcCompilerを初期化
 	IDxcUtils* dxcUtils = nullptr;
 	IDxcCompiler3* dxcCompiler = nullptr;
