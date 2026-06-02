@@ -60,15 +60,6 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg
 #include "DirectXCommon.h"
 #include "Input.h"
 #include "ShaderCompiler.h"
-Microsoft::WRL::ComPtr<IDxcBlob> CompileShader(
-	// compilerするshaderファイルへのパス
-	const std::wstring& filepath,
-	// compilerに使用するprofile
-	const wchar_t* profile,
-	const Microsoft::WRL::ComPtr <IDxcUtils>& dxcUtils,
-	const Microsoft::WRL::ComPtr<IDxcCompiler3>& dxcCompiler,
-	const Microsoft::WRL::ComPtr<IDxcIncludeHandler>& includeHandler
-);
 static LONG WINAPI ExportDump(EXCEPTION_POINTERS* exception);
 Microsoft::WRL::ComPtr<ID3D12Resource> CreateBufferResource(const Microsoft::WRL::ComPtr<ID3D12Device>& device,
 	size_t sizeInBytes);
@@ -209,18 +200,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 	ShaderCompiler shaderCompiler;
 	shaderCompiler.Initialize();
-	// dxcCompilerを初期化
-	IDxcUtils* dxcUtils = nullptr;
-	IDxcCompiler3* dxcCompiler = nullptr;
-	hr = DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&dxcUtils));
-	assert(SUCCEEDED(hr));
-	hr = DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&dxcCompiler));
-	assert(SUCCEEDED(hr));
-
-	// 現時点でincludeはしないが、includeに対応するための設定を行っておく
-	IDxcIncludeHandler* includeHandler = nullptr;
-	hr = dxcUtils->CreateDefaultIncludeHandler(&includeHandler);
-	assert(SUCCEEDED(hr));
 
 	// RootSignature作成
 	D3D12_ROOT_SIGNATURE_DESC descriptionRootSignature{};
@@ -305,13 +284,11 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	// 三角形の中を塗りつぶす
 	rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
 	// Shaderをコンパイルする
-	Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = CompileShader(L"Object3D.VS.hlsl",
-		L"vs_6_0", dxcUtils, dxcCompiler, includeHandler);
-	assert(vertexShaderBlob != nullptr);
+	Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = 
+		shaderCompiler.Compile(L"Object3D.VS.hlsl",L"vs_6_0");
 
-	Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = CompileShader(L"Object3d.PS.hlsl",
-		L"ps_6_0", dxcUtils, dxcCompiler, includeHandler);
-	assert(pixelShaderBlob != nullptr);
+	Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob =
+		shaderCompiler.Compile(L"Object3d.PS.hlsl",L"ps_6_0");
 
 	// DepthStencilStateの設定
 	D3D12_DEPTH_STENCIL_DESC depthStencilDesc{};
@@ -708,71 +685,6 @@ static LONG WINAPI ExportDump(EXCEPTION_POINTERS* exception) {
 
 	// ほかに関連付けられているSEH例外ハンドラがあれば実行。通常はプロセスを終了する
 	return EXCEPTION_EXECUTE_HANDLER;
-}
-
-// =========================================================
-// CompileShader
-// =========================================================
-Microsoft::WRL::ComPtr<IDxcBlob> CompileShader(
-	const std::wstring& filePath,
-	const wchar_t* profile,
-	const Microsoft::WRL::ComPtr<IDxcUtils>& dxcUtils,
-	const Microsoft::WRL::ComPtr<IDxcCompiler3>& dxcCompiler,
-	const Microsoft::WRL::ComPtr<IDxcIncludeHandler>& includeHandler
-) {
-	// これからシェーダーにコンパイルする旨をログに出す
-	Log(ConvertString(std::format(L"Begin CompilerShader, path:{}, profile:{}\n", filePath, profile)));
-	// hlslファイルを読む
-	Microsoft::WRL::ComPtr<IDxcBlobEncoding> shaderSource;
-	HRESULT hr = dxcUtils->LoadFile(filePath.c_str(), nullptr, &shaderSource);
-	// 読めなかったら止める
-	assert(SUCCEEDED(hr));
-	// 読み込んだファイルの内容を設定する
-	DxcBuffer shaderSourcesBuffer;
-	shaderSourcesBuffer.Ptr = shaderSource->GetBufferPointer();
-	shaderSourcesBuffer.Size = shaderSource->GetBufferSize();
-	shaderSourcesBuffer.Encoding = DXC_CP_UTF8;
-
-	LPCWSTR arguments[] = {
-		filePath.c_str(), // コンパイル対象のhlslファイル名
-		L"-E",L"main", // エントリーポイントの指定。基本的にmain以外ではしない
-		L"-T",profile, // ShaderProfileの設定
-		L"-Zi",L"-Qembed_debug", // デバッグ用の情報を読み込む
-		L"-Od",		// 最適化を外しておく
-		L"-Zpr",	// メモリレイアウトは行優先
-	};
-	// 実際にShaderをコンパイルする
-	Microsoft::WRL::ComPtr<IDxcResult> shaderResult;
-	hr = dxcCompiler->Compile(
-		&shaderSourcesBuffer,	// 読み込んだファイル
-		arguments,				// コンパイルオプション
-		_countof(arguments),	// コンパイルオプションの数
-		includeHandler.Get(),	// includeが含まれた諸々 (ComPtrから生ポインタを取得)
-		IID_PPV_ARGS(&shaderResult)// コンパイル結果
-	);
-	// コンパイルエラーではなくdxcが起動できななど致命的な状況
-	assert(SUCCEEDED(hr));
-
-	// 警告やエラーが出てたらログに出して止める
-	Microsoft::WRL::ComPtr<IDxcBlobUtf8> shaderError;
-	shaderResult->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(&shaderError), nullptr);
-	if (shaderError != nullptr && shaderError->GetStringLength() != 0) {
-		Log(shaderError->GetStringPointer());
-		// 警告エラーダメゼッタイ
-		assert(false);
-	}
-
-	// コンパイル結果から実行用のバイナリ部分を取得
-	Microsoft::WRL::ComPtr<IDxcBlob> shaderBlob;
-	hr = shaderResult->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(&shaderBlob), nullptr);
-	assert(SUCCEEDED(hr));
-	// 成功したログを出す
-	Log(ConvertString(std::format(L"Compile Succeeded, path:{}, profile:{}\n", filePath, profile)));
-
-	// ※ ComPtr化により Release() の手動呼び出しは不要になるため削除
-
-	// 実行用のバイナリを返却
-	return shaderBlob;
 }
 
 // =========================================================

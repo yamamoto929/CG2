@@ -1,7 +1,8 @@
 #pragma once
-#include <dxcapi.h>
-#pragma comment(lib,"dxcompiler.lib")
+#include <Windows.h>
 #include <wrl.h>
+#include <dxcapi.h>
+#pragma comment(lib, "dxcompiler.lib")
 #include <string>
 class ShaderCompiler{
 private:
