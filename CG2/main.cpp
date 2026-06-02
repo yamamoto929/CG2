@@ -60,6 +60,7 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg
 #include "DirectXCommon.h"
 #include "Input.h"
 #include "ShaderCompiler.h"
+#include "TextureManager.h"
 static LONG WINAPI ExportDump(EXCEPTION_POINTERS* exception);
 Microsoft::WRL::ComPtr<ID3D12Resource> CreateBufferResource(const Microsoft::WRL::ComPtr<ID3D12Device>& device,
 	size_t sizeInBytes);
@@ -128,8 +129,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 		infoQueue->Release();
 	}
 #endif 
-	// SRV用のディスクリプタヒープ
-	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> srvDescriptorHeap = CreateDescriptorHeap(directXCommon.GetDevice(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 128, true);
+	TextureManager textureManager;
+	textureManager.Initialize(directXCommon.GetDevice(),directXCommon.GetCommandList(),128);
 
 	Input input;
 	input.Initialize(winApp.GetHInstance(),winApp.GetHwnd());
@@ -400,41 +401,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	*transformationMatrixDataSprite = MakeIdentityMatrix();
 	Transform transformSprite{ {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
 
-	// Textureを読んで転送する
-	DirectX::ScratchImage mipImages = LoadTexture("./resources/uvChecker.png");
-	const DirectX::TexMetadata& metadata = mipImages.GetMetadata();
-	Microsoft::WRL::ComPtr<ID3D12Resource> textureResource = CreateTextureResource(directXCommon.GetDevice(), metadata);
-	Microsoft::WRL::ComPtr<ID3D12Resource> intermediateResource = UploadTextureData(textureResource, mipImages, directXCommon.GetDevice(), directXCommon.GetCommandList());
-
-	// metaDataを基にSRVの設定
-	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
-	srvDesc.Format = metadata.format;
-	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-	srvDesc.Texture2D.MipLevels = UINT(metadata.mipLevels);//2Dテクスチャ
-	// SRVを作成するDescriptorHeapの場所を決める
-	// 先頭はImGuiが使っているのでその次を使う
-	D3D12_CPU_DESCRIPTOR_HANDLE textureSrvHandleCPU = GetCPUDescriptorHandle(srvDescriptorHeap.Get(), directXCommon.GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV), 1);
-	D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandleGPU = GetGPUDescriptorHandle(srvDescriptorHeap.Get(), directXCommon.GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV), 1);
-	directXCommon.GetDevice()->CreateShaderResourceView(textureResource.Get(), &srvDesc, textureSrvHandleCPU);
-
-	// 2枚目Textureを読んで転送する
-	DirectX::ScratchImage mipImages2 = LoadTexture(modelData.material.textureFilePath);
-	const DirectX::TexMetadata& metadata2 = mipImages2.GetMetadata();
-	Microsoft::WRL::ComPtr<ID3D12Resource> textureResource2 = CreateTextureResource(directXCommon.GetDevice(), metadata2);
-	Microsoft::WRL::ComPtr<ID3D12Resource> intermediateResource2 = UploadTextureData(textureResource2, mipImages2, directXCommon.GetDevice(), directXCommon.GetCommandList());
-
-	// metaDataを基にSRVの設定
-	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc2{};
-	srvDesc2.Format = metadata2.format;
-	srvDesc2.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	srvDesc2.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-	srvDesc2.Texture2D.MipLevels = UINT(metadata2.mipLevels);//2Dテクスチャ
-	// SRVを作成するDescriptorHeapの場所を決める
-	D3D12_CPU_DESCRIPTOR_HANDLE textureSrvHandleCPU2 = GetCPUDescriptorHandle(srvDescriptorHeap, directXCommon.GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV), 2);
-	D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandleGPU2 = GetGPUDescriptorHandle(srvDescriptorHeap, directXCommon.GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV), 2);
-	// SRVの生成
-	directXCommon.GetDevice()->CreateShaderResourceView(textureResource2.Get(), &srvDesc2, textureSrvHandleCPU2);
+	uint32_t uvTextureHandle = textureManager.Load("./resources/uvChecker.png");
+	uint32_t modelTextureHandle = textureManager.Load(modelData.material.textureFilePath);
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> directionalLightResource = CreateBufferResource(directXCommon.GetDevice(), sizeof(DirectionalLight));
 	DirectionalLight* directionalLightData = nullptr;
@@ -490,9 +458,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	ImGui_ImplDX12_Init(directXCommon.GetDevice(),
 		directXCommon.GetSwapChainDesc().BufferCount,
 		directXCommon.GetDXGIFormat(),
-		srvDescriptorHeap.Get(),
-		srvDescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
-		srvDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
+		textureManager.GetSrvDescriptorHeap(),
+		textureManager.GetSrvHandleCPU(0),
+		textureManager.GetSrvHandleGPU(0));
 	ImGuiIO& io = ImGui::GetIO();
 	io.Fonts->Build();
 #endif
@@ -586,7 +554,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			materialDataSprite->uvTransform = uvTransformMatrix;
 			directXCommon.PreDraw();
 			// 描画用のDescriptorHeapの設定
-			Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> descriptorHeaps[] = { srvDescriptorHeap };
+			Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> descriptorHeaps[] = {
+				textureManager.GetSrvDescriptorHeap()
+			};
 			directXCommon.GetCommandList()->SetDescriptorHeaps(1, descriptorHeaps->GetAddressOf());
 			// RootSignatureを設定。PSOに設定しているけど別途設定が必要
 			directXCommon.GetCommandList()->SetGraphicsRootSignature(rootSignature.Get());
@@ -600,7 +570,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			// wvp用のCBufferの場所を設定
 			directXCommon.GetCommandList()->SetGraphicsRootConstantBufferView(1, transformationMatrixResource->GetGPUVirtualAddress());
 			// SRVのDescriptorTableの先頭を設定
-			directXCommon.GetCommandList()->SetGraphicsRootDescriptorTable(2, useMonsterBall ? textureSrvHandleGPU2 : textureSrvHandleGPU);
+			directXCommon.GetCommandList()->SetGraphicsRootDescriptorTable(2, textureManager.GetSrvHandleGPU(useMonsterBall ? modelTextureHandle : uvTextureHandle));
 			directXCommon.GetCommandList()->SetGraphicsRootConstantBufferView(3, directionalLightResource->GetGPUVirtualAddress());
 			// 3D描画!
 			directXCommon.GetCommandList()->DrawInstanced(UINT(modelData.vertices.size()), 1, 0, 0);
@@ -611,7 +581,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			// TransformationMatrixCBufferの場所を設定
 			directXCommon.GetCommandList()->SetGraphicsRootConstantBufferView(1, transformationMatrixResourceSprite->GetGPUVirtualAddress());
 			// SRVのDescriptorTableを設定
-			directXCommon.GetCommandList()->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU);
+			directXCommon.GetCommandList()->SetGraphicsRootDescriptorTable(2, textureManager.GetSrvHandleGPU(uvTextureHandle));
 
 			// スプライト描画
 			//commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
@@ -722,71 +692,6 @@ Microsoft::WRL::ComPtr<ID3D12Resource> CreateBufferResource(const Microsoft::WRL
 }
 
 // =========================================================
-// CreateDescriptorHeap
-// =========================================================
-Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> CreateDescriptorHeap(
-	const Microsoft::WRL::ComPtr<ID3D12Device>& device, D3D12_DESCRIPTOR_HEAP_TYPE heapType, UINT numDescriptors, bool shaderVisible
-) {
-	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> descriptorHeap;
-	D3D12_DESCRIPTOR_HEAP_DESC descriptorHeapDesc{};
-	descriptorHeapDesc.Type = heapType;
-	descriptorHeapDesc.NumDescriptors = numDescriptors;
-	descriptorHeapDesc.Flags = shaderVisible ? D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE : D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-	HRESULT hr = device->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(&descriptorHeap));
-	// ディスクリプタヒープが作れなかったので起動できない
-	assert(SUCCEEDED(hr));
-	return descriptorHeap;
-}
-
-// =========================================================
-// CreateTextureResource
-// =========================================================
-Microsoft::WRL::ComPtr<ID3D12Resource> CreateTextureResource(const Microsoft::WRL::ComPtr<ID3D12Device>& device, const DirectX::TexMetadata& metadata) {
-	// metadataを基にResourceの設定
-	D3D12_RESOURCE_DESC resourceDesc{};
-	resourceDesc.Width = UINT(metadata.width); // Textureの幅
-	resourceDesc.Height = UINT(metadata.height); // Textureの高さ
-	resourceDesc.MipLevels = UINT16(metadata.mipLevels); // mipmapの数
-	resourceDesc.DepthOrArraySize = UINT16(metadata.arraySize); // 奥行き or 配列Textureの配列数
-	resourceDesc.Format = metadata.format; // TextureのFormat
-	resourceDesc.SampleDesc.Count = 1; // サンプリングカウント。1固定。
-	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION(metadata.dimension); // Textureの次元数。普段使っているのは2次元
-	// 利用するHeapの設定。
-	D3D12_HEAP_PROPERTIES heapProperties{};
-	heapProperties.Type = D3D12_HEAP_TYPE_DEFAULT;
-	// Resourceの生成
-	Microsoft::WRL::ComPtr<ID3D12Resource> resource;
-	HRESULT hr = device->CreateCommittedResource(
-		&heapProperties, // Heapの設定
-		D3D12_HEAP_FLAG_NONE, // Heapの特殊な設定。特になし。
-		&resourceDesc, // Resourceの設定
-		D3D12_RESOURCE_STATE_COPY_DEST, // データ転送される設定
-		nullptr, // Clear最適値。使わないのでnullptr
-		IID_PPV_ARGS(&resource)); // 作成するResourceポインタへのポインタ
-	assert(SUCCEEDED(hr));
-	return resource;
-}
-
-// =========================================================
-// LoadTexture 
-// =========================================================
-DirectX::ScratchImage LoadTexture(const std::string& filePath) {
-	// テクスチャファイルを読んでプログラムで扱えるようにする
-	DirectX::ScratchImage image{};
-	std::wstring filePathW = ConvertString(filePath);
-	HRESULT hr = DirectX::LoadFromWICFile(filePathW.c_str(), DirectX::WIC_FLAGS_FORCE_SRGB, nullptr, image);
-	assert(SUCCEEDED(hr));
-
-	// ミップマップの作成
-	DirectX::ScratchImage mipImages{};
-	hr = DirectX::GenerateMipMaps(image.GetImages(), image.GetImageCount(), image.GetMetadata(), DirectX::TEX_FILTER_SRGB, 0, mipImages);
-	assert(SUCCEEDED(hr));
-
-	// ミップマップ付きのデータを返す
-	return mipImages;
-}
-
-// =========================================================
 // LoadObjFile 
 // =========================================================
 ModelData LoadObjFile(const std::string& directoryPath, const std::string& filename) {
@@ -879,52 +784,4 @@ MaterialData LoadMaterialTemplateFile(const std::string& directoryPath, const st
 	}
 
 	return materialData;
-}
-
-// =========================================================
-// UploadTextureData
-// =========================================================
-Microsoft::WRL::ComPtr<ID3D12Resource> UploadTextureData(
-	const Microsoft::WRL::ComPtr<ID3D12Resource>& texture,
-	const DirectX::ScratchImage& mipImages,
-	const Microsoft::WRL::ComPtr<ID3D12Device>& device,
-	const Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList) {
-
-	std::vector<D3D12_SUBRESOURCE_DATA> subresources;
-	DirectX::PrepareUpload(device.Get(), mipImages.GetImages(), mipImages.GetImageCount(), mipImages.GetMetadata(), subresources);
-
-	uint64_t intermediateSize = GetRequiredIntermediateSize(texture.Get(), 0, UINT(subresources.size()));
-	Microsoft::WRL::ComPtr<ID3D12Resource> intermediateResource = CreateBufferResource(device, intermediateSize);
-
-	UpdateSubresources(commandList.Get(), texture.Get(), intermediateResource.Get(), 0, 0, UINT(subresources.size()), subresources.data());
-
-	// Textureへの転送後は利用できるよう、D3D12_RESOURCE_STATE_COPY_DESTからD3D12_RESOURCE_STATE_GENERIC_READ ResourceStateを変更する
-	D3D12_RESOURCE_BARRIER barrier{};
-	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-	barrier.Transition.pResource = texture.Get();
-	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
-	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_GENERIC_READ;
-	commandList->ResourceBarrier(1, &barrier);
-
-	return intermediateResource;
-}
-
-// =========================================================
-// GetCPUDescriptorHandle
-// =========================================================
-D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescriptorHandle(const Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>& descriptorHeap, uint32_t descriptorSize, uint32_t index) {
-	D3D12_CPU_DESCRIPTOR_HANDLE handleCPU = descriptorHeap->GetCPUDescriptorHandleForHeapStart();
-	handleCPU.ptr += (descriptorSize * index);
-	return handleCPU;
-}
-
-// =========================================================
-// GetGPUDescriptorHandle
-// =========================================================
-D3D12_GPU_DESCRIPTOR_HANDLE GetGPUDescriptorHandle(const Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>& descriptorHeap, uint32_t descriptorSize, uint32_t index) {
-	D3D12_GPU_DESCRIPTOR_HANDLE handleGPU = descriptorHeap->GetGPUDescriptorHandleForHeapStart();
-	handleGPU.ptr += (descriptorSize * index);
-	return handleGPU;
 }

@@ -136,6 +136,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="ConvertString.cpp" />
     <ClCompile Include="Matrix4x4.cpp" />
     <ClCompile Include="ShaderCompiler.cpp" />
+    <ClCompile Include="TextureManager.cpp" />
     <ClCompile Include="transformNormal.cpp" />
     <ClCompile Include="Vector3.cpp" />
     <ClCompile Include="WinApp.cpp" />
@@ -165,6 +166,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Matrix4x4.h" />
     <ClInclude Include="ModelData.h" />
     <ClInclude Include="ShaderCompiler.h" />
+    <ClInclude Include="TextureManager.h" />
     <ClInclude Include="Transform.h" />
     <ClInclude Include="TransformationMatrix.h" />
     <ClInclude Include="transformNormal.h" />
