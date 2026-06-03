@@ -21,12 +21,6 @@ void Model::Initialize(ID3D12Device* device, TextureManager* textureManager, Mod
 	materialData_->enableLighting = true;
 	materialData_->uvTransform = MakeIdentityMatrix();
 
-	// WVP用のリソース
-	transformationMatrixResource_ = CreateBufferResource(device, sizeof(TransformationMatrix));
-	transformationMatrixResource_->Map(0, nullptr, reinterpret_cast<void**>(&transformationMatrixData_));
-	transformationMatrixData_->WVP = MakeIdentityMatrix();
-	transformationMatrixData_->World = MakeIdentityMatrix();
-
 	textureHandle_ = textureManager->Load(modelData->material.textureFilePath);
 
 	vertexCount_ = static_cast<uint32_t>(modelData->vertices.size());
@@ -37,7 +31,6 @@ void Model::Draw(ID3D12GraphicsCommandList* commandList, TextureManager* texture
 	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	commandList->SetGraphicsRootConstantBufferView(0, materialResource_->GetGPUVirtualAddress());
-	commandList->SetGraphicsRootConstantBufferView(1, transformationMatrixResource_->GetGPUVirtualAddress());
 	commandList->SetGraphicsRootDescriptorTable(2, textureManager->GetSrvHandleGPU(textureHandle_));
 
 	commandList->DrawInstanced(vertexCount_, 1, 0, 0);

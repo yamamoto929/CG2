@@ -63,6 +63,7 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg
 #include "TextureManager.h"
 #include "ModelLoader.h"
 #include "Model.h"
+#include "Object3D.h"
 static LONG WINAPI ExportDump(EXCEPTION_POINTERS* exception);
 Microsoft::WRL::ComPtr<ID3D12Resource> CreateBufferResource(const Microsoft::WRL::ComPtr<ID3D12Device>& device,
 	size_t sizeInBytes);
@@ -324,6 +325,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	Model model;
 	model.Initialize(directXCommon.GetDevice(), &textureManager, &modelData);
 
+	Object3D object3D;
+	object3D.Initialize(directXCommon.GetDevice(), &model);
+
 	// Sprite用の頂点リソースを作る
 	Microsoft::WRL::ComPtr<ID3D12Resource> vertexResourceSprite = CreateBufferResource(directXCommon.GetDevice(), sizeof(VertexData) * 4);
 	// 頂点バッファビューを作成する
@@ -395,7 +399,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	indexDataSprite[5] = 2;
 
 	// Transform変数
-	Transform transform{ {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f} };
+	Transform& transform = object3D.GetTransform();
 
 	// カメラの変数
 	Transform cameraTransform = kDefaultCameraTransform;
@@ -445,9 +449,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 		#endif // USE_IMGUI
 			input.Update();
 			// ゲームの処理
-			Matrix4x4 worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
-			model.SetTransformationWorld(worldMatrix);
-
 			Matrix4x4 cameraMatrix = MakeAffineMatrix(cameraTransform.scale, cameraTransform.rotate, cameraTransform.translate);
 			Matrix4x4 viewMatrix = Inverse(cameraMatrix);
 		#ifdef _DEBUG
@@ -457,8 +458,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			}
 		#endif
 			Matrix4x4 projectionMatrix = MakePerspectiveFovMatrix(0.45f, float(kClientWidth) / float(kClientHeight), 0.1f, 100.0f);
-			Matrix4x4 worldViewProjectionMatrix = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
-			model.SetTransformationWVP(worldViewProjectionMatrix);
+			object3D.Update(viewMatrix, projectionMatrix);
+
 			// Sprite用のWorldViewProjectionMatrixを作る
 			Matrix4x4 worldMatrixSprite = MakeAffineMatrix(transformSprite.scale, transformSprite.rotate, transformSprite.translate);
 			Matrix4x4 viewMatrixSprite = MakeIdentityMatrix();
@@ -531,7 +532,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			directXCommon.GetCommandList()->SetPipelineState(graphicPipelineState.Get()); // PSOを設定		
 			directXCommon.GetCommandList()->SetGraphicsRootConstantBufferView(3, directionalLightResource->GetGPUVirtualAddress());
 			// 3D描画!
-			model.Draw(directXCommon.GetCommandList(), &textureManager);
+			object3D.Draw(directXCommon.GetCommandList(), &textureManager);
 			// Spriteの描画。変更が必要なものだけ変更する
 			directXCommon.GetCommandList()->IASetVertexBuffers(0, 1, &vertexBufferViewSprite); // VBVを設定
 			directXCommon.GetCommandList()->IASetIndexBuffer(&indexBufferViewSprite);
