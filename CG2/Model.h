@@ -9,7 +9,6 @@
 #include "Matrix4x4.h"
 class Model {
 private:
-	ModelData* modelData_;
 	Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource_ = nullptr;
 	D3D12_VERTEX_BUFFER_VIEW vertexBufferView_{};
 	Material* materialData_ = nullptr;
