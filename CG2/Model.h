@@ -16,18 +16,18 @@ private:
 	Microsoft::WRL::ComPtr<ID3D12Resource> materialResource_ = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12Resource> transformationMatrixResource_ = nullptr;
 	TransformationMatrix* transformationMatrixData_ = nullptr;
-	uint32_t textureHandle_;
-	uint32_t vertexCount_;
+	uint32_t textureHandle_ = 0;
+	uint32_t vertexCount_ = 0;
 	Microsoft::WRL::ComPtr<ID3D12Resource> CreateBufferResource(ID3D12Device* device, size_t sizeInBytes);
 public:
 	void Initialize(ID3D12Device* device, TextureManager* textureManager, ModelData* modelData);
 	void Draw(ID3D12GraphicsCommandList* commandList, TextureManager* textureManager);
 	const Material& GetMaterial() const { return *materialData_; }
-	const Matrix4x4& GetWorldMatrix() const { return transformationMatrixData_->World; }
+	const Vector4& GetColor() const { return materialData_->color; }
 	void SetColor(const Vector4& color) { materialData_->color = color; }
 	void SetEnableLighting(bool enableLighting) { materialData_->enableLighting = enableLighting; }
 	void SetUVTransform(const Matrix4x4& uvTransform) { materialData_->uvTransform = uvTransform; }
-	void SetTransformationWorld(const Matrix4x4& world) {	transformationMatrixData_->World = world;}
-	void SetTransformationWVP( const Matrix4x4& wvp){ transformationMatrixData_->WVP = wvp; }
+	void SetTransformationWorld(const Matrix4x4& world) { transformationMatrixData_->World = world; }
+	void SetTransformationWVP(const Matrix4x4& wvp) { transformationMatrixData_->WVP = wvp; }
 };
 

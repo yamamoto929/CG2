@@ -121,10 +121,10 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	}
 #endif 
 	TextureManager textureManager;
-	textureManager.Initialize(directXCommon.GetDevice(),directXCommon.GetCommandList(),128);
+	textureManager.Initialize(directXCommon.GetDevice(), directXCommon.GetCommandList(), 128);
 
 	Input input;
-	input.Initialize(winApp.GetHInstance(),winApp.GetHwnd());
+	input.Initialize(winApp.GetHInstance(), winApp.GetHwnd());
 
 	Microsoft::WRL::ComPtr<IXAudio2> xAudio2;
 	IXAudio2MasteringVoice* masterVoice = nullptr;
@@ -276,11 +276,11 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	// 三角形の中を塗りつぶす
 	rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
 	// Shaderをコンパイルする
-	Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = 
-		shaderCompiler.Compile(L"Object3D.VS.hlsl",L"vs_6_0");
+	Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob =
+		shaderCompiler.Compile(L"Object3D.VS.hlsl", L"vs_6_0");
 
 	Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob =
-		shaderCompiler.Compile(L"Object3d.PS.hlsl",L"ps_6_0");
+		shaderCompiler.Compile(L"Object3d.PS.hlsl", L"ps_6_0");
 
 	// DepthStencilStateの設定
 	D3D12_DEPTH_STENCIL_DESC depthStencilDesc{};
@@ -447,7 +447,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			// ゲームの処理
 			Matrix4x4 worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
 			model.SetTransformationWorld(worldMatrix);
-			
+
 			Matrix4x4 cameraMatrix = MakeAffineMatrix(cameraTransform.scale, cameraTransform.rotate, cameraTransform.translate);
 			Matrix4x4 viewMatrix = Inverse(cameraMatrix);
 		#ifdef _DEBUG
@@ -457,7 +457,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			}
 		#endif
 			Matrix4x4 projectionMatrix = MakePerspectiveFovMatrix(0.45f, float(kClientWidth) / float(kClientHeight), 0.1f, 100.0f);
-			Matrix4x4 worldViewProjectionMatrix = Multiply(model.GetWorldMatrix(), Multiply(viewMatrix, projectionMatrix));
+			Matrix4x4 worldViewProjectionMatrix = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
 			model.SetTransformationWVP(worldViewProjectionMatrix);
 			// Sprite用のWorldViewProjectionMatrixを作る
 			Matrix4x4 worldMatrixSprite = MakeAffineMatrix(transformSprite.scale, transformSprite.rotate, transformSprite.translate);
@@ -472,10 +472,12 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			ImGui::SliderAngle("CameraRotateX", &cameraTransform.rotate.x);
 			ImGui::SliderAngle("CameraRotateY", &cameraTransform.rotate.y);
 			ImGui::SliderAngle("CameraRotateZ", &cameraTransform.rotate.z);
-			ImGui::SliderAngle("SphereRotateX", &transform.rotate.x);
-			ImGui::SliderAngle("SphereRotateY", &transform.rotate.y);
-			ImGui::SliderAngle("SphereRotateZ", &transform.rotate.z);
-			//ImGui::DragFloat3("TextureColorRGB", &materialData->color.x, 0.01f, 0.0f, 1.0f);
+			ImGui::SliderAngle("ModelRotateX", &transform.rotate.x);
+			ImGui::SliderAngle("ModelRotateY", &transform.rotate.y);
+			ImGui::SliderAngle("ModelRotateZ", &transform.rotate.z);
+			Vector4 color = model.GetColor();
+			ImGui::DragFloat3("TextureColorRGB", &color.x, 0.01f, 0.0f, 1.0f);
+			model.SetColor(color);
 
 			if (ImGui::Button("Reset Camera")) {
 				cameraTransform = kDefaultCameraTransform;

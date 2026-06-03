@@ -1,4 +1,6 @@
 #include "Model.h"
+#include <cassert>
+#include <cstring>
 
 void Model::Initialize(ID3D12Device* device, TextureManager* textureManager, ModelData* modelData) {
 	modelData_ = modelData;
@@ -24,6 +26,7 @@ void Model::Initialize(ID3D12Device* device, TextureManager* textureManager, Mod
 	transformationMatrixResource_ = CreateBufferResource(device, sizeof(TransformationMatrix));
 	transformationMatrixResource_->Map(0, nullptr, reinterpret_cast<void**>(&transformationMatrixData_));
 	transformationMatrixData_->WVP = MakeIdentityMatrix();
+	transformationMatrixData_->World = MakeIdentityMatrix();
 
 	textureHandle_ = textureManager->Load(modelData_->material.textureFilePath);
 
