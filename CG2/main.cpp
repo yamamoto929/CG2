@@ -62,6 +62,7 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg
 #include "ShaderCompiler.h"
 #include "TextureManager.h"
 #include "ModelLoader.h"
+#include "Model.h"
 static LONG WINAPI ExportDump(EXCEPTION_POINTERS* exception);
 Microsoft::WRL::ComPtr<ID3D12Resource> CreateBufferResource(const Microsoft::WRL::ComPtr<ID3D12Device>& device,
 	size_t sizeInBytes);
@@ -320,33 +321,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	ModelLoader modelLoader;
 	// モデル読み込み
 	ModelData modelData = modelLoader.LoadObjFile("resources", "axis.obj");
-	// 実際に頂点リソースを作る 
-	Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource = CreateBufferResource(directXCommon.GetDevice(), sizeof(VertexData) * modelData.vertices.size());
-
-	// マテリアル用のリソースを作る
-	Microsoft::WRL::ComPtr<ID3D12Resource> materialResource = CreateBufferResource(directXCommon.GetDevice(), sizeof(Material));
-	Material* materialData = nullptr;
-	materialResource->Map(0, nullptr, reinterpret_cast<void**>(&materialData));
-	materialData->color = { 1.0f, 1.0f, 1.0f, 1.0f };
-	materialData->enableLighting = true;
-	materialData->uvTransform = MakeIdentityMatrix();
-
-	// WVP用のリソース
-	Microsoft::WRL::ComPtr<ID3D12Resource> transformationMatrixResource = CreateBufferResource(directXCommon.GetDevice(), sizeof(TransformationMatrix));
-	TransformationMatrix* transformationMatrixData = nullptr;
-	transformationMatrixResource->Map(0, nullptr, reinterpret_cast<void**>(&transformationMatrixData));
-	transformationMatrixData->WVP = MakeIdentityMatrix();
-
-	// 頂点バッファビューを作成
-	D3D12_VERTEX_BUFFER_VIEW vertexBufferView{};
-	vertexBufferView.BufferLocation = vertexResource->GetGPUVirtualAddress();
-	vertexBufferView.SizeInBytes = UINT(sizeof(VertexData) * modelData.vertices.size());
-	vertexBufferView.StrideInBytes = sizeof(VertexData);
-
-	// 頂点リソースにデータを書き込む
-	VertexData* vertexData = nullptr;
-	vertexResource->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));
-	std::memcpy(vertexData, modelData.vertices.data(), sizeof(VertexData) * modelData.vertices.size());
+	Model model;
+	model.Initialize(directXCommon.GetDevice(), &textureManager, &modelData);
 
 	// Sprite用の頂点リソースを作る
 	Microsoft::WRL::ComPtr<ID3D12Resource> vertexResourceSprite = CreateBufferResource(directXCommon.GetDevice(), sizeof(VertexData) * 4);
@@ -393,7 +369,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	Transform transformSprite{ {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
 
 	uint32_t uvTextureHandle = textureManager.Load("./resources/uvChecker.png");
-	uint32_t modelTextureHandle = textureManager.Load(modelData.material.textureFilePath);
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> directionalLightResource = CreateBufferResource(directXCommon.GetDevice(), sizeof(DirectionalLight));
 	DirectionalLight* directionalLightData = nullptr;
@@ -472,6 +447,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			// ゲームの処理
 			Matrix4x4 worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
 			transformationMatrixData->World = worldMatrix;
+			
 			Matrix4x4 cameraMatrix = MakeAffineMatrix(cameraTransform.scale, cameraTransform.rotate, cameraTransform.translate);
 			Matrix4x4 viewMatrix = Inverse(cameraMatrix);
 		#ifdef _DEBUG
@@ -500,7 +476,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			ImGui::SliderAngle("SphereRotateX", &transform.rotate.x);
 			ImGui::SliderAngle("SphereRotateY", &transform.rotate.y);
 			ImGui::SliderAngle("SphereRotateZ", &transform.rotate.z);
-			ImGui::DragFloat3("TextureColorRGB", &materialData->color.x, 0.01f, 0.0f, 1.0f);
+			//ImGui::DragFloat3("TextureColorRGB", &materialData->color.x, 0.01f, 0.0f, 1.0f);
 
 			if (ImGui::Button("Reset Camera")) {
 				cameraTransform = kDefaultCameraTransform;
@@ -552,19 +528,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			// RootSignatureを設定。PSOに設定しているけど別途設定が必要
 			directXCommon.GetCommandList()->SetGraphicsRootSignature(rootSignature.Get());
 			directXCommon.GetCommandList()->SetPipelineState(graphicPipelineState.Get()); // PSOを設定		
-			directXCommon.GetCommandList()->IASetVertexBuffers(0, 1, &vertexBufferView); // VBVを設定
-			// commandList->IASetIndexBuffer(&indexBufferView);
-			// 形状を設定。PSOに設定しているものとはまた別。同じものを設定すると考えておけば良い
-			directXCommon.GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-			// マテリアルCBufferの場所を設定
-			directXCommon.GetCommandList()->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
-			// wvp用のCBufferの場所を設定
-			directXCommon.GetCommandList()->SetGraphicsRootConstantBufferView(1, transformationMatrixResource->GetGPUVirtualAddress());
-			// SRVのDescriptorTableの先頭を設定
-			directXCommon.GetCommandList()->SetGraphicsRootDescriptorTable(2, textureManager.GetSrvHandleGPU(useMonsterBall ? modelTextureHandle : uvTextureHandle));
 			directXCommon.GetCommandList()->SetGraphicsRootConstantBufferView(3, directionalLightResource->GetGPUVirtualAddress());
 			// 3D描画!
-			directXCommon.GetCommandList()->DrawInstanced(UINT(modelData.vertices.size()), 1, 0, 0);
+			model.Draw(directXCommon.GetCommandList(), &textureManager);
 			// Spriteの描画。変更が必要なものだけ変更する
 			directXCommon.GetCommandList()->IASetVertexBuffers(0, 1, &vertexBufferViewSprite); // VBVを設定
 			directXCommon.GetCommandList()->IASetIndexBuffer(&indexBufferViewSprite);
