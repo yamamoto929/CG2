@@ -106,9 +106,12 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AffineMatrix.cpp" />
+    <ClCompile Include="CrashHandler.cpp" />
     <ClCompile Include="DebugCamera.cpp" />
     <ClCompile Include="DescriptorHeap.cpp" />
+    <ClCompile Include="DirectXDebug.cpp" />
     <ClCompile Include="DirectXCommon.cpp" />
+    <ClCompile Include="DirectionalLight.cpp" />
     <ClCompile Include="externals\imgui\imgui.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
@@ -139,6 +142,8 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Model.cpp" />
     <ClCompile Include="ModelLoader.cpp" />
     <ClCompile Include="Object3D.cpp" />
+    <ClCompile Include="Renderer.cpp" />
+    <ClCompile Include="ResourceManager.cpp" />
     <ClCompile Include="ShaderCompiler.cpp" />
     <ClCompile Include="Sprite.cpp" />
     <ClCompile Include="TextureManager.cpp" />
@@ -149,10 +154,13 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AffineMatrix.h" />
+    <ClInclude Include="ConstantBuffer.h" />
     <ClInclude Include="ConvertString.h" />
+    <ClInclude Include="CrashHandler.h" />
     <ClInclude Include="D3DResourceLeakChecker.h" />
     <ClInclude Include="DebugCamera.h" />
     <ClInclude Include="DescriptorHeap.h" />
+    <ClInclude Include="DirectXDebug.h" />
     <ClInclude Include="DirectionalLight.h" />
     <ClInclude Include="DirectXCommon.h" />
     <ClInclude Include="externals\imgui\imconfig.h" />
@@ -174,6 +182,8 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="ModelData.h" />
     <ClInclude Include="ModelLoader.h" />
     <ClInclude Include="Object3D.h" />
+    <ClInclude Include="Renderer.h" />
+    <ClInclude Include="ResourceManager.h" />
     <ClInclude Include="ShaderCompiler.h" />
     <ClInclude Include="Sprite.h" />
     <ClInclude Include="TextureManager.h" />

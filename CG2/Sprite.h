@@ -9,6 +9,7 @@
 #include "Vector4.h"
 #include "Matrix4x4.h"
 #include "Transform.h"
+#include "ConstantBuffer.h"
 #include "Material.h"
 #include "TransformationMatrix.h"
 
@@ -42,7 +43,7 @@ private:
     D3D12_INDEX_BUFFER_VIEW indexBufferView_;
 
     // マテリアル
-    Microsoft::WRL::ComPtr<ID3D12Resource> materialResource_;
+    ConstantBuffer<Material> material_;
     Material* materialData_;
 
     Vector4 color_ = { 1.0f, 1.0f, 1.0f, 1.0f };
@@ -54,8 +55,8 @@ private:
     };
 
     // WVP
-    Microsoft::WRL::ComPtr<ID3D12Resource> transformationMatrixResource_;
+    ConstantBuffer<TransformationMatrix> transformationMatrix_;
     TransformationMatrix* transformationMatrixData_;
 
-    Microsoft::WRL::ComPtr<ID3D12Resource> CreateBufferResource(const Microsoft::WRL::ComPtr<ID3D12Device>& device, size_t sizeInBytes);
+    Microsoft::WRL::ComPtr<ID3D12Resource> CreateBufferResource(ID3D12Device* device, size_t sizeInBytes);
 };

@@ -32,18 +32,18 @@ void Sprite::Initialize(
 	vertexData[3].texCoord = { 1.0f, 0.0f };
 	vertexData[3].normal = { 0.0f, 0.0f,-1.0f };
 
-	materialResource_ = CreateBufferResource(device, sizeof(Material));
-	materialResource_->Map(0, nullptr, reinterpret_cast<void**>(&materialData_));
+	material_.Initialize(device);
+	materialData_ = material_.GetData();
 	color_ = { 1.0f,1.0f,1.0f,1.0f };
 	materialData_->color = color_;
 	materialData_->enableLighting = false;
 	materialData_->uvTransform = MakeIdentityMatrix();
 
 	// Sprite用のTransformation Matrix用のリソースを作る。Matrix4x4 1つ分のサイズを用意する
-	transformationMatrixResource_ = CreateBufferResource(device, sizeof(Matrix4x4));
+	transformationMatrix_.Initialize(device);
 	// データを書き込む
 	// 書き込むためのアドレスを取得
-	transformationMatrixResource_->Map(0, nullptr, reinterpret_cast<void**>(&transformationMatrixData_));
+	transformationMatrixData_ = transformationMatrix_.GetData();
 	// 単位行列を書きこんでおく
 	transformationMatrixData_->World = MakeIdentityMatrix();
 	transform_={ {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
@@ -88,12 +88,12 @@ void  Sprite::Draw(ID3D12GraphicsCommandList* commandList, TextureManager* textu
 
 	commandList->SetGraphicsRootConstantBufferView(
 		0,
-		materialResource_->GetGPUVirtualAddress()
+		material_.GetGPUVirtualAddress()
 	);
 
 	commandList->SetGraphicsRootConstantBufferView(
 		1,
-		transformationMatrixResource_->GetGPUVirtualAddress()
+		transformationMatrix_.GetGPUVirtualAddress()
 	);
 
 	commandList->SetGraphicsRootDescriptorTable(
@@ -106,7 +106,7 @@ void  Sprite::Draw(ID3D12GraphicsCommandList* commandList, TextureManager* textu
 // =========================================================
 // CreateBufferResource
 // =========================================================
-Microsoft::WRL::ComPtr<ID3D12Resource> Sprite::CreateBufferResource(const Microsoft::WRL::ComPtr<ID3D12Device>& device, size_t sizeInBytes) {
+Microsoft::WRL::ComPtr<ID3D12Resource> Sprite::CreateBufferResource(ID3D12Device* device, size_t sizeInBytes) {
 	// 頂点リソース用のヒープの設定
 	D3D12_HEAP_PROPERTIES uploadHeapProperties{};
 	uploadHeapProperties.Type = D3D12_HEAP_TYPE_UPLOAD; // UploadHeapを使う

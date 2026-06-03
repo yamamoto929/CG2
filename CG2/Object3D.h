@@ -1,10 +1,9 @@
 #pragma once
 #include "Matrix4x4.h"
 #include "Transform.h"
+#include "ConstantBuffer.h"
 #include <d3d12.h>
 #pragma comment(lib,"d3d12.lib")
-#include <cstddef>
-#include <wrl.h>
 #include "TransformationMatrix.h"
 
 class Model;
@@ -17,13 +16,12 @@ private:
 		{ 0.0f, 0.0f, 0.0f },
 		{ 0.0f, 0.0f, 0.0f },
 	};
-	Microsoft::WRL::ComPtr<ID3D12Resource> transformationMatrixResource_;
+	ConstantBuffer<TransformationMatrix> transformationMatrix_;
 	TransformationMatrix* transformationMatrixData_ = nullptr;
 	Model* model_ = nullptr;
 	Matrix4x4 worldMatrix_{};
 	Matrix4x4 wvpMatrix_{};
 
-	Microsoft::WRL::ComPtr<ID3D12Resource> CreateBufferResource(ID3D12Device* device, size_t sizeInBytes);
 public:
 	void Initialize(ID3D12Device* device, Model* model);
 

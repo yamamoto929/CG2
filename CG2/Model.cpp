@@ -15,8 +15,8 @@ void Model::Initialize(ID3D12Device* device, TextureManager* textureManager, Mod
 	std::memcpy(vertexData, modelData->vertices.data(), sizeof(VertexData) * modelData->vertices.size());
 
 	// マテリアル用のリソースを作る
-	materialResource_ = CreateBufferResource(device, sizeof(Material));
-	materialResource_->Map(0, nullptr, reinterpret_cast<void**>(&materialData_));
+	material_.Initialize(device);
+	materialData_ = material_.GetData();
 	materialData_->color = { 1.0f, 1.0f, 1.0f, 1.0f };
 	materialData_->enableLighting = true;
 	materialData_->uvTransform = MakeIdentityMatrix();
@@ -30,7 +30,7 @@ void Model::Draw(ID3D12GraphicsCommandList* commandList, TextureManager* texture
 	commandList->IASetVertexBuffers(0, 1, &vertexBufferView_);
 	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	commandList->SetGraphicsRootConstantBufferView(0, materialResource_->GetGPUVirtualAddress());
+	commandList->SetGraphicsRootConstantBufferView(0, material_.GetGPUVirtualAddress());
 	commandList->SetGraphicsRootDescriptorTable(2, textureManager->GetSrvHandleGPU(textureHandle_));
 
 	commandList->DrawInstanced(vertexCount_, 1, 0, 0);

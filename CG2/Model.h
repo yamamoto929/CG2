@@ -3,16 +3,16 @@
 #pragma comment(lib,"d3d12.lib")
 #include <string>
 #include "TextureManager.h"
+#include "ConstantBuffer.h"
 #include "ModelData.h"
 #include "Material.h"
-#include "TransformationMatrix.h"
 #include "Matrix4x4.h"
 class Model {
 private:
 	Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource_ = nullptr;
 	D3D12_VERTEX_BUFFER_VIEW vertexBufferView_{};
+	ConstantBuffer<Material> material_;
 	Material* materialData_ = nullptr;
-	Microsoft::WRL::ComPtr<ID3D12Resource> materialResource_ = nullptr;
 	uint32_t textureHandle_ = 0;
 	uint32_t vertexCount_ = 0;
 	Microsoft::WRL::ComPtr<ID3D12Resource> CreateBufferResource(ID3D12Device* device, size_t sizeInBytes);
