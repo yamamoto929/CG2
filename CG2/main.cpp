@@ -64,6 +64,7 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg
 #include "ModelLoader.h"
 #include "Model.h"
 #include "Object3D.h"
+#include "Sprite.h"
 static LONG WINAPI ExportDump(EXCEPTION_POINTERS* exception);
 Microsoft::WRL::ComPtr<ID3D12Resource> CreateBufferResource(const Microsoft::WRL::ComPtr<ID3D12Device>& device,
 	size_t sizeInBytes);
@@ -328,51 +329,12 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	Object3D object3D;
 	object3D.Initialize(directXCommon.GetDevice(), &model);
 
-	// Sprite用の頂点リソースを作る
-	Microsoft::WRL::ComPtr<ID3D12Resource> vertexResourceSprite = CreateBufferResource(directXCommon.GetDevice(), sizeof(VertexData) * 4);
-	// 頂点バッファビューを作成する
-	D3D12_VERTEX_BUFFER_VIEW vertexBufferViewSprite{};
-	// リソースの先頭のアドレスから使う
-	vertexBufferViewSprite.BufferLocation = vertexResourceSprite->GetGPUVirtualAddress();
-	// 使用するリソースのサイズは頂点6つ分のサイズ
-	vertexBufferViewSprite.SizeInBytes = sizeof(VertexData) * 4;
-	// 1頂点あたりのサイズ
-	vertexBufferViewSprite.StrideInBytes = sizeof(VertexData);
-	VertexData* vertexDataSprite = nullptr;
-	vertexResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&vertexDataSprite));
-
-	vertexDataSprite[0].position = { 0.0f, 360.0f, 0.0f, 1.0f };//左下
-	vertexDataSprite[0].texCoord = { 0.0f, 1.0f };
-	vertexDataSprite[0].normal = { 0.0f, 0.0f,-1.0f };
-	vertexDataSprite[1].position = { 0.0f, 0.0f, 0.0f, 1.0f };//左上
-	vertexDataSprite[1].texCoord = { 0.0f, 0.0f };
-	vertexDataSprite[1].normal = { 0.0f, 0.0f,-1.0f };
-	vertexDataSprite[2].position = { 640.0f, 360.0f, 0.0f, 1.0f }; //右下
-	vertexDataSprite[2].texCoord = { 1.0f, 1.0f };
-	vertexDataSprite[2].normal = { 0.0f, 0.0f,-1.0f };
-	vertexDataSprite[3].position = { 640.0f, 0.0f, 0.0f, 1.0f };//右上
-	vertexDataSprite[3].texCoord = { 1.0f, 0.0f };
-	vertexDataSprite[3].normal = { 0.0f, 0.0f,-1.0f };
-
-
-	Microsoft::WRL::ComPtr<ID3D12Resource> materialResourceSprite = CreateBufferResource(directXCommon.GetDevice(), sizeof(Material));
-	Material* materialDataSprite = nullptr;
-	materialResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&materialDataSprite));
-	materialDataSprite->color = { 1.0f, 1.0f, 1.0f, 1.0f };
-	materialDataSprite->enableLighting = false;
-	materialDataSprite->uvTransform = MakeIdentityMatrix();
-
-	// Sprite用のTransformation Matrix用のリソースを作る。Matrix4x4 1つ分のサイズを用意する
-	Microsoft::WRL::ComPtr<ID3D12Resource> transformationMatrixResourceSprite = CreateBufferResource(directXCommon.GetDevice(), sizeof(Matrix4x4));
-	// データを書き込む
-	Matrix4x4* transformationMatrixDataSprite = nullptr;
-	// 書き込むためのアドレスを取得
-	transformationMatrixResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&transformationMatrixDataSprite));
-	// 単位行列を書きこんでおく
-	*transformationMatrixDataSprite = MakeIdentityMatrix();
-	Transform transformSprite{ {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
-
-	uint32_t uvTextureHandle = textureManager.Load("./resources/uvChecker.png");
+	Sprite sprite;
+	sprite.Initialize(
+		directXCommon.GetDevice(),
+		&textureManager,
+		"./resources/uvChecker.png"
+	);
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> directionalLightResource = CreateBufferResource(directXCommon.GetDevice(), sizeof(DirectionalLight));
 	DirectionalLight* directionalLightData = nullptr;
@@ -380,23 +342,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	directionalLightData->color = { 1.0f,1.0f,1.0f,1.0f };
 	directionalLightData->direction = { 0.0f,-1.0f,0.0f };
 	directionalLightData->intensity = 1.0f;
-
-	Microsoft::WRL::ComPtr<ID3D12Resource> indexResourceSprite = CreateBufferResource(directXCommon.GetDevice(), sizeof(uint32_t) * 6);
-	// IBVの作成
-	D3D12_INDEX_BUFFER_VIEW indexBufferViewSprite{};
-	indexBufferViewSprite.BufferLocation = indexResourceSprite->GetGPUVirtualAddress();
-	indexBufferViewSprite.SizeInBytes = sizeof(uint32_t) * 6;
-	indexBufferViewSprite.Format = DXGI_FORMAT_R32_UINT;
-
-	// インデックスリソースにデータを書き込む
-	uint32_t* indexDataSprite = nullptr;
-	indexResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&indexDataSprite));
-	indexDataSprite[0] = 0;
-	indexDataSprite[1] = 1;
-	indexDataSprite[2] = 2;
-	indexDataSprite[3] = 1;
-	indexDataSprite[4] = 3;
-	indexDataSprite[5] = 2;
 
 	// Transform変数
 	Transform& transform = object3D.GetTransform();
@@ -460,67 +405,15 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			Matrix4x4 projectionMatrix = MakePerspectiveFovMatrix(0.45f, float(kClientWidth) / float(kClientHeight), 0.1f, 100.0f);
 			object3D.Update(viewMatrix, projectionMatrix);
 
-			// Sprite用のWorldViewProjectionMatrixを作る
-			Matrix4x4 worldMatrixSprite = MakeAffineMatrix(transformSprite.scale, transformSprite.rotate, transformSprite.translate);
-			Matrix4x4 viewMatrixSprite = MakeIdentityMatrix();
-			Matrix4x4 projectionMatrixSprite = MakeOrthographicMatrix(0.0f, 0.0f, float(kClientWidth), float(kClientHeight), 0.0f, 100.0f);
-			Matrix4x4 worldViewProjectionMatrixSprite = Multiply(worldMatrixSprite, Multiply(viewMatrixSprite, projectionMatrixSprite));
-			*transformationMatrixDataSprite = worldViewProjectionMatrixSprite;
+			sprite.Update(kClientWidth,kClientHeight);
 		#ifdef USE_IMGUI
 			ImGui::Begin("Debug");
-			// UIの処理
-			ImGui::DragFloat3("CameraTranslate", &cameraTransform.translate.x, 0.01f, -2000.0f, 2000.0f);
-			ImGui::SliderAngle("CameraRotateX", &cameraTransform.rotate.x);
-			ImGui::SliderAngle("CameraRotateY", &cameraTransform.rotate.y);
-			ImGui::SliderAngle("CameraRotateZ", &cameraTransform.rotate.z);
-			ImGui::SliderAngle("ModelRotateX", &transform.rotate.x);
-			ImGui::SliderAngle("ModelRotateY", &transform.rotate.y);
-			ImGui::SliderAngle("ModelRotateZ", &transform.rotate.z);
-			Vector4 color = model.GetColor();
-			ImGui::DragFloat3("TextureColorRGB", &color.x, 0.01f, 0.0f, 1.0f);
-			model.SetColor(color);
-
-			if (ImGui::Button("Reset Camera")) {
-				cameraTransform = kDefaultCameraTransform;
-			}
-			ImGui::Checkbox("useMonsterBall", &useMonsterBall);
-			ImGui::DragFloat3("LightColorRGB", &directionalLightData->color.x, 0.01f, 0.0f, 1.0f);
-			ImGui::DragFloat3("LightDirection", &directionalLightData->direction.x, 0.01f, -1.0f, 1.0f);
-			directionalLightData->direction.Normalize();
-			ImGui::DragFloat("Intensity", &directionalLightData->intensity, 0.01f, 0.0f, 1.0f);
-			ImGui::DragFloat2("UVTranslate", &uvTransformSprite.translate.x, 0.01f, -10.0f, 10.0f);
-			ImGui::DragFloat2("UVScale", &uvTransformSprite.scale.x, 0.01f, -10.0f, 10.0f);
-			ImGui::SliderAngle("UVRotate", &uvTransformSprite.rotate.z);
-
-			ImGui::End();
-
-			ImGui::Begin("DebugCamera");
-			ImGui::Checkbox("useDebugCamera", &useDebugCamera);
-			if (useDebugCamera) {
-				ImGui::Text("rotate camera: arrow key or mouse");
-				ImGui::Text("LEFT : A");
-				ImGui::Text("RIGHT : D");
-				ImGui::Text("UP : SPACE");
-				ImGui::Text("DOWN : LEFT SHIFT");
-				ImGui::Text("FORWARD : W");
-				ImGui::Text("BACK : S");
-				ImGui::Text("CameraRotation");
-				ImGui::Text("x : %.2f", debugCamera.GetRotation().x);
-				ImGui::Text("y : %.2f", debugCamera.GetRotation().y);
-				ImGui::Text("z : %.2f", debugCamera.GetRotation().z);
-				ImGui::Text("CameraTranslation");
-				ImGui::Text("x : %.2f", debugCamera.GetTranslation().x);
-				ImGui::Text("y : %.2f", debugCamera.GetTranslation().y);
-				ImGui::Text("z : %.2f", debugCamera.GetTranslation().z);
-			}
+			
 			ImGui::End();
 			// ImGuiの内部コマンドを生成
 			ImGui::Render();
 		#endif
-			Matrix4x4 uvTransformMatrix = MakeScaleMatrix(uvTransformSprite.scale);
-			uvTransformMatrix = Multiply(uvTransformMatrix, MakeRotateZMatrix(uvTransformSprite.rotate.z));
-			uvTransformMatrix = Multiply(uvTransformMatrix, MakeTranslateMatrix(uvTransformSprite.translate));
-			materialDataSprite->uvTransform = uvTransformMatrix;
+			
 			directXCommon.PreDraw();
 			// 描画用のDescriptorHeapの設定
 			ID3D12DescriptorHeap* descriptorHeaps[] = {
@@ -533,17 +426,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			directXCommon.GetCommandList()->SetGraphicsRootConstantBufferView(3, directionalLightResource->GetGPUVirtualAddress());
 			// 3D描画!
 			object3D.Draw(directXCommon.GetCommandList(), &textureManager);
-			// Spriteの描画。変更が必要なものだけ変更する
-			directXCommon.GetCommandList()->IASetVertexBuffers(0, 1, &vertexBufferViewSprite); // VBVを設定
-			directXCommon.GetCommandList()->IASetIndexBuffer(&indexBufferViewSprite);
-			directXCommon.GetCommandList()->SetGraphicsRootConstantBufferView(0, materialResourceSprite->GetGPUVirtualAddress());
-			// TransformationMatrixCBufferの場所を設定
-			directXCommon.GetCommandList()->SetGraphicsRootConstantBufferView(1, transformationMatrixResourceSprite->GetGPUVirtualAddress());
-			// SRVのDescriptorTableを設定
-			directXCommon.GetCommandList()->SetGraphicsRootDescriptorTable(2, textureManager.GetSrvHandleGPU(uvTextureHandle));
-
-			// スプライト描画
-			//commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
+			// Spriteの描画
+			sprite.Draw(directXCommon.GetCommandList(),&textureManager);
 		#ifdef USE_IMGUI
 			// 実際のcommandListのImGuiの描画コマンドを積む
 			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), directXCommon.GetCommandList());
