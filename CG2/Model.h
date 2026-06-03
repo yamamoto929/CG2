@@ -23,9 +23,11 @@ public:
 	void Initialize(ID3D12Device* device, TextureManager* textureManager, ModelData* modelData);
 	void Draw(ID3D12GraphicsCommandList* commandList, TextureManager* textureManager);
 	const Material& GetMaterial() const { return *materialData_; }
+	const Matrix4x4& GetWorldMatrix() const { return transformationMatrixData_->World; }
 	void SetColor(const Vector4& color) { materialData_->color = color; }
 	void SetEnableLighting(bool enableLighting) { materialData_->enableLighting = enableLighting; }
 	void SetUVTransform(const Matrix4x4& uvTransform) { materialData_->uvTransform = uvTransform; }
-	void SetTransformationMatrix(const Matrix4x4& world, const Matrix4x4& wvp);
+	void SetTransformationWorld(const Matrix4x4& world) {	transformationMatrixData_->World = world;}
+	void SetTransformationWVP( const Matrix4x4& wvp){ transformationMatrixData_->WVP = wvp; }
 };
 
