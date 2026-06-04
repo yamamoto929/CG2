@@ -22,16 +22,23 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include <Windows.h>
 #ifdef USE_IMGUI
 #include "externals/imgui/imgui.h"
 #endif
 
+namespace RunaEngine {
 
-class RunaEngine {
+using Vector2 = ::Vector2;
+using Vector3 = ::Vector3;
+using Transform = ::Transform;
+using Model = ::Model;
+using Sprite = ::Sprite;
+using Object3D = ::Object3D;
+
+class Engine {
 public:
-	RunaEngine();
-	~RunaEngine();
+	Engine();
+	~Engine();
 
 	void Initialize(int32_t width, int32_t height, const std::string& title);
 	bool ProcessMessage();
@@ -40,7 +47,7 @@ public:
 	void Shutdown();
 
 	Sprite* CreateSprite(const std::string& texturePath);
-	Model* CreateModel(const std::string& directoryPath);
+	Model* CreateModel(const std::string& filePath);
 	Object3D* CreateObject3D(Model* model);
 
 	void DrawSprite(Sprite* sprite, const Vector2& position, float z = 0.0f);
@@ -110,3 +117,59 @@ private:
 	std::vector<std::unique_ptr<Object3D>> object3Ds_;
 	std::unordered_map<Model*, Object3D*> defaultObjects_;
 };
+
+Engine& GetEngine();
+
+void Initialize(int32_t width, int32_t height, const std::string& title);
+bool ProcessMessage();
+void BeginFrame();
+void EndFrame();
+void Shutdown();
+
+Sprite* CreateSprite(const std::string& texturePath);
+Model* CreateModel(const std::string& filePath);
+Object3D* CreateObject3D(Model* model);
+
+void DrawSprite(Sprite* sprite, const Vector2& position, float z = 0.0f);
+void DrawSprite(Sprite* sprite, const Vector3& translate);
+void DrawSprite(Sprite* sprite, const Transform& transform);
+
+void DrawModel(Model* model, const Vector3& translate);
+void DrawModel(Model* model, const Transform& transform);
+void DrawModel(
+	Model* model,
+	const float& scaleX,
+	const float& scaleY,
+	const float& scaleZ,
+	const float& rotateX,
+	const float& rotateY,
+	const float& rotateZ,
+	const float& translateX,
+	const float& translateY,
+	const float& translateZ
+	);
+void DrawObject3D(Object3D* object, const Vector3& translate);
+void DrawObject3D(Object3D* object, const Transform& transform);
+void DrawObject3D(Object3D* object);
+
+uint32_t LoadTexture(const std::string& texturePath);
+void SetModelTexture(Model* model, const std::string& texturePath);
+void SetSpriteTexture(Sprite* sprite, const std::string& texturePath);
+
+uint32_t LoadSound(const std::wstring& filePath);
+uint32_t LoadSound(const std::string& filePath);
+void PlaySound(uint32_t soundHandle, bool loop = false, float volume = 1.0f);
+
+const BYTE* GetKey();
+bool IsPushKey(uint8_t key);
+Input& GetInput();
+
+Transform& GetCameraTransform();
+void SetCameraTransform(const Transform& transform);
+void MoveCamera(const Vector3& move);
+
+ImGuiManager& GetImGuiManager();
+TextureManager& GetTextureManager();
+Renderer& GetRenderer();
+
+}
