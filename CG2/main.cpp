@@ -4,10 +4,10 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	RunaEngine engine;
 	engine.Initialize(1280, 720, "CG2");
 
-	Model* model = engine.CreateModel("resources", "axis.obj");
+	Model* model = engine.CreateModel("./resources/axis.obj");
 	Sprite* sprite = engine.CreateSprite("./resources/uvChecker.png");
 
-	uint32_t alarmSound = engine.LoadSound(L"Resources/Alarm01.wav");
+	uint32_t alarmSound = engine.LoadSound("./Resources/Alarm01.wav");
 	engine.PlaySound(alarmSound);
 
 	while (engine.ProcessMessage()) {

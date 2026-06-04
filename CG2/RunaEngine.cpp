@@ -5,6 +5,7 @@
 #include "Log.h"
 #include "WVPMatrix.h"
 #include <cassert>
+#include <filesystem>
 
 RunaEngine::RunaEngine() = default;
 
@@ -108,9 +109,13 @@ Sprite* RunaEngine::CreateSprite(const std::string& texturePath) {
 	return result;
 }
 
-Model* RunaEngine::CreateModel(const std::string& directoryPath, const std::string& fileName) {
+Model* RunaEngine::CreateModel(const std::string& directoryPath) {
 	assert(initialized_);
-	return resourceManager_.LoadModel(directXCommon_.GetDevice(), &textureManager_, directoryPath, fileName);
+	std::filesystem::path path(directoryPath);
+
+	std::string filePath = path.parent_path().generic_string();
+	std::string fileName = path.filename().generic_string();
+	return resourceManager_.LoadModel(directXCommon_.GetDevice(), &textureManager_, filePath, fileName);
 }
 
 Object3D* RunaEngine::CreateObject3D(Model* model) {

@@ -40,7 +40,7 @@ public:
 	void Shutdown();
 
 	Sprite* CreateSprite(const std::string& texturePath);
-	Model* CreateModel(const std::string& directoryPath, const std::string& fileName);
+	Model* CreateModel(const std::string& directoryPath);
 	Object3D* CreateObject3D(Model* model);
 
 	void DrawSprite(Sprite* sprite, const Vector2& position, float z = 0.0f);
