@@ -6,6 +6,8 @@
 #include "ImGuiManager.h"
 #include "Input.h"
 #include "Object3D.h"
+#include "Primitive3D.h"
+#include "PrimitiveGraphicsPipeline.h"
 #include "Renderer.h"
 #include "ResourceManager.h"
 #include "ShaderCompiler.h"
@@ -15,6 +17,7 @@
 #include "Transform.h"
 #include "Vector2.h"
 #include "Vector3.h"
+#include "Vector4.h"
 #include "WinApp.h"
 #include <Windows.h>
 #include <cstdint>
@@ -34,6 +37,8 @@ using Transform = ::Transform;
 using Model = ::Model;
 using Sprite = ::Sprite;
 using Object3D = ::Object3D;
+using Primitive3D = ::Primitive3D;
+using Vector4 = ::Vector4;
 
 class Engine {
 public:
@@ -49,6 +54,8 @@ public:
 	Sprite* CreateSprite(const std::string& texturePath);
 	Model* CreateModel(const std::string& filePath);
 	Object3D* CreateObject3D(Model* model);
+	Primitive3D* CreateTriangle3D();
+	Primitive3D* CreateTriangle3D(const Vector4& color);
 
 	void DrawSprite(Sprite* sprite, const Vector2& position, float z = 0.0f);
 	void DrawSprite(Sprite* sprite, const Vector3& translate);
@@ -59,6 +66,9 @@ public:
 	void DrawObject3D(Object3D* object, const Vector3& translate);
 	void DrawObject3D(Object3D* object, const Transform& transform);
 	void DrawObject3D(Object3D* object);
+	void DrawPrimitive3D(Primitive3D* primitive, const Vector3& translate);
+	void DrawPrimitive3D(Primitive3D* primitive, const Transform& transform);
+	void DrawPrimitive3D(Primitive3D* primitive);
 
 	uint32_t LoadTexture(const std::string& texturePath);
 	void SetModelTexture(Model* model, const std::string& texturePath);
@@ -100,6 +110,7 @@ private:
 	SoundManager soundManager_;
 	ShaderCompiler shaderCompiler_;
 	GraphicsPipeline graphicsPipeline_;
+	PrimitiveGraphicsPipeline primitiveGraphicsPipeline_;
 	ResourceManager resourceManager_;
 	DirectionalLight directionalLight_;
 	Renderer renderer_;
@@ -115,6 +126,7 @@ private:
 
 	std::vector<std::unique_ptr<Sprite>> sprites_;
 	std::vector<std::unique_ptr<Object3D>> object3Ds_;
+	std::vector<std::unique_ptr<Primitive3D>> primitive3Ds_;
 	std::unordered_map<Model*, Object3D*> defaultObjects_;
 };
 
@@ -129,6 +141,8 @@ void Shutdown();
 Sprite* CreateSprite(const std::string& texturePath);
 Model* CreateModel(const std::string& filePath);
 Object3D* CreateObject3D(Model* model);
+Primitive3D* CreateTriangle3D();
+Primitive3D* CreateTriangle3D(const Vector4& color);
 
 void DrawSprite(Sprite* sprite, const Vector2& position, float z = 0.0f);
 void DrawSprite(Sprite* sprite, const Vector3& translate);
@@ -151,6 +165,21 @@ void DrawModel(
 void DrawObject3D(Object3D* object, const Vector3& translate);
 void DrawObject3D(Object3D* object, const Transform& transform);
 void DrawObject3D(Object3D* object);
+void DrawPrimitive3D(Primitive3D* primitive, const Vector3& translate);
+void DrawPrimitive3D(Primitive3D* primitive, const Transform& transform);
+void DrawPrimitive3D(
+	Primitive3D* primitive,
+	float scaleX,
+	float scaleY,
+	float scaleZ,
+	float rotateX,
+	float rotateY,
+	float rotateZ,
+	float translateX,
+	float translateY,
+	float translateZ
+);
+void DrawPrimitive3D(Primitive3D* primitive);
 
 uint32_t LoadTexture(const std::string& texturePath);
 void SetModelTexture(Model* model, const std::string& texturePath);

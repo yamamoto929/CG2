@@ -45,9 +45,15 @@ void Engine::Initialize(int32_t width, int32_t height, const std::string& title)
 		directXCommon_.GetDXGIFormat(),
 		DXGI_FORMAT_D24_UNORM_S8_UINT
 	);
+	primitiveGraphicsPipeline_.Initialize(
+		directXCommon_.GetDevice(),
+		&shaderCompiler_,
+		directXCommon_.GetDXGIFormat(),
+		DXGI_FORMAT_D24_UNORM_S8_UINT
+	);
 
 	directionalLight_.Initialize(directXCommon_.GetDevice());
-	renderer_.Initialize(&directXCommon_, &textureManager_, &graphicsPipeline_, &directionalLight_);
+	renderer_.Initialize(&directXCommon_, &textureManager_, &graphicsPipeline_, &primitiveGraphicsPipeline_, &directionalLight_);
 	imGuiManager_.Initialize(winApp_, directXCommon_, textureManager_);
 
 	UpdateCameraMatrices();
@@ -135,6 +141,22 @@ Object3D* Engine::CreateObject3D(Model* model) {
 	return result;
 }
 
+Primitive3D* Engine::CreateTriangle3D() {
+	return CreateTriangle3D({ 1.0f, 0.2f, 0.1f, 1.0f });
+}
+
+Primitive3D* Engine::CreateTriangle3D(const Vector4& color) {
+	assert(initialized_);
+
+	std::unique_ptr<Primitive3D> primitive = std::make_unique<Primitive3D>();
+	primitive->InitializeTriangle(directXCommon_.GetDevice());
+	primitive->SetColor(color);
+
+	Primitive3D* result = primitive.get();
+	primitive3Ds_.push_back(std::move(primitive));
+	return result;
+}
+
 void Engine::DrawSprite(Sprite* sprite, const Vector2& position, float z) {
 	DrawSprite(sprite, Vector3{ position.x, position.y, z });
 }
@@ -190,6 +212,29 @@ void Engine::DrawObject3D(Object3D* object) {
 
 	object->Update(viewMatrix_, projectionMatrix_);
 	renderer_.Draw(*object);
+}
+
+void Engine::DrawPrimitive3D(Primitive3D* primitive, const Vector3& translate) {
+	Transform transform{
+		{ 1.0f, 1.0f, 1.0f },
+		{ 0.0f, 0.0f, 0.0f },
+		translate,
+	};
+	DrawPrimitive3D(primitive, transform);
+}
+
+void Engine::DrawPrimitive3D(Primitive3D* primitive, const Transform& transform) {
+	assert(primitive);
+
+	primitive->GetTransform() = transform;
+	DrawPrimitive3D(primitive);
+}
+
+void Engine::DrawPrimitive3D(Primitive3D* primitive) {
+	assert(primitive);
+
+	primitive->Update(viewMatrix_, projectionMatrix_);
+	renderer_.Draw(*primitive);
 }
 
 uint32_t Engine::LoadTexture(const std::string& texturePath) {
@@ -305,6 +350,14 @@ Object3D* CreateObject3D(Model* model) {
 	return GetEngine().CreateObject3D(model);
 }
 
+Primitive3D* CreateTriangle3D() {
+	return GetEngine().CreateTriangle3D();
+}
+
+Primitive3D* CreateTriangle3D(const Vector4& color) {
+	return GetEngine().CreateTriangle3D(color);
+}
+
 void DrawSprite(Sprite* sprite, const Vector2& position, float z) {
 	GetEngine().DrawSprite(sprite, position, z);
 }
@@ -337,7 +390,12 @@ void DrawModel(
 	const float& translateY,
 	const float& translateZ
 ) {
-
+	Transform transform{
+		{ scaleX, scaleY, scaleZ },
+		{ rotateX, rotateY, rotateZ },
+		{ translateX, translateY, translateZ },
+	};
+	GetEngine().DrawModel(model, transform);
 }
 
 
@@ -351,6 +409,38 @@ void DrawObject3D(Object3D* object, const Transform& transform) {
 
 void DrawObject3D(Object3D* object) {
 	GetEngine().DrawObject3D(object);
+}
+
+void DrawPrimitive3D(Primitive3D* primitive, const Vector3& translate) {
+	GetEngine().DrawPrimitive3D(primitive, translate);
+}
+
+void DrawPrimitive3D(Primitive3D* primitive, const Transform& transform) {
+	GetEngine().DrawPrimitive3D(primitive, transform);
+}
+
+void DrawPrimitive3D(
+	Primitive3D* primitive,
+	float scaleX,
+	float scaleY,
+	float scaleZ,
+	float rotateX,
+	float rotateY,
+	float rotateZ,
+	float translateX,
+	float translateY,
+	float translateZ
+) {
+	Transform transform{
+		{ scaleX, scaleY, scaleZ },
+		{ rotateX, rotateY, rotateZ },
+		{ translateX, translateY, translateZ },
+	};
+	GetEngine().DrawPrimitive3D(primitive, transform);
+}
+
+void DrawPrimitive3D(Primitive3D* primitive) {
+	GetEngine().DrawPrimitive3D(primitive);
 }
 
 uint32_t LoadTexture(const std::string& texturePath) {
