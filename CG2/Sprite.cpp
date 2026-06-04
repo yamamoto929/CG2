@@ -103,6 +103,29 @@ void  Sprite::Draw(ID3D12GraphicsCommandList* commandList, TextureManager* textu
 
 	commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
 }
+
+Transform& Sprite::GetTransform() {
+	return transform_;
+}
+
+const Transform& Sprite::GetTransform() const {
+	return transform_;
+}
+
+void Sprite::SetSize(const Vector2& size) {
+	size_ = size;
+}
+
+void Sprite::SetColor(const Vector4& color) {
+	color_ = color;
+}
+
+void Sprite::SetUVTransform(const Matrix4x4& uvTransform) {
+	if (materialData_) {
+		materialData_->uvTransform = uvTransform;
+	}
+}
+
 // =========================================================
 // CreateBufferResource
 // =========================================================

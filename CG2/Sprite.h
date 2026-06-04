@@ -25,9 +25,12 @@ public:
     void Draw(ID3D12GraphicsCommandList* commandList, TextureManager* textureManager);
 
     Transform& GetTransform();
+    const Transform& GetTransform() const;
     void SetSize(const Vector2& size);
     void SetColor(const Vector4& color);
     void SetUVTransform(const Matrix4x4& uvTransform);
+    uint32_t GetTextureHandle() const { return textureHandle_; }
+    void SetTextureHandle(uint32_t textureHandle) { textureHandle_ = textureHandle; }
    
 private:
     Transform transform_;

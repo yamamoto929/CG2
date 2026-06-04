@@ -24,5 +24,7 @@ public:
 	void SetColor(const Vector4& color) { materialData_->color = color; }
 	void SetEnableLighting(bool enableLighting) { materialData_->enableLighting = enableLighting; }
 	void SetUVTransform(const Matrix4x4& uvTransform) { materialData_->uvTransform = uvTransform; }
+	uint32_t GetTextureHandle() const { return textureHandle_; }
+	void SetTextureHandle(uint32_t textureHandle) { textureHandle_ = textureHandle; }
 };
 
