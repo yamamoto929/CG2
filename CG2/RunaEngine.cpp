@@ -74,6 +74,7 @@ bool Engine::ProcessMessage() {
 void Engine::BeginFrame() {
 	assert(initialized_);
 
+	drawModelObjectIndex_ = 0;
 	imGuiManager_.BeginFrame();
 	input_.Update();
 	soundManager_.Update();
@@ -188,7 +189,7 @@ void Engine::DrawModel(Model* model, const Vector3& translate) {
 }
 
 void Engine::DrawModel(Model* model, const Transform& transform) {
-	DrawObject3D(GetDefaultObject(model), transform);
+	DrawObject3D(GetDrawModelObject(model), transform);
 }
 
 void Engine::DrawObject3D(Object3D* object, const Vector3& translate) {
@@ -285,16 +286,18 @@ void Engine::MoveCamera(const Vector3& move) {
 	UpdateCameraMatrices();
 }
 
-Object3D* Engine::GetDefaultObject(Model* model) {
+Object3D* Engine::GetDrawModelObject(Model* model) {
 	assert(model);
 
-	auto it = defaultObjects_.find(model);
-	if (it != defaultObjects_.end()) {
-		return it->second;
+	if (drawModelObjectIndex_ >= drawModelObjects_.size()) {
+		std::unique_ptr<Object3D> object = std::make_unique<Object3D>();
+		object->Initialize(directXCommon_.GetDevice(), model);
+		drawModelObjects_.push_back(std::move(object));
 	}
 
-	Object3D* object = CreateObject3D(model);
-	defaultObjects_[model] = object;
+	Object3D* object = drawModelObjects_[drawModelObjectIndex_].get();
+	object->SetModel(model);
+	++drawModelObjectIndex_;
 	return object;
 }
 

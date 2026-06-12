@@ -21,9 +21,9 @@
 #include "WinApp.h"
 #include <Windows.h>
 #include <cstdint>
+#include <cstddef>
 #include <memory>
 #include <string>
-#include <unordered_map>
 #include <vector>
 #ifdef USE_IMGUI
 #include "externals/imgui/imgui.h"
@@ -93,7 +93,7 @@ public:
 	Renderer& GetRenderer() { return renderer_; }
 
 private:
-	Object3D* GetDefaultObject(Model* model);
+	Object3D* GetDrawModelObject(Model* model);
 	void UpdateCameraMatrices();
 
 	D3DResourceLeakChecker leakChecker_;
@@ -127,7 +127,8 @@ private:
 	std::vector<std::unique_ptr<Sprite>> sprites_;
 	std::vector<std::unique_ptr<Object3D>> object3Ds_;
 	std::vector<std::unique_ptr<Primitive3D>> primitive3Ds_;
-	std::unordered_map<Model*, Object3D*> defaultObjects_;
+	std::vector<std::unique_ptr<Object3D>> drawModelObjects_;
+	size_t drawModelObjectIndex_ = 0;
 };
 
 Engine& GetEngine();
