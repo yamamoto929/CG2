@@ -2,15 +2,15 @@
 //============================================
 // たしざん
 //============================================
-Vector3 operator+=(Vector3& lhs, const Vector3& rhs) {
+RunaEngine::Vector3 operator+=(RunaEngine::Vector3& lhs, const RunaEngine::Vector3& rhs) {
 	lhs.x += rhs.x;
 	lhs.y += rhs.y;
 	lhs.z += rhs.z;
 	return lhs;
 }
 
-Vector3 operator+(const Vector3& lhs, const Vector3& rhs) {
-	Vector3 result = lhs;
+RunaEngine::Vector3 operator+(const RunaEngine::Vector3& lhs, const RunaEngine::Vector3& rhs) {
+	RunaEngine::Vector3 result = lhs;
 	result += rhs;
 	return result;
 }
@@ -18,15 +18,15 @@ Vector3 operator+(const Vector3& lhs, const Vector3& rhs) {
 //============================================
 // ひきざん
 //============================================
-Vector3 operator-=(Vector3& lhs, const Vector3& rhs) {
+RunaEngine::Vector3 operator-=(RunaEngine::Vector3& lhs, const RunaEngine::Vector3& rhs) {
 	lhs.x -= rhs.x;
 	lhs.y -= rhs.y;
 	lhs.z -= rhs.z;
 	return lhs;
 }
 
-Vector3 operator-(const Vector3& lhs, const Vector3& rhs) {
-	Vector3 result = lhs;
+RunaEngine::Vector3 operator-(const RunaEngine::Vector3& lhs, const RunaEngine::Vector3& rhs) {
+	RunaEngine::Vector3 result = lhs;
 	result -= rhs;
 	return result;
 }
@@ -34,16 +34,16 @@ Vector3 operator-(const Vector3& lhs, const Vector3& rhs) {
 //============================================
 // かけざん
 //============================================
-Vector3 operator*(const Vector3& v, const float& s) {
-	Vector3 result = v;
+RunaEngine::Vector3 operator*(const RunaEngine::Vector3& v, const float& s) {
+	RunaEngine::Vector3 result = v;
 	result.x *= s;
 	result.y *= s;
 	result.z *= s;
 	return result;
 }
 
-Vector3 operator*(const float& s, const Vector3& v) {
-	Vector3 result = v;
+RunaEngine::Vector3 operator*(const float& s, const RunaEngine::Vector3& v) {
+	RunaEngine::Vector3 result = v;
 	result.x *= s;
 	result.y *= s;
 	result.z *= s;
@@ -53,16 +53,16 @@ Vector3 operator*(const float& s, const Vector3& v) {
 //============================================
 // わりざん
 //============================================
-Vector3 operator/(const Vector3& v, const float& s) {
-	Vector3 result = v;
+RunaEngine::Vector3 operator/(const RunaEngine::Vector3& v, const float& s) {
+	RunaEngine::Vector3 result = v;
 	result.x /= s;
 	result.y /= s;
 	result.z /= s;
 	return result;
 }
 
-Vector3 operator/(const float& s, const Vector3& v) {
-	Vector3 result = v;
+RunaEngine::Vector3 operator/(const float& s, const RunaEngine::Vector3& v) {
+	RunaEngine::Vector3 result = v;
 	result.x /= s;
 	result.y /= s;
 	result.z /= s;

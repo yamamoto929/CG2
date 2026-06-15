@@ -1,5 +1,7 @@
 #pragma once
-struct Vector2 {
-	float x;
-	float y;
-};
+namespace RunaEngine {
+	struct Vector2 {
+		float x;
+		float y;
+	};
+}

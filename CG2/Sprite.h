@@ -13,53 +13,55 @@
 #include "Material.h"
 #include "TransformationMatrix.h"
 
-class Sprite {
-public:
-    void Initialize(
-        ID3D12Device* device,
-        TextureManager* textureManager,
-        const std::string& texturePath
-    );
+namespace RunaEngine{
+    class Sprite {
+    public:
+        void Initialize(
+            ID3D12Device* device,
+            TextureManager* textureManager,
+            const std::string& texturePath
+        );
 
-    void Update(int32_t screenWidth, int32_t screenHeight);
-    void Draw(ID3D12GraphicsCommandList* commandList, TextureManager* textureManager);
+        void Update(int32_t screenWidth, int32_t screenHeight);
+        void Draw(ID3D12GraphicsCommandList* commandList, TextureManager* textureManager);
 
-    Transform& GetTransform();
-    const Transform& GetTransform() const;
-    void SetSize(const Vector2& size);
-    void SetColor(const Vector4& color);
-    void SetUVTransform(const Matrix4x4& uvTransform);
-    uint32_t GetTextureHandle() const { return textureHandle_; }
-    void SetTextureHandle(uint32_t textureHandle) { textureHandle_ = textureHandle; }
-   
-private:
-    Transform transform_;
-    Vector2 size_;
+        Transform& GetTransform();
+        const Transform& GetTransform() const;
+        void SetSize(const Vector2& size);
+        void SetColor(const Vector4& color);
+        void SetUVTransform(const Matrix4x4& uvTransform);
+        uint32_t GetTextureHandle() const { return textureHandle_; }
+        void SetTextureHandle(uint32_t textureHandle) { textureHandle_ = textureHandle; }
 
-    uint32_t textureHandle_;
+    private:
+        Transform transform_;
+        Vector2 size_;
 
-    // 頂点・インデックス
-    Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource_;
-    D3D12_VERTEX_BUFFER_VIEW vertexBufferView_;
+        uint32_t textureHandle_;
 
-    Microsoft::WRL::ComPtr<ID3D12Resource> indexResource_;
-    D3D12_INDEX_BUFFER_VIEW indexBufferView_;
+        // 頂点・インデックス
+        Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource_;
+        D3D12_VERTEX_BUFFER_VIEW vertexBufferView_;
 
-    // マテリアル
-    ConstantBuffer<Material> material_;
-    Material* materialData_;
+        Microsoft::WRL::ComPtr<ID3D12Resource> indexResource_;
+        D3D12_INDEX_BUFFER_VIEW indexBufferView_;
 
-    Vector4 color_ = { 1.0f, 1.0f, 1.0f, 1.0f };
+        // マテリアル
+        ConstantBuffer<Material> material_;
+        Material* materialData_;
 
-    Transform uvTransform_{
-        { 1.0f, 1.0f, 1.0f },
-        { 0.0f, 0.0f, 0.0f },
-        { 0.0f, 0.0f, 0.0f },
+        Vector4 color_ = { 1.0f, 1.0f, 1.0f, 1.0f };
+
+        Transform uvTransform_{
+            { 1.0f, 1.0f, 1.0f },
+            { 0.0f, 0.0f, 0.0f },
+            { 0.0f, 0.0f, 0.0f },
+        };
+
+        // WVP
+        ConstantBuffer<TransformationMatrix> transformationMatrix_;
+        TransformationMatrix* transformationMatrixData_;
+
+        Microsoft::WRL::ComPtr<ID3D12Resource> CreateBufferResource(ID3D12Device* device, size_t sizeInBytes);
     };
-
-    // WVP
-    ConstantBuffer<TransformationMatrix> transformationMatrix_;
-    TransformationMatrix* transformationMatrixData_;
-
-    Microsoft::WRL::ComPtr<ID3D12Resource> CreateBufferResource(ID3D12Device* device, size_t sizeInBytes);
-};
+}
