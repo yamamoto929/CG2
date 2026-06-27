@@ -15,12 +15,12 @@ void DirectionalLight::SetCommand(ID3D12GraphicsCommandList* commandList, UINT r
 	commandList->SetGraphicsRootConstantBufferView(rootParameterIndex, buffer_.GetGPUVirtualAddress());
 }
 
-void DirectionalLight::SetColor(const Vector4& color) {
+void DirectionalLight::SetColor(const RunaEngine::Vector4& color) {
 	assert(data_);
 	data_->color = color;
 }
 
-void DirectionalLight::SetDirection(const Vector3& direction) {
+void DirectionalLight::SetDirection(const RunaEngine::Vector3& direction) {
 	assert(data_);
 	data_->direction = direction;
 	data_->direction.Normalize();

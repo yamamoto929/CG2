@@ -47,19 +47,19 @@ void Renderer::Begin() {
 	directionalLight_->SetCommand(GetCommandList());
 }
 
-void Renderer::Draw(Object3D& object) {
+void Renderer::Draw(RunaEngine::Object3D& object) {
 	graphicsPipeline_->Set(GetCommandList());
 	directionalLight_->SetCommand(GetCommandList(), 3);
 	object.Draw(GetCommandList(), textureManager_);
 }
 
-void Renderer::Draw(Primitive3D& primitive) {
+void Renderer::Draw(RunaEngine::Primitive3D& primitive) {
 	primitiveGraphicsPipeline_->Set(GetCommandList());
 	directionalLight_->SetCommand(GetCommandList(), 2);
 	primitive.Draw(GetCommandList());
 }
 
-void Renderer::Draw(Sprite& sprite) {
+void Renderer::Draw(RunaEngine::Sprite& sprite) {
 	graphicsPipeline_->Set(GetCommandList());
 	directionalLight_->SetCommand(GetCommandList(), 3);
 	sprite.Draw(GetCommandList(), textureManager_);

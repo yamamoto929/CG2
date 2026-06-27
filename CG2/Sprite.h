@@ -27,9 +27,9 @@ namespace RunaEngine{
 
         Transform& GetTransform();
         const Transform& GetTransform() const;
-        void SetSize(const Vector2& size);
-        void SetColor(const Vector4& color);
-        void SetUVTransform(const Matrix4x4& uvTransform);
+        void SetSize(const RunaEngine::Vector2& size);
+        void SetColor(const RunaEngine::Vector4& color);
+        void SetUVTransform(const RunaEngine::Matrix4x4& uvTransform);
         uint32_t GetTextureHandle() const { return textureHandle_; }
         void SetTextureHandle(uint32_t textureHandle) { textureHandle_ = textureHandle; }
 

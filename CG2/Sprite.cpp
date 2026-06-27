@@ -2,6 +2,9 @@
 #include "VertexData.h"
 #include "AffineMatrix.h"
 #include "WVPMatrix.h"
+
+namespace RunaEngine {
+
 void Sprite::Initialize(
     ID3D12Device* device,
     TextureManager* textureManager,
@@ -159,3 +162,5 @@ Microsoft::WRL::ComPtr<ID3D12Resource> Sprite::CreateBufferResource(ID3D12Device
 
 	return resource;
 }
+
+} // namespace RunaEngine

@@ -1,12 +1,14 @@
 #pragma once
-struct Matrix4x4 {
-	float m[4][4];
-};
-Matrix4x4 Add(const Matrix4x4& m1, const Matrix4x4& m2);
-Matrix4x4 Subtract(const Matrix4x4& m1, const Matrix4x4& m2);
-Matrix4x4 Multiply(const Matrix4x4& m1, const Matrix4x4& m2);
-Matrix4x4 Inverse(const Matrix4x4& m);
-Matrix4x4 Transpose(const Matrix4x4& m);
-Matrix4x4 MakeIdentityMatrix();
+namespace RunaEngine{
+	struct Matrix4x4 {
+		float m[4][4];
+	};
+}
+RunaEngine::Matrix4x4 Add(const RunaEngine::Matrix4x4& m1, const RunaEngine::Matrix4x4& m2);
+RunaEngine::Matrix4x4 Subtract(const RunaEngine::Matrix4x4& m1, const RunaEngine::Matrix4x4& m2);
+RunaEngine::Matrix4x4 Multiply(const RunaEngine::Matrix4x4& m1, const RunaEngine::Matrix4x4& m2);
+RunaEngine::Matrix4x4 Inverse(const RunaEngine::Matrix4x4& m);
+RunaEngine::Matrix4x4 Transpose(const RunaEngine::Matrix4x4& m);
+RunaEngine::Matrix4x4 MakeIdentityMatrix();
 
 

@@ -6,10 +6,11 @@
 #pragma comment(lib,"d3d12.lib")
 #include "TransformationMatrix.h"
 
-class Model;
 class TextureManager;
 
 namespace RunaEngine{
+	class Model;
+
 	class Object3D {
 	private:
 		Transform transform_{

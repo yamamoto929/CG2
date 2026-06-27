@@ -30,16 +30,6 @@
 #endif
 
 namespace RunaEngine {
-
-using Vector2 = ::Vector2;
-using Vector3 = ::Vector3;
-using Transform = ::Transform;
-using Model = ::Model;
-using Sprite = ::Sprite;
-using Object3D = ::Object3D;
-using Primitive3D = ::Primitive3D;
-using Vector4 = ::Vector4;
-
 class Engine {
 public:
 	Engine();

@@ -5,10 +5,13 @@
 class DirectXCommon;
 class DirectionalLight;
 class GraphicsPipeline;
-class Object3D;
-class Primitive3D;
+namespace RunaEngine{
+	class Object3D;
+	class Primitive3D;
+	class Sprite;
+}
+
 class PrimitiveGraphicsPipeline;
-class Sprite;
 class TextureManager;
 
 class Renderer {
@@ -22,9 +25,9 @@ public:
 	);
 
 	void Begin();
-	void Draw(Object3D& object);
-	void Draw(Primitive3D& primitive);
-	void Draw(Sprite& sprite);
+	void Draw(RunaEngine::Object3D& object);
+	void Draw(RunaEngine::Primitive3D& primitive);
+	void Draw(RunaEngine::Sprite& sprite);
 	void End();
 
 	ID3D12GraphicsCommandList* GetCommandList() const;

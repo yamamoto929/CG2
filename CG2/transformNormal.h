@@ -1,5 +1,5 @@
 #pragma once
 #include "Vector3.h"
 #include "Matrix4x4.h"
-Vector3 TransformNormal(Vector3 v, Matrix4x4 m);
+RunaEngine::Vector3 TransformNormal(RunaEngine::Vector3 v, RunaEngine::Matrix4x4 m);
 

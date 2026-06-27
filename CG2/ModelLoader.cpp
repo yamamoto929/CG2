@@ -9,12 +9,12 @@
 // =========================================================
 // LoadObjFile 
 // =========================================================
-ModelData ModelLoader::LoadObjFile(const std::string& directoryPath, const std::string& filename) {
+RunaEngine::ModelData ModelLoader::LoadObjFile(const std::string& directoryPath, const std::string& filename) {
 	// 変数を宣言
-	ModelData modelData;
-	std::vector<Vector4> positions; // 位置
-	std::vector<Vector3> normals; // 法線
-	std::vector<Vector2> texCoords; // テクスチャ座標
+	RunaEngine::ModelData modelData;
+	std::vector<RunaEngine::Vector4> positions; // 位置
+	std::vector<RunaEngine::Vector3> normals; // 法線
+	std::vector<RunaEngine::Vector2> texCoords; // テクスチャ座標
 	std::string line; // ファイルから読んだ1行を格納するもの
 
 	// ファイルを開ける
@@ -26,23 +26,23 @@ ModelData ModelLoader::LoadObjFile(const std::string& directoryPath, const std::
 		std::istringstream s(line);
 		s >> identifier; // 先頭の識別子を読む
 		if (identifier == "v") {
-			Vector4 position;
+			RunaEngine::Vector4 position;
 			s >> position.x >> position.y >> position.z;
 			position.w = 1.0f;
 			position.x *= -1.0f;
 			positions.push_back(position);
 		} else if (identifier == "vt") {
-			Vector2 texCoord;
+			RunaEngine::Vector2 texCoord;
 			s >> texCoord.x >> texCoord.y;
 			texCoord.y = 1.0f - texCoord.y;
 			texCoords.push_back(texCoord);
 		} else if (identifier == "vn") {
-			Vector3 normal;
+			RunaEngine::Vector3 normal;
 			s >> normal.x >> normal.y >> normal.z;
 			normal.x *= -1.0f;
 			normals.push_back(normal);
 		} else if (identifier == "f") {
-			VertexData triangle[3];
+			RunaEngine::VertexData triangle[3];
 			// 面は三角形限定。そのほかは未対応
 			for (int32_t faceVertex = 0;faceVertex < 3;++faceVertex) {
 				std::string vertexDefinition;
@@ -57,9 +57,9 @@ ModelData ModelLoader::LoadObjFile(const std::string& directoryPath, const std::
 				}
 
 				// 要素へのIndexから、実際の要素の値を取得して、頂点を構築する
-				Vector4 position = positions[elementIndices[0] - 1];
-				Vector2 texcoord = texCoords[elementIndices[1] - 1];
-				Vector3 normal = normals[elementIndices[2] - 1];
+				RunaEngine::Vector4 position = positions[elementIndices[0] - 1];
+				RunaEngine::Vector2 texcoord = texCoords[elementIndices[1] - 1];
+				RunaEngine::Vector3 normal = normals[elementIndices[2] - 1];
 				//VertexData vertex = { position, texcoord, normal };
 				//modelData.vertices.push_back(vertex);
 				triangle[faceVertex] = { position,texcoord,normal };
@@ -81,8 +81,8 @@ ModelData ModelLoader::LoadObjFile(const std::string& directoryPath, const std::
 // =========================================================
 // LoadMaterialTemplateFile 
 // =========================================================
-MaterialData ModelLoader::LoadMaterialTemplateFile(const std::string& directoryPath, const std::string& filename) {
-	MaterialData materialData;
+RunaEngine::MaterialData ModelLoader::LoadMaterialTemplateFile(const std::string& directoryPath, const std::string& filename) {
+	RunaEngine::MaterialData materialData;
 	std::string line;
 	std::ifstream file(directoryPath + "/" + filename);
 	assert(file.is_open());

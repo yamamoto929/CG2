@@ -2,8 +2,8 @@
 #include <cmath>
 
 // 行列の加法
-Matrix4x4 Add(const Matrix4x4& m1, const Matrix4x4& m2) {
-	Matrix4x4 result;
+RunaEngine::Matrix4x4 Add(const RunaEngine::Matrix4x4& m1, const RunaEngine::Matrix4x4& m2) {
+	RunaEngine::Matrix4x4 result;
 	for (size_t ai = 0; ai < 4; ai++) {
 		for (size_t bi = 0; bi < 4; bi++) {
 			result.m[ai][bi] = m1.m[ai][bi] + m2.m[ai][bi];
@@ -13,8 +13,8 @@ Matrix4x4 Add(const Matrix4x4& m1, const Matrix4x4& m2) {
 };
 
 // 行列の減法
-Matrix4x4 Subtract(const Matrix4x4& m1, const Matrix4x4& m2) {
-	Matrix4x4 result;
+RunaEngine::Matrix4x4 Subtract(const RunaEngine::Matrix4x4& m1, const RunaEngine::Matrix4x4& m2) {
+	RunaEngine::Matrix4x4 result;
 	for (size_t ai = 0; ai < 4; ai++) {
 		for (size_t bi = 0; bi < 4; bi++) {
 			result.m[ai][bi] = m1.m[ai][bi] - m2.m[ai][bi];
@@ -24,8 +24,8 @@ Matrix4x4 Subtract(const Matrix4x4& m1, const Matrix4x4& m2) {
 };
 
 // 行列の積
-Matrix4x4 Multiply(const Matrix4x4& m1, const Matrix4x4& m2) {
-	Matrix4x4 result;
+RunaEngine::Matrix4x4 Multiply(const RunaEngine::Matrix4x4& m1, const RunaEngine::Matrix4x4& m2) {
+	RunaEngine::Matrix4x4 result;
 	for (size_t ai = 0; ai < 4; ai++) {
 		for (size_t bi = 0; bi < 4; bi++) {
 			result.m[ai][bi] =
@@ -40,11 +40,11 @@ Matrix4x4 Multiply(const Matrix4x4& m1, const Matrix4x4& m2) {
 
 // 逆行列
 // 掃き出し法
-Matrix4x4 Inverse(const Matrix4x4& m) {
+RunaEngine::Matrix4x4 Inverse(const RunaEngine::Matrix4x4& m) {
 	// 掃き出し法を行うために、左側の行列（元の行列のコピー）を用意
-	Matrix4x4 matrix = m;
+	RunaEngine::Matrix4x4 matrix = m;
 	// 右側の行列（単位行列からスタートし、最終的に逆行列になる）を用意
-	Matrix4x4 result = MakeIdentityMatrix();
+	RunaEngine::Matrix4x4 result = MakeIdentityMatrix();
 
 	for (size_t i = 0; i < 4; i++) {
 
@@ -104,8 +104,8 @@ Matrix4x4 Inverse(const Matrix4x4& m) {
 };
 
 // 転置行列
-Matrix4x4 Transpose(const Matrix4x4& m) {
-	Matrix4x4 result = m;
+RunaEngine::Matrix4x4 Transpose(const RunaEngine::Matrix4x4& m) {
+	RunaEngine::Matrix4x4 result = m;
 	for (size_t ai = 0; ai < 4; ai++) {
 		for (size_t bi = 0; bi < 4; bi++) {
 			if (ai == bi) { continue; }
@@ -116,8 +116,8 @@ Matrix4x4 Transpose(const Matrix4x4& m) {
 };
 
 // 単位行列の作成
-Matrix4x4 MakeIdentityMatrix() {
-	Matrix4x4 identityMatrix;
+RunaEngine::Matrix4x4 MakeIdentityMatrix() {
+	RunaEngine::Matrix4x4 identityMatrix;
 	for (size_t ai = 0; ai < 4; ai++) {
 		for (size_t bi = 0; bi < 4; bi++) {
 

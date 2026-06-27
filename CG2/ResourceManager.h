@@ -10,7 +10,7 @@ struct ID3D12Device;
 
 class ResourceManager {
 public:
-	Model* LoadModel(
+	RunaEngine::Model* LoadModel(
 		ID3D12Device* device,
 		TextureManager* textureManager,
 		const std::string& directoryPath,
@@ -19,5 +19,5 @@ public:
 
 private:
 	ModelLoader modelLoader_;
-	std::vector<std::unique_ptr<Model>> models_;
+	std::vector<std::unique_ptr<RunaEngine::Model>> models_;
 };

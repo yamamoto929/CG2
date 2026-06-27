@@ -3,40 +3,41 @@
 #include "Model.h"
 #include <cassert>
 
+namespace RunaEngine {
+	void Object3D::Initialize(ID3D12Device* device, RunaEngine::Model* model) {
+		assert(device);
+		assert(model);
 
-void Object3D::Initialize(ID3D12Device* device, Model* model) {
-	assert(device);
-	assert(model);
+		model_ = model;
+		worldMatrix_ = MakeIdentityMatrix();
+		wvpMatrix_ = MakeIdentityMatrix();
 
-	model_ = model;
-	worldMatrix_ = MakeIdentityMatrix();
-	wvpMatrix_ = MakeIdentityMatrix();
+		transformationMatrix_.Initialize(device);
+		transformationMatrixData_ = transformationMatrix_.GetData();
 
-	transformationMatrix_.Initialize(device);
-	transformationMatrixData_ = transformationMatrix_.GetData();
+		transformationMatrixData_->World = worldMatrix_;
+		transformationMatrixData_->WVP = wvpMatrix_;
+	}
 
-	transformationMatrixData_->World = worldMatrix_;
-	transformationMatrixData_->WVP = wvpMatrix_;
-}
+	void Object3D::Update(const Matrix4x4& viewMatrix, const Matrix4x4& projectionMatrix) {
+		assert(model_);
+		assert(transformationMatrixData_);
 
-void Object3D::Update(const Matrix4x4& viewMatrix, const Matrix4x4& projectionMatrix) {
-	assert(model_);
-	assert(transformationMatrixData_);
+		worldMatrix_ = MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
+		wvpMatrix_ = Multiply(worldMatrix_, Multiply(viewMatrix, projectionMatrix));
 
-	worldMatrix_ = MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
-	wvpMatrix_ = Multiply(worldMatrix_, Multiply(viewMatrix, projectionMatrix));
+		transformationMatrixData_->World = worldMatrix_;
+		transformationMatrixData_->WVP = wvpMatrix_;
+	}
 
-	transformationMatrixData_->World = worldMatrix_;
-	transformationMatrixData_->WVP = wvpMatrix_;
-}
+	void Object3D::Draw(ID3D12GraphicsCommandList* commandList, TextureManager* textureManager) {
+		assert(model_);
+		assert(transformationMatrixData_);
+		commandList->SetGraphicsRootConstantBufferView(
+			1,
+			transformationMatrix_.GetGPUVirtualAddress()
+		);
 
-void Object3D::Draw(ID3D12GraphicsCommandList* commandList, TextureManager* textureManager) {
-	assert(model_);
-	assert(transformationMatrixData_);
-	commandList->SetGraphicsRootConstantBufferView(
-		1,
-		transformationMatrix_.GetGPUVirtualAddress()
-	);
-
-	model_->Draw(commandList, textureManager);
+		model_->Draw(commandList, textureManager);
+	}
 }

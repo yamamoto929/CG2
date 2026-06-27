@@ -31,46 +31,46 @@ void DebugCamera::Update(const uint8_t* keys, DIMOUSESTATE mouseState) {
 	}
 
 	// 
-	matRot_ = Multiply(MakeRotateXMatrix(rotateRadX), matRot_);
-	matRot_ = Multiply(matRot_, MakeRotateYMatrix(rotateRadY));
+	matRot_ = Multiply(RunaEngine::MakeRotateXMatrix(rotateRadX), matRot_);
+	matRot_ = Multiply(matRot_, RunaEngine::MakeRotateYMatrix(rotateRadY));
 	
 	if (keys[DIK_A]) {
-		Vector3 move = { -translationSpeed_,0.0f,0.0f };
+		RunaEngine::Vector3 move = { -translationSpeed_,0.0f,0.0f };
 		MoveTranslate(move);
 	} else if (keys[DIK_D]) {
-		Vector3 move = { translationSpeed_,0.0f,0.0f };
+		RunaEngine::Vector3 move = { translationSpeed_,0.0f,0.0f };
 		MoveTranslate(move);
 	}
 
 	if (keys[DIK_LSHIFT]) {
-		Vector3 move = { 0.0f,-translationSpeed_,0.0f };
+		RunaEngine::Vector3 move = { 0.0f,-translationSpeed_,0.0f };
 		MoveTranslate(move);
 	} else if (keys[DIK_SPACE]) {
-		Vector3 move = { 0.0f,translationSpeed_,0.0f };
+		RunaEngine::Vector3 move = { 0.0f,translationSpeed_,0.0f };
 		MoveTranslate(move);
 	}
 
 	if (keys[DIK_W]) {
-		Vector3 move = { 0.0f,0.0f,translationSpeed_ };
+		RunaEngine::Vector3 move = { 0.0f,0.0f,translationSpeed_ };
 		MoveTranslate(move);
 	} else if (keys[DIK_S]) {
-		Vector3 move = { 0.0f,0.0f,-translationSpeed_ };
+		RunaEngine::Vector3 move = { 0.0f,0.0f,-translationSpeed_ };
 		MoveTranslate(move);
 	}
 
-	Matrix4x4 translationMatrix = { {
+	RunaEngine::Matrix4x4 translationMatrix = { {
 		{1.0f,        0.0f,        0.0f,        0.0f},
 		{0.0f,        1.0f,        0.0f,        0.0f},
 		{0.0f,        0.0f,        1.0f,        0.0f},
 		{translation_.x, translation_.y, translation_.z, 1.0f}
 	} };
-	Matrix4x4 cameraMatrix = Multiply(Multiply(MakeIdentityMatrix(), matRot_), translationMatrix);
+	RunaEngine::Matrix4x4 cameraMatrix = Multiply(Multiply(MakeIdentityMatrix(), matRot_), translationMatrix);
 
 	viewMatrix_ = Inverse(cameraMatrix);
 }
 
-void DebugCamera::MoveTranslate(const Vector3 move) {
-	Vector3 moveVector;
+void DebugCamera::MoveTranslate(const RunaEngine::Vector3 move) {
+	RunaEngine::Vector3 moveVector;
 	moveVector = TransformNormal(move, matRot_);
 	translation_ += moveVector;
 }

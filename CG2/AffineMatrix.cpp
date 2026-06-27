@@ -1,5 +1,8 @@
 #include "AffineMatrix.h"
 #include <cmath>
+
+namespace RunaEngine {
+
 Matrix4x4 MakeScaleMatrix(Vector3 scale) {
 	Matrix4x4 result = { {
 		{scale.x,0.0f,   0.0f,   0.0f},
@@ -84,3 +87,5 @@ Matrix4x4 MakeAffineMatrix(const Vector3& scale, const Vector3& rotate, const Ve
 	result = Multiply(Multiply(scaleMatrix4x4, rotateMatrix4x4), translateMatrix4x4);
 	return result;
 }
+
+} // namespace RunaEngine
