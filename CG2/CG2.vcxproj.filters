@@ -13,282 +13,254 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="imgui">
-      <UniqueIdentifier>{af0702a0-1c33-402e-916a-55c126f3a482}</UniqueIdentifier>
+    <Filter Include="RunaEngine">
+      <UniqueIdentifier>{a7ef79e0-0887-492e-ab04-f9a00c6aaeb7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RunaEngine\Audio">
+      <UniqueIdentifier>{53f2f5d0-7fc5-4ea3-95eb-06dc63118e32}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RunaEngine\Core">
+      <UniqueIdentifier>{fa97b671-8a17-4519-af95-117b7a87b635}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RunaEngine\Graphics">
+      <UniqueIdentifier>{ff501d5a-cd4b-4887-b816-66ba84524881}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RunaEngine\Input">
+      <UniqueIdentifier>{0b13fb0d-02a7-45fa-a5e2-cea5c14d36d9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RunaEngine\Math">
+      <UniqueIdentifier>{0f0e12ca-fcf8-4b76-919e-452aba37cb13}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RunaEngine\UI">
+      <UniqueIdentifier>{16d24e5f-faf0-44c8-af47-aa0cd737776a}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include=".editorconfig" />
-    <None Include="Object3d.hlsli" />
+    <None Include="RunaEngine\Graphics\Object3d.hlsli">
+      <Filter>RunaEngine\Graphics</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="ConvertString.cpp">
-      <Filter>ソース ファイル</Filter>
+    <ClCompile Include="RunaEngine\RunaEngine.cpp">
+      <Filter>RunaEngine</Filter>
     </ClCompile>
-    <ClCompile Include="AffineMatrix.cpp">
-      <Filter>ソース ファイル</Filter>
+    <ClCompile Include="RunaEngine\Audio\SoundManager.cpp">
+      <Filter>RunaEngine\Audio</Filter>
     </ClCompile>
-    <ClCompile Include="Matrix4x4.cpp">
-      <Filter>ソース ファイル</Filter>
+    <ClCompile Include="RunaEngine\Core\ConvertString.cpp">
+      <Filter>RunaEngine\Core</Filter>
     </ClCompile>
-    <ClCompile Include="WVPMatrix.cpp">
-      <Filter>ソース ファイル</Filter>
+    <ClCompile Include="RunaEngine\Core\CrashHandler.cpp">
+      <Filter>RunaEngine\Core</Filter>
     </ClCompile>
-    <ClCompile Include="externals\imgui\imgui.cpp">
-      <Filter>imgui</Filter>
+    <ClCompile Include="RunaEngine\Core\DescriptorHeap.cpp">
+      <Filter>RunaEngine\Core</Filter>
     </ClCompile>
-    <ClCompile Include="externals\imgui\imgui_demo.cpp">
-      <Filter>imgui</Filter>
+    <ClCompile Include="RunaEngine\Core\DirectXCommon.cpp">
+      <Filter>RunaEngine\Core</Filter>
     </ClCompile>
-    <ClCompile Include="externals\imgui\imgui_draw.cpp">
-      <Filter>imgui</Filter>
+    <ClCompile Include="RunaEngine\Core\DirectXDebug.cpp">
+      <Filter>RunaEngine\Core</Filter>
     </ClCompile>
-    <ClCompile Include="externals\imgui\imgui_impl_dx12.cpp">
-      <Filter>imgui</Filter>
+    <ClCompile Include="RunaEngine\Core\Log.cpp">
+      <Filter>RunaEngine\Core</Filter>
     </ClCompile>
-    <ClCompile Include="externals\imgui\imgui_impl_win32.cpp">
-      <Filter>imgui</Filter>
+    <ClCompile Include="RunaEngine\Core\ResourceManager.cpp">
+      <Filter>RunaEngine\Core</Filter>
     </ClCompile>
-    <ClCompile Include="externals\imgui\imgui_tables.cpp">
-      <Filter>imgui</Filter>
+    <ClCompile Include="RunaEngine\Core\ShaderCompiler.cpp">
+      <Filter>RunaEngine\Core</Filter>
     </ClCompile>
-    <ClCompile Include="externals\imgui\imgui_widgets.cpp">
-      <Filter>imgui</Filter>
+    <ClCompile Include="RunaEngine\Core\TextureManager.cpp">
+      <Filter>RunaEngine\Core</Filter>
     </ClCompile>
-    <ClCompile Include="DebugCamera.cpp">
-      <Filter>ソース ファイル</Filter>
+    <ClCompile Include="RunaEngine\Core\WinApp.cpp">
+      <Filter>RunaEngine\Core</Filter>
     </ClCompile>
-    <ClCompile Include="Vector3.cpp">
-      <Filter>ソース ファイル</Filter>
+    <ClCompile Include="RunaEngine\Graphics\DirectionalLight.cpp">
+      <Filter>RunaEngine\Graphics</Filter>
     </ClCompile>
-    <ClCompile Include="transformNormal.cpp">
-      <Filter>ソース ファイル</Filter>
+    <ClCompile Include="RunaEngine\Graphics\GraphicsPipeline.cpp">
+      <Filter>RunaEngine\Graphics</Filter>
     </ClCompile>
-    <ClCompile Include="WinApp.cpp">
-      <Filter>ソース ファイル</Filter>
+    <ClCompile Include="RunaEngine\Graphics\Model.cpp">
+      <Filter>RunaEngine\Graphics</Filter>
     </ClCompile>
-    <ClCompile Include="DirectXCommon.cpp">
-      <Filter>ソース ファイル</Filter>
+    <ClCompile Include="RunaEngine\Graphics\ModelLoader.cpp">
+      <Filter>RunaEngine\Graphics</Filter>
     </ClCompile>
-    <ClCompile Include="Log.cpp">
-      <Filter>ソース ファイル</Filter>
+    <ClCompile Include="RunaEngine\Graphics\Object3D.cpp">
+      <Filter>RunaEngine\Graphics</Filter>
     </ClCompile>
-    <ClCompile Include="DescriptorHeap.cpp">
-      <Filter>ソース ファイル</Filter>
+    <ClCompile Include="RunaEngine\Graphics\Primitive3D.cpp">
+      <Filter>RunaEngine\Graphics</Filter>
     </ClCompile>
-    <ClCompile Include="Input.cpp">
-      <Filter>ソース ファイル</Filter>
+    <ClCompile Include="RunaEngine\Graphics\PrimitiveGraphicsPipeline.cpp">
+      <Filter>RunaEngine\Graphics</Filter>
     </ClCompile>
-    <ClCompile Include="ShaderCompiler.cpp">
-      <Filter>ソース ファイル</Filter>
+    <ClCompile Include="RunaEngine\Graphics\Renderer.cpp">
+      <Filter>RunaEngine\Graphics</Filter>
     </ClCompile>
-    <ClCompile Include="TextureManager.cpp">
-      <Filter>ソース ファイル</Filter>
+    <ClCompile Include="RunaEngine\Graphics\Sprite.cpp">
+      <Filter>RunaEngine\Graphics</Filter>
     </ClCompile>
-    <ClCompile Include="ModelLoader.cpp">
-      <Filter>ソース ファイル</Filter>
+    <ClCompile Include="RunaEngine\Graphics\transformNormal.cpp">
+      <Filter>RunaEngine\Graphics</Filter>
     </ClCompile>
-    <ClCompile Include="Model.cpp">
-      <Filter>ソース ファイル</Filter>
+    <ClCompile Include="RunaEngine\Input\DebugCamera.cpp">
+      <Filter>RunaEngine\Input</Filter>
     </ClCompile>
-    <ClCompile Include="Object3D.cpp">
-      <Filter>ソース ファイル</Filter>
+    <ClCompile Include="RunaEngine\Input\Input.cpp">
+      <Filter>RunaEngine\Input</Filter>
     </ClCompile>
-    <ClCompile Include="Primitive3D.cpp">
-      <Filter>ソース ファイル</Filter>
+    <ClCompile Include="RunaEngine\Math\AffineMatrix.cpp">
+      <Filter>RunaEngine\Math</Filter>
     </ClCompile>
-    <ClCompile Include="PrimitiveGraphicsPipeline.cpp">
-      <Filter>ソース ファイル</Filter>
+    <ClCompile Include="RunaEngine\Math\Matrix4x4.cpp">
+      <Filter>RunaEngine\Math</Filter>
     </ClCompile>
-    <ClCompile Include="Sprite.cpp">
-      <Filter>ソース ファイル</Filter>
+    <ClCompile Include="RunaEngine\Math\Vector3.cpp">
+      <Filter>RunaEngine\Math</Filter>
     </ClCompile>
-    <ClCompile Include="GraphicsPipeline.cpp">
-      <Filter>ソース ファイル</Filter>
+    <ClCompile Include="RunaEngine\Math\WVPMatrix.cpp">
+      <Filter>RunaEngine\Math</Filter>
     </ClCompile>
-    <ClCompile Include="CrashHandler.cpp">
-      <Filter>ソース ファイル</Filter>
+    <ClCompile Include="RunaEngine\UI\ImGuiManager.cpp">
+      <Filter>RunaEngine\UI</Filter>
     </ClCompile>
-    <ClCompile Include="DirectXDebug.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="DirectionalLight.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="ResourceManager.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="ImGuiManager.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="SoundManager.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="RunaEngine.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-  
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ConvertString.h">
-      <Filter>ヘッダー ファイル</Filter>
+    <ClInclude Include="RunaEngine\Audio\SoundManager.h">
+      <Filter>RunaEngine\Audio</Filter>
     </ClInclude>
-    <ClInclude Include="Vector4.h">
-      <Filter>ヘッダー ファイル</Filter>
+    <ClInclude Include="RunaEngine\RunaEngine.h">
+      <Filter>RunaEngine</Filter>
     </ClInclude>
-    <ClInclude Include="Matrix4x4.h">
-      <Filter>ヘッダー ファイル</Filter>
+    <ClInclude Include="RunaEngine\Core\ConvertString.h">
+      <Filter>RunaEngine\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Transform.h">
-      <Filter>ヘッダー ファイル</Filter>
+    <ClInclude Include="RunaEngine\Core\CrashHandler.h">
+      <Filter>RunaEngine\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Vector3.h">
-      <Filter>ヘッダー ファイル</Filter>
+    <ClInclude Include="RunaEngine\Core\D3DResourceLeakChecker.h">
+      <Filter>RunaEngine\Core</Filter>
     </ClInclude>
-    <ClInclude Include="AffineMatrix.h">
-      <Filter>ヘッダー ファイル</Filter>
+    <ClInclude Include="RunaEngine\Core\DescriptorHeap.h">
+      <Filter>RunaEngine\Core</Filter>
     </ClInclude>
-    <ClInclude Include="WVPMatrix.h">
-      <Filter>ヘッダー ファイル</Filter>
+    <ClInclude Include="RunaEngine\Core\DirectXCommon.h">
+      <Filter>RunaEngine\Core</Filter>
     </ClInclude>
-    <ClInclude Include="externals\imgui\imconfig.h">
-      <Filter>imgui</Filter>
+    <ClInclude Include="RunaEngine\Core\DirectXDebug.h">
+      <Filter>RunaEngine\Core</Filter>
     </ClInclude>
-    <ClInclude Include="externals\imgui\imgui.h">
-      <Filter>imgui</Filter>
+    <ClInclude Include="RunaEngine\Core\Log.h">
+      <Filter>RunaEngine\Core</Filter>
     </ClInclude>
-    <ClInclude Include="externals\imgui\imgui_impl_dx12.h">
-      <Filter>imgui</Filter>
+    <ClInclude Include="RunaEngine\Core\ResourceManager.h">
+      <Filter>RunaEngine\Core</Filter>
     </ClInclude>
-    <ClInclude Include="externals\imgui\imgui_impl_win32.h">
-      <Filter>imgui</Filter>
+    <ClInclude Include="RunaEngine\Core\ShaderCompiler.h">
+      <Filter>RunaEngine\Core</Filter>
     </ClInclude>
-    <ClInclude Include="externals\imgui\imgui_internal.h">
-      <Filter>imgui</Filter>
+    <ClInclude Include="RunaEngine\Core\TextureManager.h">
+      <Filter>RunaEngine\Core</Filter>
     </ClInclude>
-    <ClInclude Include="externals\imgui\imstb_rectpack.h">
-      <Filter>imgui</Filter>
+    <ClInclude Include="RunaEngine\Core\WinApp.h">
+      <Filter>RunaEngine\Core</Filter>
     </ClInclude>
-    <ClInclude Include="externals\imgui\imstb_textedit.h">
-      <Filter>imgui</Filter>
+    <ClInclude Include="RunaEngine\Graphics\ConstantBuffer.h">
+      <Filter>RunaEngine\Graphics</Filter>
     </ClInclude>
-    <ClInclude Include="externals\imgui\imstb_truetype.h">
-      <Filter>imgui</Filter>
+    <ClInclude Include="RunaEngine\Graphics\DirectionalLight.h">
+      <Filter>RunaEngine\Graphics</Filter>
     </ClInclude>
-    <ClInclude Include="VertexData.h">
-      <Filter>ヘッダー ファイル</Filter>
+    <ClInclude Include="RunaEngine\Graphics\GraphicsPipeline.h">
+      <Filter>RunaEngine\Graphics</Filter>
     </ClInclude>
-    <ClInclude Include="Vector2.h">
-      <Filter>ヘッダー ファイル</Filter>
+    <ClInclude Include="RunaEngine\Graphics\Material.h">
+      <Filter>RunaEngine\Graphics</Filter>
     </ClInclude>
-    <ClInclude Include="Material.h">
-      <Filter>ヘッダー ファイル</Filter>
+    <ClInclude Include="RunaEngine\Graphics\MaterialData.h">
+      <Filter>RunaEngine\Graphics</Filter>
     </ClInclude>
-    <ClInclude Include="TransformationMatrix.h">
-      <Filter>ヘッダー ファイル</Filter>
+    <ClInclude Include="RunaEngine\Graphics\Model.h">
+      <Filter>RunaEngine\Graphics</Filter>
     </ClInclude>
-    <ClInclude Include="DirectionalLight.h">
-      <Filter>ヘッダー ファイル</Filter>
+    <ClInclude Include="RunaEngine\Graphics\ModelData.h">
+      <Filter>RunaEngine\Graphics</Filter>
     </ClInclude>
-    <ClInclude Include="Matrix3x3.h">
-      <Filter>ヘッダー ファイル</Filter>
+    <ClInclude Include="RunaEngine\Graphics\ModelLoader.h">
+      <Filter>RunaEngine\Graphics</Filter>
     </ClInclude>
-    <ClInclude Include="ModelData.h">
-      <Filter>ヘッダー ファイル</Filter>
+    <ClInclude Include="RunaEngine\Graphics\Object3D.h">
+      <Filter>RunaEngine\Graphics</Filter>
     </ClInclude>
-    <ClInclude Include="MaterialData.h">
-      <Filter>ヘッダー ファイル</Filter>
+    <ClInclude Include="RunaEngine\Graphics\Primitive3D.h">
+      <Filter>RunaEngine\Graphics</Filter>
     </ClInclude>
-    <ClInclude Include="D3DResourceLeakChecker.h">
-      <Filter>ヘッダー ファイル</Filter>
+    <ClInclude Include="RunaEngine\Graphics\PrimitiveGraphicsPipeline.h">
+      <Filter>RunaEngine\Graphics</Filter>
     </ClInclude>
-    <ClInclude Include="DebugCamera.h">
-      <Filter>ヘッダー ファイル</Filter>
+    <ClInclude Include="RunaEngine\Graphics\Renderer.h">
+      <Filter>RunaEngine\Graphics</Filter>
     </ClInclude>
-    <ClInclude Include="transformNormal.h">
-      <Filter>ヘッダー ファイル</Filter>
+    <ClInclude Include="RunaEngine\Graphics\Sprite.h">
+      <Filter>RunaEngine\Graphics</Filter>
     </ClInclude>
-    <ClInclude Include="WinApp.h">
-      <Filter>ヘッダー ファイル</Filter>
+    <ClInclude Include="RunaEngine\Graphics\TransformationMatrix.h">
+      <Filter>RunaEngine\Graphics</Filter>
     </ClInclude>
-    <ClInclude Include="DirectXCommon.h">
-      <Filter>ヘッダー ファイル</Filter>
+    <ClInclude Include="RunaEngine\Graphics\transformNormal.h">
+      <Filter>RunaEngine\Graphics</Filter>
     </ClInclude>
-    <ClInclude Include="Log.h">
-      <Filter>ヘッダー ファイル</Filter>
+    <ClInclude Include="RunaEngine\Graphics\VertexData.h">
+      <Filter>RunaEngine\Graphics</Filter>
     </ClInclude>
-    <ClInclude Include="DescriptorHeap.h">
-      <Filter>ヘッダー ファイル</Filter>
+    <ClInclude Include="RunaEngine\Input\DebugCamera.h">
+      <Filter>RunaEngine\Input</Filter>
     </ClInclude>
-    <ClInclude Include="Input.h">
-      <Filter>ヘッダー ファイル</Filter>
+    <ClInclude Include="RunaEngine\Input\Input.h">
+      <Filter>RunaEngine\Input</Filter>
     </ClInclude>
-    <ClInclude Include="ShaderCompiler.h">
-      <Filter>ヘッダー ファイル</Filter>
+    <ClInclude Include="RunaEngine\Math\AffineMatrix.h">
+      <Filter>RunaEngine\Math</Filter>
     </ClInclude>
-    <ClInclude Include="TextureManager.h">
-      <Filter>ヘッダー ファイル</Filter>
+    <ClInclude Include="RunaEngine\Math\Matrix4x4.h">
+      <Filter>RunaEngine\Math</Filter>
     </ClInclude>
-    <ClInclude Include="ModelLoader.h">
-      <Filter>ヘッダー ファイル</Filter>
+    <ClInclude Include="RunaEngine\Math\Transform.h">
+      <Filter>RunaEngine\Math</Filter>
     </ClInclude>
-    <ClInclude Include="Model.h">
-      <Filter>ヘッダー ファイル</Filter>
+    <ClInclude Include="RunaEngine\Math\Vector2.h">
+      <Filter>RunaEngine\Math</Filter>
     </ClInclude>
-    <ClInclude Include="Object3D.h">
-      <Filter>ヘッダー ファイル</Filter>
+    <ClInclude Include="RunaEngine\Math\Vector3.h">
+      <Filter>RunaEngine\Math</Filter>
     </ClInclude>
-    <ClInclude Include="Primitive3D.h">
-      <Filter>ヘッダー ファイル</Filter>
+    <ClInclude Include="RunaEngine\Math\Vector4.h">
+      <Filter>RunaEngine\Math</Filter>
     </ClInclude>
-    <ClInclude Include="PrimitiveGraphicsPipeline.h">
-      <Filter>ヘッダー ファイル</Filter>
+    <ClInclude Include="RunaEngine\Math\WVPMatrix.h">
+      <Filter>RunaEngine\Math</Filter>
     </ClInclude>
-    <ClInclude Include="Sprite.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="GraphicsPipeline.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="ConstantBuffer.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="CrashHandler.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="DirectXDebug.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="ResourceManager.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="ImGuiManager.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="SoundManager.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="RunaEngine.h">
-      <Filter>ヘッダー ファイル</Filter>
+    <ClInclude Include="RunaEngine\UI\ImGuiManager.h">
+      <Filter>RunaEngine\UI</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="Object3d.VS.hlsl" />
-    <FxCompile Include="Object3d.PS.hlsl" />
-    <FxCompile Include="Primitive3D.PS.hlsl" />
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="externals\imgui\LICENSE.txt">
-      <Filter>imgui</Filter>
-    </Text>
+    <FxCompile Include="RunaEngine\Graphics\Object3d.PS.hlsl">
+      <Filter>RunaEngine\Graphics</Filter>
+    </FxCompile>
+    <FxCompile Include="RunaEngine\Graphics\Object3d.VS.hlsl">
+      <Filter>RunaEngine\Graphics</Filter>
+    </FxCompile>
+    <FxCompile Include="RunaEngine\Graphics\Primitive3D.PS.hlsl">
+      <Filter>RunaEngine\Graphics</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

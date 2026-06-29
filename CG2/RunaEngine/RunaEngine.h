@@ -1,24 +1,24 @@
 #pragma once
-#include "D3DResourceLeakChecker.h"
-#include "DirectXCommon.h"
-#include "DirectionalLight.h"
-#include "GraphicsPipeline.h"
-#include "ImGuiManager.h"
-#include "Input.h"
-#include "Object3D.h"
-#include "Primitive3D.h"
-#include "PrimitiveGraphicsPipeline.h"
-#include "Renderer.h"
-#include "ResourceManager.h"
-#include "ShaderCompiler.h"
-#include "SoundManager.h"
-#include "Sprite.h"
-#include "TextureManager.h"
-#include "Transform.h"
-#include "Vector2.h"
-#include "Vector3.h"
-#include "Vector4.h"
-#include "WinApp.h"
+#include "RunaEngine/Core/D3DResourceLeakChecker.h"
+#include "RunaEngine/Core/DirectXCommon.h"
+#include "RunaEngine/Graphics/DirectionalLight.h"
+#include "RunaEngine/Graphics/GraphicsPipeline.h"
+#include "RunaEngine/UI/ImGuiManager.h"
+#include "RunaEngine/Input/Input.h"
+#include "RunaEngine/Graphics/Object3D.h"
+#include "RunaEngine/Graphics/Primitive3D.h"
+#include "RunaEngine/Graphics/PrimitiveGraphicsPipeline.h"
+#include "RunaEngine/Graphics/Renderer.h"
+#include "RunaEngine/Core/ResourceManager.h"
+#include "RunaEngine/Core/ShaderCompiler.h"
+#include "RunaEngine/Audio/SoundManager.h"
+#include "RunaEngine/Graphics/Sprite.h"
+#include "RunaEngine/Core/TextureManager.h"
+#include "RunaEngine/Math/Transform.h"
+#include "RunaEngine/Math/Vector2.h"
+#include "RunaEngine/Math/Vector3.h"
+#include "RunaEngine/Math/Vector4.h"
+#include "RunaEngine/Core/WinApp.h"
 #include <Windows.h>
 #include <cstdint>
 #include <cstddef>
@@ -26,7 +26,7 @@
 #include <string>
 #include <vector>
 #ifdef USE_IMGUI
-#include "externals/imgui/imgui.h"
+#include "RunaEngine/externals/imgui/imgui.h"
 #endif
 
 namespace RunaEngine {

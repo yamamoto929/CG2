@@ -1,6 +1,9 @@
 #pragma once
 #include "Vector3.h"
 #include "Matrix4x4.h"
+#ifndef DIRECTINPUT_VERSION
+#define DIRECTINPUT_VERSION 0x0800
+#endif
 #include <dinput.h>
 class DebugCamera {
 private:

@@ -1,5 +1,7 @@
 #pragma once
-#define DIRECTINPUT_VERSION		0X0800
+#ifndef DIRECTINPUT_VERSION
+#define DIRECTINPUT_VERSION 0x0800
+#endif
 #include <dinput.h>
 #pragma comment(lib,"dinput8.lib")
 #include <wrl.h>
