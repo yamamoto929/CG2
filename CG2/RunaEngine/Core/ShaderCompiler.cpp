@@ -2,6 +2,7 @@
 #include <cassert>
 #include "ConvertString.h"
 #include "Log.h"
+#include <filesystem>
 #include <format>
 void ShaderCompiler::Initialize() {
 	HRESULT hr = DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&dxcUtils_));
@@ -20,6 +21,16 @@ Microsoft::WRL::ComPtr<IDxcBlob> ShaderCompiler::Compile(const std::wstring& fil
 	// hlslファイルを読む
 	Microsoft::WRL::ComPtr<IDxcBlobEncoding> shaderSource;
 	HRESULT hr = dxcUtils_->LoadFile(filePath.c_str(), nullptr, &shaderSource);
+	if (FAILED(hr)) {
+		Log(ConvertString(std::format(
+			L"Failed to load shader file. path:{}, current:{}, hr:0x{:08X}\n",
+			filePath,
+			std::filesystem::current_path().wstring(),
+			static_cast<unsigned long>(hr)
+		)));
+		assert(false);
+		return nullptr;
+	}
 	// 読めなかったら止める
 	assert(SUCCEEDED(hr));
 	// 読み込んだファイルの内容を設定する

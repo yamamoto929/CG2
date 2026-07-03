@@ -135,10 +135,10 @@ void GraphicsPipeline::CreatePipelineState(
     inputLayoutDesc.NumElements = _countof(inputElementDescs);
 
     Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob =
-        shaderCompiler->Compile(L"RunaEngine_Ver1.0/Graphics/Object3d.VS.hlsl", L"vs_6_0");
+        shaderCompiler->Compile(L"RunaEngine/Graphics/Object3d.VS.hlsl", L"vs_6_0");
 
     Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob =
-        shaderCompiler->Compile(L"RunaEngine_Ver1.0/Graphics/Object3d.PS.hlsl", L"ps_6_0");
+        shaderCompiler->Compile(L"RunaEngine/Graphics/Object3d.PS.hlsl", L"ps_6_0");
 
     D3D12_BLEND_DESC blendDesc{};
     blendDesc.RenderTarget[0].RenderTargetWriteMask =
