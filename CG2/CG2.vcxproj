@@ -111,6 +111,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="RunaEngine\Graphics\SpriteGraphicsPipeline.cpp" />
     <ClCompile Include="RunaEngine\RunaEngine.cpp" />
     <ClCompile Include="RunaEngine\externals\imgui\imgui.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
@@ -161,10 +162,10 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="RunaEngine\Math\Vector3.cpp" />
     <ClCompile Include="RunaEngine\Math\WVPMatrix.cpp" />
     <ClCompile Include="RunaEngine\UI\ImGuiManager.cpp" />
-    <ClCompile Include="SpriteGraphicsPipeline.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="RunaEngine\Audio\SoundManager.h" />
+    <ClInclude Include="RunaEngine\Graphics\SpriteGraphicsPipeline.h" />
     <ClInclude Include="RunaEngine\RunaEngine.h" />
     <ClInclude Include="RunaEngine\Core\ConvertString.h" />
     <ClInclude Include="RunaEngine\Core\CrashHandler.h" />
@@ -211,7 +212,6 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="RunaEngine\Math\Vector4.h" />
     <ClInclude Include="RunaEngine\Math\WVPMatrix.h" />
     <ClInclude Include="RunaEngine\UI\ImGuiManager.h" />
-    <ClInclude Include="SpriteGraphicsPipeline.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="RunaEngine\Graphics\Object3d.PS.hlsl">
@@ -233,13 +233,18 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Sprite.PS.hlsl">
+    <FxCompile Include="RunaEngine\Graphics\Sprite.PS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Sprite.VS.hlsl">
+    <FxCompile Include="RunaEngine\Graphics\Sprite.VS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">6.2</ShaderModel>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>

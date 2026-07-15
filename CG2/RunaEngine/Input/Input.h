@@ -22,8 +22,8 @@ public:
 	void Update();
 	const BYTE* GetKey() const { return key_; }
 	const DIMOUSESTATE& GetMouseState() const { return mouseState_; }
-	bool IsPushkey(uint8_t key);
-	bool IsTriggerkey(uint8_t key, uint8_t preKey);
+	bool IsPushkey(uint8_t keyNum)const;
+	bool IsTriggerkey(uint8_t keyNum, uint8_t preKeyNum)const;
 	bool IsPressMouse(int button) const;
 	bool IsTriggerMouse(int button) const;
 	LONG GetMouseMoveX() const { return mouseState_.lX; }

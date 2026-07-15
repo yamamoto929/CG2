@@ -88,6 +88,7 @@ void  Sprite::Update(int32_t screenWidth, int32_t screenHeight) {
 void  Sprite::Draw(ID3D12GraphicsCommandList* commandList, TextureManager* textureManager) {
 	commandList->IASetVertexBuffers(0, 1, &vertexBufferView_);
 	commandList->IASetIndexBuffer(&indexBufferView_);
+	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	commandList->SetGraphicsRootConstantBufferView(
 		0,

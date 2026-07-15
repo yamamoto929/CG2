@@ -39,6 +39,12 @@ void Engine::Initialize(int32_t width, int32_t height, const std::string& title)
 	soundManager_.Initialize();
 
 	shaderCompiler_.Initialize();
+	spriteGraphicsPipeline_.Initialize(
+		directXCommon_.GetDevice(),
+		&shaderCompiler_,
+		directXCommon_.GetDXGIFormat(),
+		DXGI_FORMAT_D24_UNORM_S8_UINT
+	);
 	graphicsPipeline_.Initialize(
 		directXCommon_.GetDevice(),
 		&shaderCompiler_,
@@ -53,7 +59,7 @@ void Engine::Initialize(int32_t width, int32_t height, const std::string& title)
 	);
 
 	directionalLight_.Initialize(directXCommon_.GetDevice());
-	renderer_.Initialize(&directXCommon_, &textureManager_, &graphicsPipeline_, &primitiveGraphicsPipeline_, &directionalLight_);
+	renderer_.Initialize(&directXCommon_, &textureManager_, &graphicsPipeline_, &primitiveGraphicsPipeline_, &directionalLight_,&spriteGraphicsPipeline_);
 	imGuiManager_.Initialize(winApp_, directXCommon_, textureManager_);
 
 	UpdateCameraMatrices();

@@ -45,15 +45,15 @@ void Input::Update() {
 	}
 }
 
-bool Input::IsPushkey(uint8_t key) {
-	if ((key & 0x80) != 0) {
+bool Input::IsPushkey(uint8_t keyNum)const {
+	if ((key_[keyNum] & 0x80) != 0) {
 		return true;
 	}
 	return false;
 }
 
-bool Input::IsTriggerkey(uint8_t key, uint8_t preKey) {
-	if ((key & 0x80) != 0 && (preKey & 0x80) == 0) {
+bool Input::IsTriggerkey(uint8_t keyNum, uint8_t preKeyNum)const {
+	if ((key_[keyNum] & 0x80) != 0 && (preKey_[preKeyNum] & 0x80) == 0) {
 		return true;
 	}
 	return false;

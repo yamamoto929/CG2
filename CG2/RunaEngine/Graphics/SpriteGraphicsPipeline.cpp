@@ -1,7 +1,7 @@
-#include "GraphicsPipeline.h"
+#include "SpriteGraphicsPipeline.h"
 #include <cassert>
 #include "Log.h"
-void GraphicsPipeline::Initialize(
+void SpriteGraphicsPipeline::Initialize(
     ID3D12Device* device,
     ShaderCompiler* shaderCompiler,
     DXGI_FORMAT rtvFormat,
@@ -11,7 +11,7 @@ void GraphicsPipeline::Initialize(
     CreatePipelineState(device, shaderCompiler, rtvFormat, dsvFormat);
 }
 
-void GraphicsPipeline::Set(ID3D12GraphicsCommandList* commandList) {
+void SpriteGraphicsPipeline::Set(ID3D12GraphicsCommandList* commandList) {
     assert(commandList);
     assert(rootSignature_);
     assert(pipelineState_);
@@ -20,44 +20,41 @@ void GraphicsPipeline::Set(ID3D12GraphicsCommandList* commandList) {
     commandList->SetPipelineState(pipelineState_.Get());
 }
 
-ID3D12RootSignature* GraphicsPipeline::GetRootSignature() const {
+ID3D12RootSignature* SpriteGraphicsPipeline::GetRootSignature() const {
     return rootSignature_.Get();
 }
 
-void GraphicsPipeline::CreateRootSignature(ID3D12Device* device) {
+void SpriteGraphicsPipeline::CreateRootSignature(ID3D12Device* device) {
     assert(device);
-
-    HRESULT hr;
 
     D3D12_ROOT_SIGNATURE_DESC descriptionRootSignature{};
     descriptionRootSignature.Flags =
         D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
     D3D12_DESCRIPTOR_RANGE descriptorRange[1] = {};
-    descriptorRange[0].BaseShaderRegister = 0;
+    descriptorRange[0].BaseShaderRegister = 0; // t0
     descriptorRange[0].NumDescriptors = 1;
     descriptorRange[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
     descriptorRange[0].OffsetInDescriptorsFromTableStart =
         D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
-    D3D12_ROOT_PARAMETER rootParameters[4] = {};
+    D3D12_ROOT_PARAMETER rootParameters[3] = {};
 
+    // 0: Material b0, Pixel Shader
     rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
     rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
     rootParameters[0].Descriptor.ShaderRegister = 0;
 
+    // 1: TransformationMatrix b0, Vertex Shader
     rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
     rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
     rootParameters[1].Descriptor.ShaderRegister = 0;
 
+    // 2: Texture t0, Pixel Shader
     rootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
     rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
     rootParameters[2].DescriptorTable.pDescriptorRanges = descriptorRange;
     rootParameters[2].DescriptorTable.NumDescriptorRanges = _countof(descriptorRange);
-
-    rootParameters[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-    rootParameters[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-    rootParameters[3].Descriptor.ShaderRegister = 1;
 
     descriptionRootSignature.pParameters = rootParameters;
     descriptionRootSignature.NumParameters = _countof(rootParameters);
@@ -69,16 +66,16 @@ void GraphicsPipeline::CreateRootSignature(ID3D12Device* device) {
     staticSamplers[0].AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
     staticSamplers[0].ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
     staticSamplers[0].MaxLOD = D3D12_FLOAT32_MAX;
-    staticSamplers[0].ShaderRegister = 0;
+    staticSamplers[0].ShaderRegister = 0; // s0
     staticSamplers[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
     descriptionRootSignature.pStaticSamplers = staticSamplers;
     descriptionRootSignature.NumStaticSamplers = _countof(staticSamplers);
 
-    Microsoft::WRL::ComPtr<ID3DBlob> signatureBlob = nullptr;
-    Microsoft::WRL::ComPtr<ID3DBlob> errorBlob = nullptr;
+    Microsoft::WRL::ComPtr<ID3DBlob> signatureBlob;
+    Microsoft::WRL::ComPtr<ID3DBlob> errorBlob;
 
-    hr = D3D12SerializeRootSignature(
+    HRESULT hr = D3D12SerializeRootSignature(
         &descriptionRootSignature,
         D3D_ROOT_SIGNATURE_VERSION_1,
         &signatureBlob,
@@ -100,8 +97,7 @@ void GraphicsPipeline::CreateRootSignature(ID3D12Device* device) {
     );
     assert(SUCCEEDED(hr));
 }
-
-void GraphicsPipeline::CreatePipelineState(
+void SpriteGraphicsPipeline::CreatePipelineState(
     ID3D12Device* device,
     ShaderCompiler* shaderCompiler,
     DXGI_FORMAT rtvFormat,
@@ -113,7 +109,7 @@ void GraphicsPipeline::CreatePipelineState(
 
     HRESULT hr;
 
-    D3D12_INPUT_ELEMENT_DESC inputElementDescs[3] = {};
+    D3D12_INPUT_ELEMENT_DESC inputElementDescs[2] = {};
 
     inputElementDescs[0].SemanticName = "POSITION";
     inputElementDescs[0].SemanticIndex = 0;
@@ -125,34 +121,35 @@ void GraphicsPipeline::CreatePipelineState(
     inputElementDescs[1].Format = DXGI_FORMAT_R32G32_FLOAT;
     inputElementDescs[1].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
 
-    inputElementDescs[2].SemanticName = "NORMAL";
-    inputElementDescs[2].SemanticIndex = 0;
-    inputElementDescs[2].Format = DXGI_FORMAT_R32G32B32_FLOAT;
-    inputElementDescs[2].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
-
     D3D12_INPUT_LAYOUT_DESC inputLayoutDesc{};
     inputLayoutDesc.pInputElementDescs = inputElementDescs;
     inputLayoutDesc.NumElements = _countof(inputElementDescs);
 
     Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob =
-        shaderCompiler->Compile(L"RunaEngine/Graphics/Object3d.VS.hlsl", L"vs_6_0");
+        shaderCompiler->Compile(L"RunaEngine/Graphics/Sprite.VS.hlsl", L"vs_6_0");
 
     Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob =
-        shaderCompiler->Compile(L"RunaEngine/Graphics/Object3d.PS.hlsl", L"ps_6_0");
+        shaderCompiler->Compile(L"RunaEngine/Graphics/Sprite.PS.hlsl", L"ps_6_0");
 
     D3D12_BLEND_DESC blendDesc{};
-    blendDesc.RenderTarget[0].RenderTargetWriteMask =
-        D3D12_COLOR_WRITE_ENABLE_ALL;
+    blendDesc.RenderTarget[0].BlendEnable = true;
+    blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
+    blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
+    blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+    blendDesc.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
+    blendDesc.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
+    blendDesc.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+    blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 
     D3D12_RASTERIZER_DESC rasterizerDesc{};
     rasterizerDesc.CullMode = D3D12_CULL_MODE_NONE;
     rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
-    rasterizerDesc.FrontCounterClockwise = FALSE;
+    rasterizerDesc.FrontCounterClockwise = TRUE;
 
     D3D12_DEPTH_STENCIL_DESC depthStencilDesc{};
-    depthStencilDesc.DepthEnable = true;
-    depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
-    depthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
+    depthStencilDesc.DepthEnable = false;
+    depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
+    depthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_ALWAYS;
 
     D3D12_GRAPHICS_PIPELINE_STATE_DESC graphicsPipelineStateDesc{};
     graphicsPipelineStateDesc.pRootSignature = rootSignature_.Get();

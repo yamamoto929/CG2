@@ -9,6 +9,7 @@
 #include "RunaEngine/Graphics/Primitive3D.h"
 #include "RunaEngine/Graphics/PrimitiveGraphicsPipeline.h"
 #include "RunaEngine/Graphics/Renderer.h"
+#include "RunaEngine/Graphics/SpriteGraphicsPipeline.h"
 #include "RunaEngine/Core/ResourceManager.h"
 #include "RunaEngine/Core/ShaderCompiler.h"
 #include "RunaEngine/Audio/SoundManager.h"
@@ -99,6 +100,7 @@ private:
 	Input input_;
 	SoundManager soundManager_;
 	ShaderCompiler shaderCompiler_;
+	SpriteGraphicsPipeline spriteGraphicsPipeline_;
 	GraphicsPipeline graphicsPipeline_;
 	PrimitiveGraphicsPipeline primitiveGraphicsPipeline_;
 	ResourceManager resourceManager_;

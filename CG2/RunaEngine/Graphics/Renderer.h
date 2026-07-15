@@ -13,6 +13,7 @@ namespace RunaEngine{
 
 class PrimitiveGraphicsPipeline;
 class TextureManager;
+class SpriteGraphicsPipeline;
 
 class Renderer {
 public:
@@ -21,7 +22,8 @@ public:
 		TextureManager* textureManager,
 		GraphicsPipeline* graphicsPipeline,
 		PrimitiveGraphicsPipeline* primitiveGraphicsPipeline,
-		DirectionalLight* directionalLight
+		DirectionalLight* directionalLight,
+		SpriteGraphicsPipeline* spriteGraphicsPipeline
 	);
 
 	void Begin();
@@ -38,4 +40,5 @@ private:
 	GraphicsPipeline* graphicsPipeline_ = nullptr;
 	PrimitiveGraphicsPipeline* primitiveGraphicsPipeline_ = nullptr;
 	DirectionalLight* directionalLight_ = nullptr;
+	SpriteGraphicsPipeline* spriteGraphicsPipeline_ = nullptr;
 };

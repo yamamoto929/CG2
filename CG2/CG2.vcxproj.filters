@@ -153,8 +153,8 @@
     <ClCompile Include="RunaEngine\externals\imgui\imgui_widgets.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="SpriteGraphicsPipeline.cpp">
-      <Filter>ソース ファイル</Filter>
+    <ClCompile Include="RunaEngine\Graphics\SpriteGraphicsPipeline.cpp">
+      <Filter>RunaEngine\Graphics</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -299,8 +299,8 @@
     <ClInclude Include="RunaEngine\externals\imgui\imstb_truetype.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="SpriteGraphicsPipeline.h">
-      <Filter>ヘッダー ファイル</Filter>
+    <ClInclude Include="RunaEngine\Graphics\SpriteGraphicsPipeline.h">
+      <Filter>RunaEngine\Graphics</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -313,8 +313,12 @@
     <FxCompile Include="RunaEngine\Graphics\Primitive3D.PS.hlsl">
       <Filter>RunaEngine\Graphics</Filter>
     </FxCompile>
-    <FxCompile Include="Sprite.VS.hlsl" />
-    <FxCompile Include="Sprite.PS.hlsl" />
+    <FxCompile Include="RunaEngine\Graphics\Sprite.PS.hlsl">
+      <Filter>RunaEngine\Graphics</Filter>
+    </FxCompile>
+    <FxCompile Include="RunaEngine\Graphics\Sprite.VS.hlsl">
+      <Filter>RunaEngine\Graphics</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <Text Include="RunaEngine\externals\imgui\LICENSE.txt" />

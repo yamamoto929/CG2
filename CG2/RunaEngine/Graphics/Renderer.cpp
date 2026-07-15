@@ -6,6 +6,7 @@
 #include "Primitive3D.h"
 #include "PrimitiveGraphicsPipeline.h"
 #include "Sprite.h"
+#include "SpriteGraphicsPipeline.h"
 #include "TextureManager.h"
 #include <cassert>
 
@@ -14,19 +15,22 @@ void Renderer::Initialize(
 	TextureManager* textureManager,
 	GraphicsPipeline* graphicsPipeline,
 	PrimitiveGraphicsPipeline* primitiveGraphicsPipeline,
-	DirectionalLight* directionalLight
+	DirectionalLight* directionalLight,
+	SpriteGraphicsPipeline* spriteGraphicsPipeline
 ) {
 	assert(directXCommon);
 	assert(textureManager);
 	assert(graphicsPipeline);
 	assert(primitiveGraphicsPipeline);
 	assert(directionalLight);
+	assert(spriteGraphicsPipeline);
 
 	directXCommon_ = directXCommon;
 	textureManager_ = textureManager;
 	graphicsPipeline_ = graphicsPipeline;
 	primitiveGraphicsPipeline_ = primitiveGraphicsPipeline;
 	directionalLight_ = directionalLight;
+	spriteGraphicsPipeline_ = spriteGraphicsPipeline;
 }
 
 void Renderer::Begin() {
@@ -35,6 +39,7 @@ void Renderer::Begin() {
 	assert(graphicsPipeline_);
 	assert(primitiveGraphicsPipeline_);
 	assert(directionalLight_);
+	assert(spriteGraphicsPipeline_);
 
 	directXCommon_->PreDraw();
 
@@ -60,8 +65,7 @@ void Renderer::Draw(RunaEngine::Primitive3D& primitive) {
 }
 
 void Renderer::Draw(RunaEngine::Sprite& sprite) {
-	graphicsPipeline_->Set(GetCommandList());
-	directionalLight_->SetCommand(GetCommandList(), 3);
+	spriteGraphicsPipeline_->Set(GetCommandList());
 	sprite.Draw(GetCommandList(), textureManager_);
 }
 
