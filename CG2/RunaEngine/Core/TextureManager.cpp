@@ -63,6 +63,10 @@ D3D12_CPU_DESCRIPTOR_HANDLE TextureManager::GetSrvHandleCPU(uint32_t index) {
 	return srvDescriptorHeap_.GetCPUDescriptorHandle(index);
 }
 
+TextureSize TextureManager::GetTextureSize(uint32_t textureHandle)const {
+	return textureSizes_.at(textureHandle);
+}
+
 // =========================================================
 // CreateTextureResource
 // =========================================================

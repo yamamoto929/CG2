@@ -39,7 +39,24 @@ namespace RunaEngine {
 		void SetDrawOrder(int32_t drawOrder);
 		int32_t GetDrawOrder() const;
 
+		void SetTextureRect(
+			float x,
+			float y,
+			float width,
+			float height
+		);
+
+		void SetUVRect(
+			float left,
+			float top,
+			float right,
+			float bottom
+		);
+
 	private:
+		Vector2 textureSize_{};
+		Vector2 uvLeftTop_{ 0.0f, 0.0f };
+		Vector2 uvRightBottom_{ 1.0f, 1.0f };
 		VertexData* vertexData_ = nullptr;
 		Transform transform_{};
 		Vector2 size_{};

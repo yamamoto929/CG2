@@ -16,6 +16,15 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	back->SetDrawOrder(0);
 	front->SetDrawOrder(10);
 
+	front->SetTextureRect(
+		0.0f,
+		0.0f,
+		256.0f,
+		256.0f
+	);
+
+	front->SetSize(256.0f, 256.0f);
+
 	while (RunaEngine::ProcessMessage()) {
 		RunaEngine::BeginFrame();
 

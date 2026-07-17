@@ -110,6 +110,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <None Include="RunaEngine\Graphics\Object3d.hlsli" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="GameTimer.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="RunaEngine\Graphics\SpriteGraphicsPipeline.cpp" />
     <ClCompile Include="RunaEngine\RunaEngine.cpp" />
@@ -164,6 +165,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="RunaEngine\UI\ImGuiManager.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="GameTimer.h" />
     <ClInclude Include="RunaEngine\Audio\SoundManager.h" />
     <ClInclude Include="RunaEngine\Graphics\SpriteDrawCommand.h" />
     <ClInclude Include="RunaEngine\Graphics\SpriteGraphicsPipeline.h" />
@@ -213,6 +215,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="RunaEngine\Math\Vector4.h" />
     <ClInclude Include="RunaEngine\Math\WVPMatrix.h" />
     <ClInclude Include="RunaEngine\UI\ImGuiManager.h" />
+    <ClInclude Include="TextureSize.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="RunaEngine\Graphics\Object3d.PS.hlsl">

@@ -8,15 +8,9 @@
 #include "externals\DirectXTex\DirectXTex.h"
 #include "externals\DirectXTex\d3dx12.h"
 #include "DescriptorHeap.h"
+#include "TextureSize.h"
 class TextureManager{
 public:
-	// テクスチャサイズを保存するための構造体
-	struct TextureSize {
-		uint32_t width;
-		uint32_t height;
-	};
-	
-
 	void Initialize(ID3D12Device* device, ID3D12GraphicsCommandList* commandList, uint32_t maxTextureCount);
 
 	uint32_t Load(const std::string& filePath);

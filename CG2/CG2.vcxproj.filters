@@ -156,6 +156,9 @@
     <ClCompile Include="RunaEngine\Graphics\SpriteGraphicsPipeline.cpp">
       <Filter>RunaEngine\Graphics</Filter>
     </ClCompile>
+    <ClCompile Include="GameTimer.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="RunaEngine\Audio\SoundManager.h">
@@ -304,6 +307,12 @@
     </ClInclude>
     <ClInclude Include="RunaEngine\Graphics\SpriteDrawCommand.h">
       <Filter>RunaEngine\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="TextureSize.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="GameTimer.h">
+      <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
