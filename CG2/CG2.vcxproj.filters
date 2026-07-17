@@ -302,6 +302,9 @@
     <ClInclude Include="RunaEngine\Graphics\SpriteGraphicsPipeline.h">
       <Filter>RunaEngine\Graphics</Filter>
     </ClInclude>
+    <ClInclude Include="RunaEngine\Graphics\SpriteDrawCommand.h">
+      <Filter>RunaEngine\Graphics</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="RunaEngine\Graphics\Object3d.PS.hlsl">

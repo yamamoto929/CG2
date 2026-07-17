@@ -165,6 +165,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="RunaEngine\Audio\SoundManager.h" />
+    <ClInclude Include="RunaEngine\Graphics\SpriteDrawCommand.h" />
     <ClInclude Include="RunaEngine\Graphics\SpriteGraphicsPipeline.h" />
     <ClInclude Include="RunaEngine\RunaEngine.h" />
     <ClInclude Include="RunaEngine\Core\ConvertString.h" />

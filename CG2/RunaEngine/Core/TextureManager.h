@@ -9,7 +9,25 @@
 #include "externals\DirectXTex\d3dx12.h"
 #include "DescriptorHeap.h"
 class TextureManager{
+public:
+	// テクスチャサイズを保存するための構造体
+	struct TextureSize {
+		uint32_t width;
+		uint32_t height;
+	};
+	
+
+	void Initialize(ID3D12Device* device, ID3D12GraphicsCommandList* commandList, uint32_t maxTextureCount);
+
+	uint32_t Load(const std::string& filePath);
+
+	D3D12_GPU_DESCRIPTOR_HANDLE GetSrvHandleGPU(uint32_t textureHandle);
+
+	ID3D12DescriptorHeap* GetSrvDescriptorHeap() const;
+	D3D12_CPU_DESCRIPTOR_HANDLE GetSrvHandleCPU(uint32_t index);
+	TextureSize GetTextureSize(uint32_t textureHandle)const;
 private:
+
 	DescriptorHeap srvDescriptorHeap_;
 	ID3D12Device* device_ = nullptr;
 	ID3D12GraphicsCommandList* commandList_ = nullptr;
@@ -26,14 +44,9 @@ private:
 		const DirectX::ScratchImage& mipImages);
 	Microsoft::WRL::ComPtr<ID3D12Resource> CreateTextureResource( const DirectX::TexMetadata& metadata);
 	Microsoft::WRL::ComPtr<ID3D12Resource> CreateBufferResource( size_t sizeInBytes);
-public:
-	void Initialize(ID3D12Device* device, ID3D12GraphicsCommandList* commandList, uint32_t maxTextureCount);
 
-	uint32_t Load(const std::string& filePath);
+	// テクスチャサイズのデータ
+	std::unordered_map<uint32_t, TextureSize> textureSizes_;
 
-	D3D12_GPU_DESCRIPTOR_HANDLE GetSrvHandleGPU(uint32_t textureHandle);
-
-	ID3D12DescriptorHeap* GetSrvDescriptorHeap() const;
-	D3D12_CPU_DESCRIPTOR_HANDLE GetSrvHandleCPU(uint32_t index);
 };
 

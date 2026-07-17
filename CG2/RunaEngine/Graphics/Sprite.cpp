@@ -19,21 +19,12 @@ void Sprite::Initialize(
 	vertexBufferView_.SizeInBytes = sizeof(VertexData) * 4;
 	// 1頂点あたりのサイズ
 	vertexBufferView_.StrideInBytes = sizeof(VertexData);
-	VertexData* vertexData = nullptr;
-	vertexResource_->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));
+	vertexResource_->Map(0, nullptr, reinterpret_cast<void**>(&vertexData_));
 
-	vertexData[0].position = { 0.0f, 360.0f, 0.0f, 1.0f };//左下
-	vertexData[0].texCoord = { 0.0f, 1.0f };
-	vertexData[0].normal = { 0.0f, 0.0f,-1.0f };
-	vertexData[1].position = { 0.0f, 0.0f, 0.0f, 1.0f };//左上
-	vertexData[1].texCoord = { 0.0f, 0.0f };
-	vertexData[1].normal = { 0.0f, 0.0f,-1.0f };
-	vertexData[2].position = { 640.0f, 360.0f, 0.0f, 1.0f }; //右下
-	vertexData[2].texCoord = { 1.0f, 1.0f };
-	vertexData[2].normal = { 0.0f, 0.0f,-1.0f };
-	vertexData[3].position = { 640.0f, 0.0f, 0.0f, 1.0f };//右上
-	vertexData[3].texCoord = { 1.0f, 0.0f };
-	vertexData[3].normal = { 0.0f, 0.0f,-1.0f };
+	size_ = { 640.0f, 360.0f };
+	pivot_ = { 0.0f, 0.0f };
+
+	UpdateVertexData();
 
 	material_.Initialize(device);
 	materialData_ = material_.GetData();
@@ -116,8 +107,24 @@ const Transform& Sprite::GetTransform() const {
 	return transform_;
 }
 
+void Sprite::SetSize(const float& sizeX, const float& sizeY) {
+	size_ = Vector2{ sizeX,sizeY };
+	UpdateVertexData();
+}
+
 void Sprite::SetSize(const Vector2& size) {
 	size_ = size;
+	UpdateVertexData();
+}
+
+void Sprite::SetPivot(const float& pivotX, const float& pivotY) {
+	pivot_ = Vector2{ pivotX,pivotY };
+	UpdateVertexData();
+}
+
+void Sprite::SetPivot(const Vector2& pivot) {
+	pivot_ = pivot;
+	UpdateVertexData();
 }
 
 void Sprite::SetColor(const Vector4& color) {
@@ -128,6 +135,14 @@ void Sprite::SetUVTransform(const Matrix4x4& uvTransform) {
 	if (materialData_) {
 		materialData_->uvTransform = uvTransform;
 	}
+}
+
+void Sprite::SetDrawOrder(int32_t drawOrder) {
+	drawOrder_ = drawOrder;
+}
+
+int32_t Sprite::GetDrawOrder() const {
+	return drawOrder_;
 }
 
 // =========================================================
@@ -162,6 +177,29 @@ Microsoft::WRL::ComPtr<ID3D12Resource> Sprite::CreateBufferResource(ID3D12Device
 	assert(SUCCEEDED(hr));
 
 	return resource;
+}
+
+void Sprite::UpdateVertexData() {
+	float left = -pivot_.x * size_.x;
+	float right = left + size_.x;
+	float top = -pivot_.y * size_.y;
+	float bottom = top + size_.y;
+
+	vertexData_[0].position = { left,  bottom, 0.0f, 1.0f };
+	vertexData_[0].texCoord = { 0.0f, 1.0f };
+	vertexData_[0].normal = { 0.0f, 0.0f, -1.0f };
+
+	vertexData_[1].position = { left,  top, 0.0f, 1.0f };
+	vertexData_[1].texCoord = { 0.0f, 0.0f };
+	vertexData_[1].normal = { 0.0f, 0.0f, -1.0f };
+
+	vertexData_[2].position = { right, bottom, 0.0f, 1.0f };
+	vertexData_[2].texCoord = { 1.0f, 1.0f };
+	vertexData_[2].normal = { 0.0f, 0.0f, -1.0f };
+
+	vertexData_[3].position = { right, top, 0.0f, 1.0f };
+	vertexData_[3].texCoord = { 1.0f, 0.0f };
+	vertexData_[3].normal = { 0.0f, 0.0f, -1.0f };
 }
 
 } // namespace RunaEngine

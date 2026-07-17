@@ -20,6 +20,7 @@
 #include "RunaEngine/Math/Vector3.h"
 #include "RunaEngine/Math/Vector4.h"
 #include "RunaEngine/Core/WinApp.h"
+#include "RunaEngine/Graphics/SpriteDrawCommand.h"
 #include <Windows.h>
 #include <cstdint>
 #include <cstddef>
@@ -48,7 +49,7 @@ public:
 	Primitive3D* CreateTriangle3D();
 	Primitive3D* CreateTriangle3D(const Vector4& color);
 
-	void DrawSprite(Sprite* sprite, const Vector2& position, float z = 0.0f);
+	void DrawSprite(Sprite* sprite, const Vector2& position);
 	void DrawSprite(Sprite* sprite, const Vector3& translate);
 	void DrawSprite(Sprite* sprite, const Transform& transform);
 
@@ -121,6 +122,11 @@ private:
 	std::vector<std::unique_ptr<Primitive3D>> primitive3Ds_;
 	std::vector<std::unique_ptr<Object3D>> drawModelObjects_;
 	size_t drawModelObjectIndex_ = 0;
+	// Sprite描画順用キュー
+	std::vector<SpriteDrawCommand> spriteDrawCommands_;
+	uint64_t spriteSubmissionIndex_ = 0;
+	// Sprite描画順並び替え
+	void FlushSprites();
 };
 
 Engine& GetEngine();
@@ -137,7 +143,7 @@ Object3D* CreateObject3D(Model* model);
 Primitive3D* CreateTriangle3D();
 Primitive3D* CreateTriangle3D(const Vector4& color);
 
-void DrawSprite(Sprite* sprite, const Vector2& position, float z = 0.0f);
+void DrawSprite(Sprite* sprite, const Vector2& position);
 void DrawSprite(Sprite* sprite, const Vector3& translate);
 void DrawSprite(Sprite* sprite, const Transform& transform);
 

@@ -20,6 +20,12 @@ uint32_t TextureManager::Load(const std::string& filePath) {
     DirectX::ScratchImage mipImages = LoadTexture(filePath);
     const DirectX::TexMetadata& metadata = mipImages.GetMetadata();
 
+	// 取得直後に保存
+	textureSizes_[textureHandle] = {
+	static_cast<uint32_t>(metadata.width),
+	static_cast<uint32_t>(metadata.height)
+	};
+
     Microsoft::WRL::ComPtr<ID3D12Resource> textureResource =
         CreateTextureResource(metadata);
 
