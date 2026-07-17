@@ -5,6 +5,12 @@ void SpriteAnimator::Initialize(
 	Sprite* sprite,
 	const SpriteAnimationClip& clip
 ) {
+	assert(sprite);
+	assert(clip.frameCount > 0);
+	assert(clip.columnCount > 0);
+	assert(clip.frameWidth > 0.0f);
+	assert(clip.frameHeight > 0.0f);
+	assert(clip.secondsPerFrame > 0.0f);
 	sprite_ = sprite;
 	clip_ = clip;
 	elapsedTime_ = 0.0f;
@@ -15,13 +21,19 @@ void SpriteAnimator::Initialize(
 }
 
 void SpriteAnimator::Update(float deltaTime) {
+	if (!playing_ || !sprite_) {
+		return;
+	}
+
 	elapsedTime_ += deltaTime;
 
-	while (elapsedTime_ >= clip_.secondsPerFrame) {
+	while (playing_&&
+		elapsedTime_ >= clip_.secondsPerFrame) {
 		elapsedTime_ -= clip_.secondsPerFrame;
 		++currentFrame_;
 
 		if (currentFrame_ >= clip_.frameCount) {
+
 			if (clip_.loop) {
 				currentFrame_ = 0;
 			} else {
@@ -45,6 +57,7 @@ void SpriteAnimator::Pause() {
 }
 
 void SpriteAnimator::Reset() {
+	elapsedTime_ = 0.0f;
 	currentFrame_ = 0;
 	ApplyCurrentFrame();
 }

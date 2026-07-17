@@ -1,11 +1,9 @@
-struct Material {
+struct SpriteMaterial {
     float32_t4 color;
-    int32_t enableLighting;
-    float32_t3 padding;
     float32_t4x4 uvTransform;
 };
 
-ConstantBuffer<Material> gMaterial : register(b0);
+ConstantBuffer<SpriteMaterial> gMaterial : register(b0);
 Texture2D<float32_t4> gTexture : register(t0);
 SamplerState gSampler : register(s0);
 

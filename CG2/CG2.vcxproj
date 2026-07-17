@@ -172,6 +172,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="RunaEngine\Graphics\SpriteAnimator.h" />
     <ClInclude Include="RunaEngine\Graphics\SpriteDrawCommand.h" />
     <ClInclude Include="RunaEngine\Graphics\SpriteGraphicsPipeline.h" />
+    <ClInclude Include="RunaEngine\Graphics\SpriteMaterial.h" />
     <ClInclude Include="RunaEngine\RunaEngine.h" />
     <ClInclude Include="RunaEngine\Core\ConvertString.h" />
     <ClInclude Include="RunaEngine\Core\CrashHandler.h" />

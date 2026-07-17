@@ -40,9 +40,10 @@ namespace RunaEngine {
 		material_.Initialize(device);
 		materialData_ = material_.GetData();
 		color_ = { 1.0f,1.0f,1.0f,1.0f };
-		materialData_->color = color_;
-		materialData_->enableLighting = false;
+		uvTransformMatrix_ = MakeIdentityMatrix();
 		materialData_->uvTransform = MakeIdentityMatrix();
+		materialData_->color = color_;
+		
 
 		// Sprite用のTransformation Matrix用のリソースを作る。Matrix4x4 1つ分のサイズを用意する
 		transformationMatrix_.Initialize(device);
@@ -76,13 +77,8 @@ namespace RunaEngine {
 		Matrix4x4 projectionMatrixSprite = MakeOrthographicMatrix(0.0f, 0.0f, float(screenWidth), float(screenHeight), 0.0f, 100.0f);
 		Matrix4x4 worldViewProjectionMatrixSprite = Multiply(transformationMatrixData_->World, Multiply(viewMatrixSprite, projectionMatrixSprite));
 		transformationMatrixData_->WVP = worldViewProjectionMatrixSprite;
-		Matrix4x4 uvTransformMatrix = MakeScaleMatrix(uvTransform_.scale);
-		uvTransformMatrix = Multiply(uvTransformMatrix, MakeRotateZMatrix(uvTransform_.rotate.z));
-		uvTransformMatrix = Multiply(uvTransformMatrix, MakeTranslateMatrix(uvTransform_.translate));
-
 		materialData_->color = color_;
-		materialData_->enableLighting = false;
-		materialData_->uvTransform = uvTransformMatrix;
+		materialData_->uvTransform = uvTransformMatrix_;
 	}
 
 	void  Sprite::Draw(ID3D12GraphicsCommandList* commandList, TextureManager* textureManager) {
@@ -141,9 +137,7 @@ namespace RunaEngine {
 	}
 
 	void Sprite::SetUVTransform(const Matrix4x4& uvTransform) {
-		if (materialData_) {
-			materialData_->uvTransform = uvTransform;
-		}
+		uvTransformMatrix_ = uvTransform;
 	}
 
 	void Sprite::SetDrawOrder(int32_t drawOrder) {

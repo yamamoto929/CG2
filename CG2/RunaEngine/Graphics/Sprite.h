@@ -11,7 +11,7 @@
 #include "Matrix4x4.h"
 #include "Transform.h"
 #include "ConstantBuffer.h"
-#include "Material.h"
+#include "SpriteMaterial.h"
 #include "TransformationMatrix.h"
 
 namespace RunaEngine {
@@ -75,16 +75,12 @@ namespace RunaEngine {
 		D3D12_INDEX_BUFFER_VIEW indexBufferView_;
 
 		// マテリアル
-		ConstantBuffer<Material> material_;
-		Material* materialData_;
+		ConstantBuffer<SpriteMaterial> material_;
+		SpriteMaterial* materialData_;
 
 		Vector4 color_ = { 1.0f, 1.0f, 1.0f, 1.0f };
 
-		Transform uvTransform_{
-			{ 1.0f, 1.0f, 1.0f },
-			{ 0.0f, 0.0f, 0.0f },
-			{ 0.0f, 0.0f, 0.0f },
-		};
+		Matrix4x4 uvTransformMatrix_{};
 
 		// WVP
 		ConstantBuffer<TransformationMatrix> transformationMatrix_;
