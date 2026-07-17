@@ -33,6 +33,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 		ImGui::Begin("Settings");
 		ImGui::DragFloat2("frontPos", &frontPos.x);
 		ImGui::DragFloat2("backPos", &backPos.x);
+
+		const float deltaTime = RunaEngine::GetDeltaTime();
+		ImGui::Text("%f", deltaTime);
 		
 		ImGui::End();
 		
@@ -56,7 +59,7 @@ void MoveCamera() {
 	if (RunaEngine::IsPushKey(DIK_SPACE)) {
 		RunaEngine::MoveCamera(RunaEngine::Vector3{ 0.0f,0.1f,0.0f });
 	} else if (RunaEngine::IsPushKey(DIK_LSHIFT)) {
-		RunaEngine::MoveCamera(RunaEngine::Vector3{ 0.f,-0.1f,0.0f });
+		RunaEngine::MoveCamera(RunaEngine::Vector3{ 0.0f,-0.1f,0.0f });
 	}
 
 	if (RunaEngine::IsPushKey(DIK_W)) {

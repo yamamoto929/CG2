@@ -21,6 +21,7 @@
 #include "RunaEngine/Math/Vector4.h"
 #include "RunaEngine/Core/WinApp.h"
 #include "RunaEngine/Graphics/SpriteDrawCommand.h"
+#include "RunaEngine/Core/GameTimer.h"
 #include <Windows.h>
 #include <cstdint>
 #include <cstddef>
@@ -83,6 +84,8 @@ public:
 	ImGuiManager& GetImGuiManager() { return imGuiManager_; }
 	TextureManager& GetTextureManager() { return textureManager_; }
 	Renderer& GetRenderer() { return renderer_; }
+	// deltaTime取得
+	float GetDeltaTime()const;
 
 private:
 	Object3D* GetDrawModelObject(Model* model);
@@ -127,6 +130,8 @@ private:
 	uint64_t spriteSubmissionIndex_ = 0;
 	// Sprite描画順並び替え
 	void FlushSprites();
+	// deltaTime用
+	GameTimer gameTimer_;
 };
 
 Engine& GetEngine();
@@ -199,5 +204,5 @@ void MoveCamera(const Vector3& move);
 ImGuiManager& GetImGuiManager();
 TextureManager& GetTextureManager();
 Renderer& GetRenderer();
-
+float GetDeltaTime();
 }

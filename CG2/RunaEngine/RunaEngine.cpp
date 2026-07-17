@@ -64,6 +64,7 @@ namespace RunaEngine {
 		imGuiManager_.Initialize(winApp_, directXCommon_, textureManager_);
 
 		UpdateCameraMatrices();
+		gameTimer_.Reset();
 		initialized_ = true;
 	}
 
@@ -81,6 +82,7 @@ namespace RunaEngine {
 	void Engine::BeginFrame() {
 		assert(initialized_);
 
+		gameTimer_.Tick();
 		drawModelObjectIndex_ = 0;
 		imGuiManager_.BeginFrame();
 		input_.Update();
@@ -355,6 +357,14 @@ namespace RunaEngine {
 		spriteSubmissionIndex_ = 0;
 	}
 
+	float Engine::GetDeltaTime()const {
+		return gameTimer_.GetDeltaTime();
+	}
+
+	//=================================================================================
+	// Engine
+	//=================================================================================
+
 	Engine& GetEngine() {
 		static Engine engine;
 		return engine;
@@ -545,4 +555,8 @@ namespace RunaEngine {
 		return GetEngine().GetRenderer();
 	}
 
+	float GetDeltaTime()
+	{
+		return GetEngine().GetDeltaTime();
+	}
 }

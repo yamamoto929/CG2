@@ -110,8 +110,9 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <None Include="RunaEngine\Graphics\Object3d.hlsli" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="GameTimer.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="RunaEngine\Core\GameTimer.cpp" />
+    <ClCompile Include="RunaEngine\Graphics\SpriteAnimator.cpp" />
     <ClCompile Include="RunaEngine\Graphics\SpriteGraphicsPipeline.cpp" />
     <ClCompile Include="RunaEngine\RunaEngine.cpp" />
     <ClCompile Include="RunaEngine\externals\imgui\imgui.cpp">
@@ -165,8 +166,10 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="RunaEngine\UI\ImGuiManager.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="GameTimer.h" />
     <ClInclude Include="RunaEngine\Audio\SoundManager.h" />
+    <ClInclude Include="RunaEngine\Core\GameTimer.h" />
+    <ClInclude Include="RunaEngine\Graphics\SpriteAnimationClip.h" />
+    <ClInclude Include="RunaEngine\Graphics\SpriteAnimator.h" />
     <ClInclude Include="RunaEngine\Graphics\SpriteDrawCommand.h" />
     <ClInclude Include="RunaEngine\Graphics\SpriteGraphicsPipeline.h" />
     <ClInclude Include="RunaEngine\RunaEngine.h" />
