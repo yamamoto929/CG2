@@ -32,7 +32,7 @@ void Input::Update() {
 	HRESULT hr = keyboard_->GetDeviceState(sizeof(key_), key_);
 	if (FAILED(hr)) {
 		keyboard_->Acquire();
-		keyboard_->GetDeviceState(sizeof(BYTE), &key_);
+		keyboard_->GetDeviceState(sizeof(key_), &key_);
 	}
 
 	// マウス
@@ -52,8 +52,8 @@ bool Input::IsPushkey(uint8_t keyNum)const {
 	return false;
 }
 
-bool Input::IsTriggerkey(uint8_t keyNum, uint8_t preKeyNum)const {
-	if ((key_[keyNum] & 0x80) != 0 && (preKey_[preKeyNum] & 0x80) == 0) {
+bool Input::IsTriggerkey(uint8_t keyNum)const {
+	if ((key_[keyNum] & 0x80) != 0 && (preKey_[keyNum] & 0x80) == 0) {
 		return true;
 	}
 	return false;

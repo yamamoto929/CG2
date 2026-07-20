@@ -23,7 +23,7 @@ public:
 	const BYTE* GetKey() const { return key_; }
 	const DIMOUSESTATE& GetMouseState() const { return mouseState_; }
 	bool IsPushkey(uint8_t keyNum)const;
-	bool IsTriggerkey(uint8_t keyNum, uint8_t preKeyNum)const;
+	bool IsTriggerkey(uint8_t keyNum)const;
 	bool IsPressMouse(int button) const;
 	bool IsTriggerMouse(int button) const;
 	LONG GetMouseMoveX() const { return mouseState_.lX; }

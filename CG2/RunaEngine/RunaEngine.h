@@ -73,6 +73,7 @@ public:
 
 	const BYTE* GetKey() const;
 	bool IsPushKey(uint8_t key);
+	bool IsTriggerKey(uint8_t key);
 	Input& GetInput() { return input_; }
 	const Input& GetInput() const { return input_; }
 

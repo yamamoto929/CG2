@@ -289,6 +289,10 @@ namespace RunaEngine {
 		return input_.IsPushkey(key);
 	}
 
+	bool Engine::IsTriggerKey(uint8_t key) {
+		return input_.IsTriggerkey(key);
+	}
+
 	void Engine::SetCameraTransform(const Transform& transform) {
 		cameraTransform_ = transform;
 		UpdateCameraMatrices();
@@ -525,6 +529,10 @@ namespace RunaEngine {
 
 	bool IsPushKey(uint8_t key) {
 		return GetEngine().IsPushKey(key);
+	}
+
+	bool IsTriggerKey(uint8_t key) {
+		return GetEngine().IsTriggerKey(key);
 	}
 
 	Input& GetInput() {
