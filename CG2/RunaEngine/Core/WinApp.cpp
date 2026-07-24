@@ -30,10 +30,13 @@ static LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg,
 }
 
 void WinApp::CreateNewWindow(int32_t width, int32_t height, const std::string& title) {
+	constexpr DWORD kWindowStyle =
+		WS_OVERLAPPEDWINDOW & ~(WS_THICKFRAME | WS_MAXIMIZEBOX);
+
 	// ウィンドウサイズを表す構造体にクライアント領域を入れる
 	RECT wrc = { 0, 0, width, height };
 	// クライアント領域を元に実際のサイズにwrcを変更してもらう
-	AdjustWindowRect(&wrc, WS_OVERLAPPEDWINDOW, false);
+	AdjustWindowRect(&wrc, kWindowStyle, false);
 
 	// ウィンドウプロシージャ
 	windowClass_.lpfnWndProc = WindowProc;
@@ -50,7 +53,7 @@ void WinApp::CreateNewWindow(int32_t width, int32_t height, const std::string& t
 	hwnd_ = CreateWindow(
 		windowClass_.lpszClassName,		// 利用するクラス名
 		ConvertString(title).c_str(),	// タイトルバーの文字
-		WS_OVERLAPPEDWINDOW,	// よく見るウィンドウスタイル
+		kWindowStyle,			// よく見るウィンドウスタイル
 		CW_USEDEFAULT,			// 表示X座標(Windowsに任せる)
 		CW_USEDEFAULT,			// 表示Y座標(Windowsに任せる)
 		wrc.right - wrc.left,	// ウィンドウ横幅
