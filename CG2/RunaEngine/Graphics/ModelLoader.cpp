@@ -6,6 +6,11 @@
 #include "Vector2.h"
 #include "Vector3.h"
 #include "Vector4.h"
+namespace {
+	uint32_t ParseObjIndex(const std::string& index) {
+		return index.empty() ? 0u : static_cast<uint32_t>(std::stoi(index));
+	}
+}
 // =========================================================
 // LoadObjFile 
 // =========================================================
@@ -44,21 +49,25 @@ RunaEngine::ModelData ModelLoader::LoadObjFile(const std::string& directoryPath,
 		} else if (identifier == "f") {
 			RunaEngine::VertexData triangle[3];
 			// 面は三角形限定。そのほかは未対応
-			for (int32_t faceVertex = 0;faceVertex < 3;++faceVertex) {
+			for (int32_t faceVertex = 0; faceVertex < 3; ++faceVertex) {
 				std::string vertexDefinition;
 				s >> vertexDefinition;
 				// 頂点の要素へのIndexを分解して取得
 				std::istringstream v(vertexDefinition);
-				uint32_t elementIndices[3];
-				for (int32_t element = 0;element < 3;++element) {
+				uint32_t elementIndices[3] = {};
+				for (int32_t element = 0; element < 3; ++element) {
 					std::string index;
-					std::getline(v, index, '/');
-					elementIndices[element] = std::stoi(index);
+					if (std::getline(v, index, '/')) {
+						elementIndices[element] = ParseObjIndex(index);
+					}
 				}
 
 				// 要素へのIndexから、実際の要素の値を取得して、頂点を構築する
 				RunaEngine::Vector4 position = positions[elementIndices[0] - 1];
-				RunaEngine::Vector2 texcoord = texCoords[elementIndices[1] - 1];
+				RunaEngine::Vector2 texcoord = { 0.0f,0.0f };
+				if (elementIndices[1] != 0) {
+					texcoord = texCoords[elementIndices[1] - 1];
+				}
 				RunaEngine::Vector3 normal = normals[elementIndices[2] - 1];
 				//VertexData vertex = { position, texcoord, normal };
 				//modelData.vertices.push_back(vertex);

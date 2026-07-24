@@ -22,7 +22,11 @@ namespace RunaEngine{
 		materialData_->enableLighting = true;
 		materialData_->uvTransform = MakeIdentityMatrix();
 
-		textureHandle_ = textureManager->Load(modelData->material.textureFilePath);
+		std::string textureFilePath = modelData->material.textureFilePath;
+		if (textureFilePath.empty()) {
+			textureFilePath = "RunaEngine/Graphics/Resources/white.png";
+		}
+		textureHandle_ = textureManager->Load(textureFilePath);
 
 		vertexCount_ = static_cast<uint32_t>(modelData->vertices.size());
 	}
