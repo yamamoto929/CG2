@@ -33,6 +33,12 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 		ImGui::Begin("Settings");
 		ImGui::DragFloat2("frontPos", &frontPos.x);
 		ImGui::DragFloat2("backPos", &backPos.x);
+		RunaEngine::Transform cameraTransform=RunaEngine::GetCameraTransform();
+		ImGui::DragFloat3("cameraPos", &cameraTransform.translate.x);
+
+		if (RunaEngine::IsButtonDown(GamepadButton::A)) {
+			ImGui::Text("A");
+		}
 
 		const float deltaTime = RunaEngine::GetDeltaTime();
 		ImGui::Text("%f", deltaTime);
@@ -50,21 +56,21 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 }
 
 void MoveCamera() {
-	if (RunaEngine::IsPushKey(DIK_A)) {
+	if (RunaEngine::IsPushKey(Key::A)) {
 		RunaEngine::MoveCamera(RunaEngine::Vector3{ -0.1f,0.0f,0.0f });
-	} else if (RunaEngine::IsPushKey(DIK_D)) {
+	} else if (RunaEngine::IsPushKey(Key::D)) {
 		RunaEngine::MoveCamera(RunaEngine::Vector3{ 0.1f,0.0f,0.0f });
 	}
 
-	if (RunaEngine::IsPushKey(DIK_SPACE)) {
+	if (RunaEngine::IsPushKey(Key::Space)) {
 		RunaEngine::MoveCamera(RunaEngine::Vector3{ 0.0f,0.1f,0.0f });
-	} else if (RunaEngine::IsPushKey(DIK_LSHIFT)) {
+	} else if (RunaEngine::IsPushKey(Key::LeftShift)) {
 		RunaEngine::MoveCamera(RunaEngine::Vector3{ 0.0f,-0.1f,0.0f });
 	}
 
-	if (RunaEngine::IsPushKey(DIK_W)) {
+	if (RunaEngine::IsPushKey(Key::W)) {
 		RunaEngine::MoveCamera(RunaEngine::Vector3{ 0.0f,0.0f,0.1f });
-	} else if (RunaEngine::IsPushKey(DIK_S)) {
+	} else if (RunaEngine::IsPushKey(Key::S)) {
 		RunaEngine::MoveCamera(RunaEngine::Vector3{ 0.0f,0.0f,-0.1f });
 	}
 

@@ -281,16 +281,24 @@ namespace RunaEngine {
 		soundManager_.Play(soundHandle, loop, volume);
 	}
 
-	const BYTE* Engine::GetKey() const {
-		return input_.GetKey();
-	}
-
-	bool Engine::IsPushKey(uint8_t key) {
+	bool Engine::IsPushKey(Key key) {
 		return input_.IsPushkey(key);
 	}
 
-	bool Engine::IsTriggerKey(uint8_t key) {
+	bool Engine::IsTriggerKey(Key key) {
 		return input_.IsTriggerkey(key);
+	}
+
+	bool Engine::IsButtonDown(GamepadButton button) {
+		return input_.IsGamepadButtonDown(button);
+	}
+
+	bool Engine::IsButtonTriggered(GamepadButton button) {
+		return input_.IsGamepadButtonTriggered(button);
+	}
+
+	bool Engine::IsButtonReleased(GamepadButton button) {
+		return input_.IsGamepadButtonReleased(button);
 	}
 
 	void Engine::SetCameraTransform(const Transform& transform) {
@@ -523,20 +531,24 @@ namespace RunaEngine {
 		GetEngine().PlaySound(soundHandle, loop, volume);
 	}
 
-	const BYTE* GetKey() {
-		return GetEngine().GetKey();
-	}
-
-	bool IsPushKey(uint8_t key) {
+	bool IsPushKey(Key key) {
 		return GetEngine().IsPushKey(key);
 	}
 
-	bool IsTriggerKey(uint8_t key) {
+	bool IsTriggerKey(Key key) {
 		return GetEngine().IsTriggerKey(key);
 	}
 
-	Input& GetInput() {
-		return GetEngine().GetInput();
+	bool IsButtonDown(GamepadButton button) {
+		return GetEngine().IsButtonDown(button);
+	}
+
+	bool IsButtonTriggered(GamepadButton button) {
+		return GetEngine().IsButtonTriggered(button);
+	}
+
+	bool IsButtonReleased(GamepadButton button) {
+		return GetEngine().IsButtonReleased(button);
 	}
 
 	Transform& GetCameraTransform() {

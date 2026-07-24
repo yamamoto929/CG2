@@ -5,6 +5,7 @@
 #include "RunaEngine/Graphics/GraphicsPipeline.h"
 #include "RunaEngine/UI/ImGuiManager.h"
 #include "RunaEngine/Input/Input.h"
+#include "RunaEngine/Input/InputTypes.h"
 #include "RunaEngine/Graphics/Object3D.h"
 #include "RunaEngine/Graphics/Primitive3D.h"
 #include "RunaEngine/Graphics/PrimitiveGraphicsPipeline.h"
@@ -71,11 +72,11 @@ public:
 	uint32_t LoadSound(const std::string& filePath);
 	void PlaySound(uint32_t soundHandle, bool loop = false, float volume = 1.0f);
 
-	const BYTE* GetKey() const;
-	bool IsPushKey(uint8_t key);
-	bool IsTriggerKey(uint8_t key);
-	Input& GetInput() { return input_; }
-	const Input& GetInput() const { return input_; }
+	bool IsPushKey(Key key);
+	bool IsTriggerKey(Key key);
+	bool IsButtonDown(GamepadButton button);
+	bool IsButtonTriggered(GamepadButton button);
+	bool IsButtonReleased(GamepadButton button);
 
 	Transform& GetCameraTransform() { return cameraTransform_; }
 	const Transform& GetCameraTransform() const { return cameraTransform_; }
@@ -194,9 +195,11 @@ uint32_t LoadSound(const std::wstring& filePath);
 uint32_t LoadSound(const std::string& filePath);
 void PlaySound(uint32_t soundHandle, bool loop = false, float volume = 1.0f);
 
-const BYTE* GetKey();
-bool IsPushKey(uint8_t key);
-Input& GetInput();
+bool IsPushKey(Key key);
+bool IsTriggerKey(Key key);
+bool IsButtonDown(GamepadButton button);
+bool IsButtonTriggered(GamepadButton button);
+bool IsButtonReleased(GamepadButton button);
 
 Transform& GetCameraTransform();
 void SetCameraTransform(const Transform& transform);
