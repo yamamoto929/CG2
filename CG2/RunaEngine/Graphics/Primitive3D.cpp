@@ -38,7 +38,7 @@ namespace RunaEngine{
 		material_.Initialize(device);
 		materialData_ = material_.GetData();
 		materialData_->color = { 1.0f, 0.2f, 0.1f, 1.0f };
-		materialData_->enableLighting = false;
+		materialData_->lightingMode = LightingMode::NONE;
 		materialData_->uvTransform = MakeIdentityMatrix();
 
 		worldMatrix_ = MakeIdentityMatrix();
@@ -83,9 +83,9 @@ namespace RunaEngine{
 		return materialData_->color;
 	}
 
-	void Primitive3D::SetEnableLighting(bool enableLighting) {
+	void Primitive3D::SetLightingMode(LightingMode lightingMode) {
 		assert(materialData_);
-		materialData_->enableLighting = enableLighting;
+		materialData_->lightingMode = lightingMode;
 	}
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> Primitive3D::CreateBufferResource(ID3D12Device* device, size_t sizeInBytes) {

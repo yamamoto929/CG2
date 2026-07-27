@@ -6,6 +6,7 @@
 #include "TransformationMatrix.h"
 #include "Vector4.h"
 #include "VertexData.h"
+#include "LightingMode.h"
 #include <cstdint>
 #include <d3d12.h>
 #pragma comment(lib, "d3d12.lib")
@@ -23,7 +24,7 @@ namespace RunaEngine{
 
 		void SetColor(const Vector4& color);
 		const Vector4& GetColor() const;
-		void SetEnableLighting(bool enableLighting);
+		void SetLightingMode(LightingMode lightingMode);
 
 	private:
 		Microsoft::WRL::ComPtr<ID3D12Resource> CreateBufferResource(ID3D12Device* device, size_t sizeInBytes);

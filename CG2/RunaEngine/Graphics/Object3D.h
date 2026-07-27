@@ -2,6 +2,8 @@
 #include "Matrix4x4.h"
 #include "Transform.h"
 #include "ConstantBuffer.h"
+#include "Material.h"
+#include "ModelDrawParameters.h"
 #include <d3d12.h>
 #pragma comment(lib,"d3d12.lib")
 #include "TransformationMatrix.h"
@@ -20,6 +22,8 @@ namespace RunaEngine{
 		};
 		ConstantBuffer<TransformationMatrix> transformationMatrix_;
 		TransformationMatrix* transformationMatrixData_ = nullptr;
+		ConstantBuffer<Material> material_;
+		Material* materialData_ = nullptr;
 		Model* model_ = nullptr;
 		Matrix4x4 worldMatrix_{};
 		Matrix4x4 wvpMatrix_{};
@@ -37,7 +41,11 @@ namespace RunaEngine{
 		const Matrix4x4& GetWVPMatrix() const { return wvpMatrix_; }
 
 		void Update(const Matrix4x4& viewMatrix, const Matrix4x4& projectionMatrix);
-		void Draw(ID3D12GraphicsCommandList* commandList, TextureManager* textureManager);
+		void Draw(
+			ID3D12GraphicsCommandList* commandList,
+			TextureManager* textureManager,
+			const ModelDrawParameters& parameters
+		);
 
 
 	};

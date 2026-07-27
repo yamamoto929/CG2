@@ -202,7 +202,15 @@ namespace RunaEngine {
 	}
 
 	void Engine::DrawModel(Model* model, const Transform& transform) {
-		DrawObject3D(GetDrawModelObject(model), transform);
+		DrawModel(model, transform, ModelDrawParameters{});
+	}
+
+	void Engine::DrawModel(
+		Model* model,
+		const Transform& transform,
+		const ModelDrawParameters& parameters
+	) {
+		DrawObject3D(GetDrawModelObject(model), transform, parameters);
 	}
 
 	void Engine::DrawObject3D(Object3D* object, const Vector3& translate) {
@@ -215,17 +223,29 @@ namespace RunaEngine {
 	}
 
 	void Engine::DrawObject3D(Object3D* object, const Transform& transform) {
+		DrawObject3D(object, transform, ModelDrawParameters{});
+	}
+
+	void Engine::DrawObject3D(
+		Object3D* object,
+		const Transform& transform,
+		const ModelDrawParameters& parameters
+	) {
 		assert(object);
 
 		object->GetTransform() = transform;
-		DrawObject3D(object);
+		DrawObject3D(object, parameters);
 	}
 
 	void Engine::DrawObject3D(Object3D* object) {
+		DrawObject3D(object, ModelDrawParameters{});
+	}
+
+	void Engine::DrawObject3D(Object3D* object, const ModelDrawParameters& parameters) {
 		assert(object);
 
 		object->Update(viewMatrix_, projectionMatrix_);
-		renderer_.Draw(*object);
+		renderer_.Draw(*object, parameters);
 	}
 
 	void Engine::DrawPrimitive3D(Primitive3D* primitive, const Vector3& translate) {
@@ -444,6 +464,14 @@ namespace RunaEngine {
 
 	void DrawModel(
 		Model* model,
+		const Transform& transform,
+		const ModelDrawParameters& parameters
+	) {
+		GetEngine().DrawModel(model, transform, parameters);
+	}
+
+	void DrawModel(
+		Model* model,
 		const float& scaleX,
 		const float& scaleY,
 		const float& scaleZ,
@@ -471,8 +499,20 @@ namespace RunaEngine {
 		GetEngine().DrawObject3D(object, transform);
 	}
 
+	void DrawObject3D(
+		Object3D* object,
+		const Transform& transform,
+		const ModelDrawParameters& parameters
+	) {
+		GetEngine().DrawObject3D(object, transform, parameters);
+	}
+
 	void DrawObject3D(Object3D* object) {
 		GetEngine().DrawObject3D(object);
+	}
+
+	void DrawObject3D(Object3D* object, const ModelDrawParameters& parameters) {
+		GetEngine().DrawObject3D(object, parameters);
 	}
 
 	void DrawPrimitive3D(Primitive3D* primitive, const Vector3& translate) {
@@ -573,6 +613,10 @@ namespace RunaEngine {
 
 	Renderer& GetRenderer() {
 		return GetEngine().GetRenderer();
+	}
+
+	DirectionalLight& GetDirectionalLight() {
+		return GetEngine().GetDirectionalLight();
 	}
 
 	float GetDeltaTime()

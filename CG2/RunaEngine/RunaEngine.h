@@ -7,6 +7,7 @@
 #include "RunaEngine/Input/Input.h"
 #include "RunaEngine/Input/InputTypes.h"
 #include "RunaEngine/Graphics/Object3D.h"
+#include "RunaEngine/Graphics/ModelDrawParameters.h"
 #include "RunaEngine/Graphics/Primitive3D.h"
 #include "RunaEngine/Graphics/PrimitiveGraphicsPipeline.h"
 #include "RunaEngine/Graphics/Renderer.h"
@@ -57,9 +58,12 @@ public:
 
 	void DrawModel(Model* model, const Vector3& translate);
 	void DrawModel(Model* model, const Transform& transform);
+	void DrawModel(Model* model, const Transform& transform, const ModelDrawParameters& parameters);
 	void DrawObject3D(Object3D* object, const Vector3& translate);
 	void DrawObject3D(Object3D* object, const Transform& transform);
+	void DrawObject3D(Object3D* object, const Transform& transform, const ModelDrawParameters& parameters);
 	void DrawObject3D(Object3D* object);
+	void DrawObject3D(Object3D* object, const ModelDrawParameters& parameters);
 	void DrawPrimitive3D(Primitive3D* primitive, const Vector3& translate);
 	void DrawPrimitive3D(Primitive3D* primitive, const Transform& transform);
 	void DrawPrimitive3D(Primitive3D* primitive);
@@ -86,6 +90,7 @@ public:
 	ImGuiManager& GetImGuiManager() { return imGuiManager_; }
 	TextureManager& GetTextureManager() { return textureManager_; }
 	Renderer& GetRenderer() { return renderer_; }
+	DirectionalLight& GetDirectionalLight() { return directionalLight_; }
 	// deltaTime取得
 	float GetDeltaTime()const;
 
@@ -156,6 +161,7 @@ void DrawSprite(Sprite* sprite, const Transform& transform);
 
 void DrawModel(Model* model, const Vector3& translate);
 void DrawModel(Model* model, const Transform& transform);
+void DrawModel(Model* model, const Transform& transform, const ModelDrawParameters& parameters);
 void DrawModel(
 	Model* model,
 	const float& scaleX,
@@ -170,7 +176,9 @@ void DrawModel(
 	);
 void DrawObject3D(Object3D* object, const Vector3& translate);
 void DrawObject3D(Object3D* object, const Transform& transform);
+void DrawObject3D(Object3D* object, const Transform& transform, const ModelDrawParameters& parameters);
 void DrawObject3D(Object3D* object);
+void DrawObject3D(Object3D* object, const ModelDrawParameters& parameters);
 void DrawPrimitive3D(Primitive3D* primitive, const Vector3& translate);
 void DrawPrimitive3D(Primitive3D* primitive, const Transform& transform);
 void DrawPrimitive3D(
@@ -208,5 +216,6 @@ void MoveCamera(const Vector3& move);
 ImGuiManager& GetImGuiManager();
 TextureManager& GetTextureManager();
 Renderer& GetRenderer();
+DirectionalLight& GetDirectionalLight();
 float GetDeltaTime();
 }

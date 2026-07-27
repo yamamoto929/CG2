@@ -329,6 +329,9 @@
     <ClInclude Include="RunaEngine\Input\InputTypes.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="RunaEngine\Graphics\LightingMode.h">
+      <Filter>RunaEngine\Graphics</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="RunaEngine\Graphics\Object3d.PS.hlsl">

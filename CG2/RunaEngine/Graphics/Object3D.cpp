@@ -17,6 +17,9 @@ namespace RunaEngine {
 
 		transformationMatrixData_->World = worldMatrix_;
 		transformationMatrixData_->WVP = wvpMatrix_;
+
+		material_.Initialize(device);
+		materialData_ = material_.GetData();
 	}
 
 	void Object3D::Update(const Matrix4x4& viewMatrix, const Matrix4x4& projectionMatrix) {
@@ -30,9 +33,23 @@ namespace RunaEngine {
 		transformationMatrixData_->WVP = wvpMatrix_;
 	}
 
-	void Object3D::Draw(ID3D12GraphicsCommandList* commandList, TextureManager* textureManager) {
+	void Object3D::Draw(
+		ID3D12GraphicsCommandList* commandList,
+		TextureManager* textureManager,
+		const ModelDrawParameters& parameters
+	) {
 		assert(model_);
 		assert(transformationMatrixData_);
+		assert(materialData_);
+
+		materialData_->color = parameters.color;
+		materialData_->lightingMode = parameters.lightingMode;
+		materialData_->uvTransform = parameters.uvTransform;
+
+		commandList->SetGraphicsRootConstantBufferView(
+			0,
+			material_.GetGPUVirtualAddress()
+		);
 		commandList->SetGraphicsRootConstantBufferView(
 			1,
 			transformationMatrix_.GetGPUVirtualAddress()

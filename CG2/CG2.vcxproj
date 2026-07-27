@@ -168,6 +168,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
   <ItemGroup>
     <ClInclude Include="RunaEngine\Audio\SoundManager.h" />
     <ClInclude Include="RunaEngine\Core\GameTimer.h" />
+    <ClInclude Include="RunaEngine\Graphics\LightingMode.h" />
     <ClInclude Include="RunaEngine\Graphics\SpriteAnimationClip.h" />
     <ClInclude Include="RunaEngine\Graphics\SpriteAnimator.h" />
     <ClInclude Include="RunaEngine\Graphics\SpriteDrawCommand.h" />

@@ -6,6 +6,7 @@ class DirectXCommon;
 class DirectionalLight;
 class GraphicsPipeline;
 namespace RunaEngine{
+	struct ModelDrawParameters;
 	class Object3D;
 	class Primitive3D;
 	class Sprite;
@@ -27,7 +28,7 @@ public:
 	);
 
 	void Begin();
-	void Draw(RunaEngine::Object3D& object);
+	void Draw(RunaEngine::Object3D& object, const RunaEngine::ModelDrawParameters& parameters);
 	void Draw(RunaEngine::Primitive3D& primitive);
 	void Draw(RunaEngine::Sprite& sprite);
 	void End();

@@ -52,10 +52,10 @@ void Renderer::Begin() {
 	directionalLight_->SetCommand(GetCommandList());
 }
 
-void Renderer::Draw(RunaEngine::Object3D& object) {
+void Renderer::Draw(RunaEngine::Object3D& object, const RunaEngine::ModelDrawParameters& parameters) {
 	graphicsPipeline_->Set(GetCommandList());
 	directionalLight_->SetCommand(GetCommandList(), 3);
-	object.Draw(GetCommandList(), textureManager_);
+	object.Draw(GetCommandList(), textureManager_, parameters);
 }
 
 void Renderer::Draw(RunaEngine::Primitive3D& primitive) {
