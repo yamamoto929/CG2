@@ -1,9 +1,15 @@
 #include "Model.h"
 #include <cassert>
 #include <cstring>
+#include <utility>
 
 namespace RunaEngine{
 	void Model::Initialize(ID3D12Device* device, TextureManager* textureManager, ModelData* modelData) {
+		assert(device);
+		assert(textureManager);
+		assert(modelData);
+		assert(!modelData->vertices.empty());
+
 		vertexResource_ = CreateBufferResource(device, sizeof(VertexData) * modelData->vertices.size());
 		// 頂点バッファビューを作成
 		vertexBufferView_.BufferLocation = vertexResource_->GetGPUVirtualAddress();
@@ -15,22 +21,75 @@ namespace RunaEngine{
 		vertexResource_->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));
 		std::memcpy(vertexData, modelData->vertices.data(), sizeof(VertexData) * modelData->vertices.size());
 
-		std::string textureFilePath = modelData->material.textureFilePath;
-		if (textureFilePath.empty()) {
-			textureFilePath = "RunaEngine/Graphics/Resources/white.png";
+		fallbackTextureHandle_ =
+			textureManager->Load("RunaEngine/Graphics/Resources/white.png");
+		materialTextureHandles_.clear();
+		for (const auto& [materialName, material] : modelData->materials) {
+			uint32_t textureHandle = fallbackTextureHandle_;
+			if (!material.textureFilePath.empty()) {
+				textureHandle = textureManager->Load(material.textureFilePath);
+			}
+			materialTextureHandles_[materialName] = textureHandle;
 		}
-		textureHandle_ = textureManager->Load(textureFilePath);
 
 		vertexCount_ = static_cast<uint32_t>(modelData->vertices.size());
+		meshes_ = modelData->meshes;
+		if (meshes_.empty()) {
+			MeshData defaultMesh{};
+			defaultMesh.name = "default";
+			defaultMesh.subMeshes.push_back({ "", 0, vertexCount_ });
+			meshes_.push_back(std::move(defaultMesh));
+		}
 	}
 
 	void Model::Draw(ID3D12GraphicsCommandList* commandList, TextureManager* textureManager) {
+		assert(commandList);
+		assert(textureManager);
+
 		commandList->IASetVertexBuffers(0, 1, &vertexBufferView_);
 		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-		commandList->SetGraphicsRootDescriptorTable(2, textureManager->GetSrvHandleGPU(textureHandle_));
+		for (const MeshData& mesh : meshes_) {
+			for (const SubMeshData& subMesh : mesh.subMeshes) {
+				const uint32_t textureHandle =
+					ResolveTextureHandle(subMesh.materialName);
+				commandList->SetGraphicsRootDescriptorTable(
+					2,
+					textureManager->GetSrvHandleGPU(textureHandle)
+				);
+				commandList->DrawInstanced(
+					subMesh.vertexCount,
+					1,
+					subMesh.firstVertex,
+					0
+				);
+			}
+		}
+	}
 
-		commandList->DrawInstanced(vertexCount_, 1, 0, 0);
+	uint32_t Model::ResolveTextureHandle(const std::string& materialName) const {
+		if (textureOverride_) {
+			return *textureOverride_;
+		}
+
+		const auto material = materialTextureHandles_.find(materialName);
+		if (material != materialTextureHandles_.end()) {
+			return material->second;
+		}
+
+		if (materialName.empty() && materialTextureHandles_.size() == 1) {
+			return materialTextureHandles_.begin()->second;
+		}
+
+		return fallbackTextureHandle_;
+	}
+
+	size_t Model::GetSubMeshCount() const {
+		size_t subMeshCount = 0;
+		for (const MeshData& mesh : meshes_) {
+			subMeshCount += mesh.subMeshes.size();
+		}
+		return subMeshCount;
 	}
 
 	// =========================================================

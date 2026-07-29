@@ -1,7 +1,11 @@
 #pragma once
 #include <d3d12.h>
 #pragma comment(lib,"d3d12.lib")
+#include <cstddef>
+#include <optional>
 #include <string>
+#include <unordered_map>
+#include <vector>
 #include "TextureManager.h"
 #include "ModelData.h"
 namespace RunaEngine{
@@ -9,14 +13,22 @@ namespace RunaEngine{
 	private:
 		Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource_ = nullptr;
 		D3D12_VERTEX_BUFFER_VIEW vertexBufferView_{};
-		uint32_t textureHandle_ = 0;
+		std::vector<MeshData> meshes_;
+		std::unordered_map<std::string, uint32_t> materialTextureHandles_;
+		uint32_t fallbackTextureHandle_ = 0;
+		std::optional<uint32_t> textureOverride_;
 		uint32_t vertexCount_ = 0;
+		uint32_t ResolveTextureHandle(const std::string& materialName) const;
 		Microsoft::WRL::ComPtr<ID3D12Resource> CreateBufferResource(ID3D12Device* device, size_t sizeInBytes);
 	public:
 		void Initialize(ID3D12Device* device, TextureManager* textureManager, ModelData* modelData);
 		void Draw(ID3D12GraphicsCommandList* commandList, TextureManager* textureManager);
-		uint32_t GetTextureHandle() const { return textureHandle_; }
-		void SetTextureHandle(uint32_t textureHandle) { textureHandle_ = textureHandle; }
+		uint32_t GetTextureHandle() const { return textureOverride_.value_or(fallbackTextureHandle_); }
+		void SetTextureHandle(uint32_t textureHandle) { textureOverride_ = textureHandle; }
+		void ClearTextureOverride() { textureOverride_.reset(); }
+		size_t GetMeshCount() const { return meshes_.size(); }
+		size_t GetSubMeshCount() const;
+		size_t GetMaterialCount() const { return materialTextureHandles_.size(); }
 	};
 }
 

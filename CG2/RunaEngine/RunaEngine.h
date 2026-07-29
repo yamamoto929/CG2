@@ -155,6 +155,7 @@ Object3D* CreateObject3D(Model* model);
 Primitive3D* CreateTriangle3D();
 Primitive3D* CreateTriangle3D(const Vector4& color);
 
+void DrawSprite(Sprite* sprite, const float& posX, const float& posY);
 void DrawSprite(Sprite* sprite, const Vector2& position);
 void DrawSprite(Sprite* sprite, const Vector3& translate);
 void DrawSprite(Sprite* sprite, const Transform& transform);

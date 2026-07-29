@@ -1,35 +1,104 @@
 #include "ModelLoader.h"
-#include <cassert>
-#include <fstream>
-#include <sstream>
-#include <cstdint>
 #include "Vector2.h"
 #include "Vector3.h"
 #include "Vector4.h"
+#include <cassert>
+#include <cstdint>
+#include <fstream>
+#include <sstream>
+#include <utility>
+#include <vector>
+
 namespace {
 	uint32_t ParseObjIndex(const std::string& index) {
 		return index.empty() ? 0u : static_cast<uint32_t>(std::stoi(index));
 	}
 }
-// =========================================================
-// LoadObjFile 
-// =========================================================
-RunaEngine::ModelData ModelLoader::LoadObjFile(const std::string& directoryPath, const std::string& filename) {
-	// 変数を宣言
-	RunaEngine::ModelData modelData;
-	std::vector<RunaEngine::Vector4> positions; // 位置
-	std::vector<RunaEngine::Vector3> normals; // 法線
-	std::vector<RunaEngine::Vector2> texCoords; // テクスチャ座標
-	std::string line; // ファイルから読んだ1行を格納するもの
 
-	// ファイルを開ける
+RunaEngine::ModelData ModelLoader::LoadObjFile(
+	const std::string& directoryPath,
+	const std::string& filename
+) {
+	RunaEngine::ModelData modelData;
+	std::vector<RunaEngine::Vector4> positions;
+	std::vector<RunaEngine::Vector3> normals;
+	std::vector<RunaEngine::Vector2> texCoords;
+
+	RunaEngine::MeshData currentMesh{};
+	RunaEngine::SubMeshData currentSubMesh{};
+	std::string currentMaterialName;
+	bool hasCurrentMesh = false;
+	bool hasCurrentSubMesh = false;
+
+	auto FinishCurrentSubMesh = [&]() {
+		if (!hasCurrentSubMesh) {
+			return;
+		}
+
+		const uint32_t currentVertexCount =
+			static_cast<uint32_t>(modelData.vertices.size());
+		currentSubMesh.vertexCount =
+			currentVertexCount - currentSubMesh.firstVertex;
+
+		if (currentSubMesh.vertexCount > 0) {
+			currentMesh.subMeshes.push_back(std::move(currentSubMesh));
+		}
+
+		currentSubMesh = {};
+		hasCurrentSubMesh = false;
+	};
+
+	auto FinishCurrentMesh = [&]() {
+		FinishCurrentSubMesh();
+		if (hasCurrentMesh && !currentMesh.subMeshes.empty()) {
+			modelData.meshes.push_back(std::move(currentMesh));
+		}
+
+		currentMesh = {};
+		hasCurrentMesh = false;
+	};
+
+	auto StartMesh = [&](const std::string& meshName) {
+		FinishCurrentMesh();
+		currentMesh = {};
+		currentMesh.name = meshName.empty() ? "default" : meshName;
+		hasCurrentMesh = true;
+	};
+
+	auto EnsureCurrentMesh = [&]() {
+		if (!hasCurrentMesh) {
+			currentMesh = {};
+			currentMesh.name = "default";
+			hasCurrentMesh = true;
+		}
+	};
+
+	auto StartSubMesh = [&](const std::string& materialName) {
+		EnsureCurrentMesh();
+		FinishCurrentSubMesh();
+		currentSubMesh = {};
+		currentSubMesh.materialName = materialName;
+		currentSubMesh.firstVertex =
+			static_cast<uint32_t>(modelData.vertices.size());
+		hasCurrentSubMesh = true;
+	};
+
+	auto EnsureCurrentSubMesh = [&]() {
+		EnsureCurrentMesh();
+		if (!hasCurrentSubMesh) {
+			StartSubMesh(currentMaterialName);
+		}
+	};
+
 	std::ifstream file(directoryPath + "/" + filename);
 	assert(file.is_open());
 
+	std::string line;
 	while (std::getline(file, line)) {
 		std::string identifier;
 		std::istringstream s(line);
-		s >> identifier; // 先頭の識別子を読む
+		s >> identifier;
+
 		if (identifier == "v") {
 			RunaEngine::Vector4 position;
 			s >> position.x >> position.y >> position.z;
@@ -46,13 +115,19 @@ RunaEngine::ModelData ModelLoader::LoadObjFile(const std::string& directoryPath,
 			s >> normal.x >> normal.y >> normal.z;
 			normal.x *= -1.0f;
 			normals.push_back(normal);
+		} else if (identifier == "o" || identifier == "g") {
+			std::string meshName;
+			s >> meshName;
+			StartMesh(meshName);
+		} else if (identifier == "usemtl") {
+			s >> currentMaterialName;
+			StartSubMesh(currentMaterialName);
 		} else if (identifier == "f") {
-			RunaEngine::VertexData triangle[3];
-			// 面は三角形限定。そのほかは未対応
-			for (int32_t faceVertex = 0; faceVertex < 3; ++faceVertex) {
-				std::string vertexDefinition;
-				s >> vertexDefinition;
-				// 頂点の要素へのIndexを分解して取得
+			EnsureCurrentSubMesh();
+
+			std::vector<RunaEngine::VertexData> faceVertices;
+			std::string vertexDefinition;
+			while (s >> vertexDefinition) {
 				std::istringstream v(vertexDefinition);
 				uint32_t elementIndices[3] = {};
 				for (int32_t element = 0; element < 3; ++element) {
@@ -62,50 +137,77 @@ RunaEngine::ModelData ModelLoader::LoadObjFile(const std::string& directoryPath,
 					}
 				}
 
-				// 要素へのIndexから、実際の要素の値を取得して、頂点を構築する
+				assert(elementIndices[0] > 0);
+				assert(elementIndices[0] <= positions.size());
 				RunaEngine::Vector4 position = positions[elementIndices[0] - 1];
-				RunaEngine::Vector2 texcoord = { 0.0f,0.0f };
+
+				RunaEngine::Vector2 texCoord{ 0.0f, 0.0f };
 				if (elementIndices[1] != 0) {
-					texcoord = texCoords[elementIndices[1] - 1];
+					assert(elementIndices[1] <= texCoords.size());
+					texCoord = texCoords[elementIndices[1] - 1];
 				}
-				RunaEngine::Vector3 normal = normals[elementIndices[2] - 1];
-				//VertexData vertex = { position, texcoord, normal };
-				//modelData.vertices.push_back(vertex);
-				triangle[faceVertex] = { position,texcoord,normal };
+
+				RunaEngine::Vector3 normal{ 0.0f, 0.0f, 0.0f };
+				if (elementIndices[2] != 0) {
+					assert(elementIndices[2] <= normals.size());
+					normal = normals[elementIndices[2] - 1];
+				}
+
+				faceVertices.push_back({ position, texCoord, normal });
 			}
 
-			modelData.vertices.push_back(triangle[2]);
-			modelData.vertices.push_back(triangle[1]);
-			modelData.vertices.push_back(triangle[0]);
-
+			assert(faceVertices.size() >= 3);
+			for (size_t vertexIndex = 1; vertexIndex + 1 < faceVertices.size(); ++vertexIndex) {
+				modelData.vertices.push_back(faceVertices[vertexIndex + 1]);
+				modelData.vertices.push_back(faceVertices[vertexIndex]);
+				modelData.vertices.push_back(faceVertices[0]);
+			}
 		} else if (identifier == "mtllib") {
 			std::string materialFilename;
 			s >> materialFilename;
-			modelData.material = LoadMaterialTemplateFile(directoryPath, materialFilename);
+			auto loadedMaterials =
+				LoadMaterialTemplateFile(directoryPath, materialFilename);
+			for (auto& [materialName, material] : loadedMaterials) {
+				modelData.materials.insert_or_assign(
+					materialName,
+					std::move(material)
+				);
+			}
 		}
 	}
+
+	FinishCurrentMesh();
 	return modelData;
 }
 
-// =========================================================
-// LoadMaterialTemplateFile 
-// =========================================================
-RunaEngine::MaterialData ModelLoader::LoadMaterialTemplateFile(const std::string& directoryPath, const std::string& filename) {
-	RunaEngine::MaterialData materialData;
-	std::string line;
+std::unordered_map<std::string, RunaEngine::MaterialData>
+ModelLoader::LoadMaterialTemplateFile(
+	const std::string& directoryPath,
+	const std::string& filename
+) {
+	std::unordered_map<std::string, RunaEngine::MaterialData> materials;
+	RunaEngine::MaterialData* currentMaterial = nullptr;
+
 	std::ifstream file(directoryPath + "/" + filename);
 	assert(file.is_open());
+
+	std::string line;
 	while (std::getline(file, line)) {
 		std::string identifier;
 		std::istringstream s(line);
 		s >> identifier;
 
-		if (identifier == "map_Kd") {
+		if (identifier == "newmtl") {
+			std::string materialName;
+			s >> materialName;
+			currentMaterial = &materials[materialName];
+		} else if (identifier == "map_Kd" && currentMaterial) {
 			std::string textureFilename;
 			s >> textureFilename;
-			materialData.textureFilePath = directoryPath + "/" + textureFilename;
+			currentMaterial->textureFilePath =
+				directoryPath + "/" + textureFilename;
 		}
 	}
 
-	return materialData;
+	return materials;
 }

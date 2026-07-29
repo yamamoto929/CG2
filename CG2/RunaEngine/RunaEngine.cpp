@@ -442,6 +442,10 @@ namespace RunaEngine {
 		return GetEngine().CreateTriangle3D(color);
 	}
 
+	void DrawSprite(Sprite* sprite, const float& posX, const float& posY) {
+		GetEngine().DrawSprite(sprite, Vector2{ posX,posY });
+	}
+
 	void DrawSprite(Sprite* sprite, const Vector2& position) {
 		GetEngine().DrawSprite(sprite, position);
 	}
