@@ -78,9 +78,15 @@ public:
 
 	bool IsPushKey(Key key);
 	bool IsTriggerKey(Key key);
+	Vector2 GetMousePosition() const;
 	bool IsButtonDown(GamepadButton button);
 	bool IsButtonTriggered(GamepadButton button);
 	bool IsButtonReleased(GamepadButton button);
+	bool IsGamepadConnected() const;
+	Vector2 GetLeftStick() const;
+	Vector2 GetRightStick() const;
+	float GetLeftTrigger() const;
+	float GetRightTrigger() const;
 
 	Transform& GetCameraTransform() { return cameraTransform_; }
 	const Transform& GetCameraTransform() const { return cameraTransform_; }
@@ -206,9 +212,15 @@ void PlaySound(uint32_t soundHandle, bool loop = false, float volume = 1.0f);
 
 bool IsPushKey(Key key);
 bool IsTriggerKey(Key key);
+Vector2 GetMousePosition();
 bool IsButtonDown(GamepadButton button);
 bool IsButtonTriggered(GamepadButton button);
 bool IsButtonReleased(GamepadButton button);
+bool IsGamepadConnected();
+Vector2 GetLeftStick();
+Vector2 GetRightStick();
+float GetLeftTrigger();
+float GetRightTrigger();
 
 Transform& GetCameraTransform();
 void SetCameraTransform(const Transform& transform);

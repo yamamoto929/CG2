@@ -309,6 +309,14 @@ namespace RunaEngine {
 		return input_.IsTriggerkey(key);
 	}
 
+	Vector2 Engine::GetMousePosition() const {
+		const MousePosition position = input_.GetMousePosition();
+		return {
+			static_cast<float>(position.x),
+			static_cast<float>(position.y),
+		};
+	}
+
 	bool Engine::IsButtonDown(GamepadButton button) {
 		return input_.IsGamepadButtonDown(button);
 	}
@@ -319,6 +327,28 @@ namespace RunaEngine {
 
 	bool Engine::IsButtonReleased(GamepadButton button) {
 		return input_.IsGamepadButtonReleased(button);
+	}
+
+	bool Engine::IsGamepadConnected() const {
+		return input_.IsGamepadConnected();
+	}
+
+	Vector2 Engine::GetLeftStick() const {
+		const Input::StickState stick = input_.GetLeftStick();
+		return { stick.horizontal, stick.vertical };
+	}
+
+	Vector2 Engine::GetRightStick() const {
+		const Input::StickState stick = input_.GetRightStick();
+		return { stick.horizontal, stick.vertical };
+	}
+
+	float Engine::GetLeftTrigger() const {
+		return input_.GetLeftTrigger();
+	}
+
+	float Engine::GetRightTrigger() const {
+		return input_.GetRightTrigger();
 	}
 
 	void Engine::SetCameraTransform(const Transform& transform) {
@@ -583,6 +613,10 @@ namespace RunaEngine {
 		return GetEngine().IsTriggerKey(key);
 	}
 
+	Vector2 GetMousePosition() {
+		return GetEngine().GetMousePosition();
+	}
+
 	bool IsButtonDown(GamepadButton button) {
 		return GetEngine().IsButtonDown(button);
 	}
@@ -593,6 +627,26 @@ namespace RunaEngine {
 
 	bool IsButtonReleased(GamepadButton button) {
 		return GetEngine().IsButtonReleased(button);
+	}
+
+	bool IsGamepadConnected() {
+		return GetEngine().IsGamepadConnected();
+	}
+
+	Vector2 GetLeftStick() {
+		return GetEngine().GetLeftStick();
+	}
+
+	Vector2 GetRightStick() {
+		return GetEngine().GetRightStick();
+	}
+
+	float GetLeftTrigger() {
+		return GetEngine().GetLeftTrigger();
+	}
+
+	float GetRightTrigger() {
+		return GetEngine().GetRightTrigger();
 	}
 
 	Transform& GetCameraTransform() {
