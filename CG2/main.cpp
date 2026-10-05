@@ -10,7 +10,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR commandLine, _
 
 	RunaEngine::Initialize(1280, 720, "TITLE");
 	Sprite* sprite = CreateSprite("resources/sprite_test.png");
-
+	assert(false && "assertテスト");
 	while (RunaEngine::ProcessMessage()) {
 		RunaEngine::BeginFrame();
 
