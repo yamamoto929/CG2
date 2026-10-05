@@ -19,6 +19,7 @@ class Input {
 public:
 	// 初期化
 	void Initialize(HINSTANCE hInstance, HWND hwnd);
+	void Shutdown();
 	// 更新
 	void Update();
 	

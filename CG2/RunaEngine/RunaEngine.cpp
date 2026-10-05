@@ -7,65 +7,83 @@
 #include <cassert>
 #include <filesystem>
 #include <algorithm>
+#include "EngineError.h"
 
 namespace RunaEngine {
+	namespace {
+		template<class T> bool Contains(const std::vector<std::unique_ptr<T>>& items, const T* value) {
+			return std::any_of(items.begin(), items.end(), [value](const auto& item) { return item.get() == value; });
+		}
+		template<class T> bool Pending(const std::vector<T*>& items, const T* value) {
+			return std::find(items.begin(), items.end(), value) != items.end();
+		}
+	}
 
 	Engine::Engine() = default;
 
 	Engine::~Engine() {
-		Shutdown();
+		try { Shutdown(); } catch (const std::exception& error) { Log(error.what()); }
 	}
 
 	void Engine::Initialize(int32_t width, int32_t height, const std::string& title) {
-		assert(!initialized_);
+		Require(!initialized_, "Engine is already initialized");
+		Require(width > 0 && height > 0, "Window dimensions must be positive");
 
 		width_ = width;
 		height_ = height;
+		msg_ = {};
+		while (PeekMessage(&msg_, nullptr, WM_QUIT, WM_QUIT, PM_REMOVE)) {}
 
 		HRESULT hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
-		assert(SUCCEEDED(hr));
+		CheckHR(hr, "CoInitializeEx");
 		comInitialized_ = true;
+		initialized_ = true; // 途中で失敗してもShutdownで作成済みの物を片付けられる。
+		try {
 
-		InitLog();
-		CrashHandler::Initialize();
+			InitLog();
+			CrashHandler::Initialize();
 
-		winApp_.CreateNewWindow(width_, height_, title);
+			winApp_.CreateNewWindow(width_, height_, title);
 
-		DirectXDebug::EnableDebugLayer();
-		directXCommon_.Initialize(winApp_.GetHwnd(), width_, height_);
-		DirectXDebug::SetupInfoQueue();
+			DirectXDebug::EnableDebugLayer();
+			directXCommon_.Initialize(winApp_.GetHwnd(), width_, height_);
+			DirectXDebug::SetupInfoQueue(directXCommon_.GetDevice());
 
-		textureManager_.Initialize(directXCommon_.GetDevice(), directXCommon_.GetCommandList(), 128);
-		input_.Initialize(winApp_.GetHInstance(), winApp_.GetHwnd());
-		soundManager_.Initialize();
+			textureManager_.Initialize(directXCommon_.GetDevice(), directXCommon_.GetCommandList(), 128);
+			input_.Initialize(winApp_.GetHInstance(), winApp_.GetHwnd());
+			soundManager_.Initialize();
 
-		shaderCompiler_.Initialize();
-		spriteGraphicsPipeline_.Initialize(
-			directXCommon_.GetDevice(),
-			&shaderCompiler_,
-			directXCommon_.GetDXGIFormat(),
-			DXGI_FORMAT_D24_UNORM_S8_UINT
-		);
-		graphicsPipeline_.Initialize(
-			directXCommon_.GetDevice(),
-			&shaderCompiler_,
-			directXCommon_.GetDXGIFormat(),
-			DXGI_FORMAT_D24_UNORM_S8_UINT
-		);
-		primitiveGraphicsPipeline_.Initialize(
-			directXCommon_.GetDevice(),
-			&shaderCompiler_,
-			directXCommon_.GetDXGIFormat(),
-			DXGI_FORMAT_D24_UNORM_S8_UINT
-		);
+			shaderCompiler_.Initialize();
+			spriteGraphicsPipeline_.Initialize(
+				directXCommon_.GetDevice(),
+				&shaderCompiler_,
+				directXCommon_.GetDXGIFormat(),
+				DXGI_FORMAT_D24_UNORM_S8_UINT
+			);
+			graphicsPipeline_.Initialize(
+				directXCommon_.GetDevice(),
+				&shaderCompiler_,
+				directXCommon_.GetDXGIFormat(),
+				DXGI_FORMAT_D24_UNORM_S8_UINT
+			);
+			primitiveGraphicsPipeline_.Initialize(
+				directXCommon_.GetDevice(),
+				&shaderCompiler_,
+				directXCommon_.GetDXGIFormat(),
+				DXGI_FORMAT_D24_UNORM_S8_UINT
+			);
 
-		directionalLight_.Initialize(directXCommon_.GetDevice());
-		renderer_.Initialize(&directXCommon_, &textureManager_, &graphicsPipeline_, &primitiveGraphicsPipeline_, &directionalLight_, &spriteGraphicsPipeline_);
-		imGuiManager_.Initialize(winApp_, directXCommon_, textureManager_);
+			directionalLight_.Initialize(directXCommon_.GetDevice());
+			renderer_.Initialize(&directXCommon_, &textureManager_, &graphicsPipeline_, &primitiveGraphicsPipeline_, &directionalLight_, &spriteGraphicsPipeline_);
+			imGuiManager_.Initialize(winApp_, directXCommon_, textureManager_);
 
-		UpdateCameraMatrices();
-		gameTimer_.Reset();
-		initialized_ = true;
+			UpdateCameraMatrices();
+			gameTimer_.Reset();
+			initialized_ = true;
+		} catch (...) {
+			try { Shutdown(); } catch (const std::exception& error) { Log(error.what()); }
+			throw;
+		}
 	}
 
 	bool Engine::ProcessMessage() {
@@ -80,7 +98,14 @@ namespace RunaEngine {
 	}
 
 	void Engine::BeginFrame() {
-		assert(initialized_);
+		Require(initialized_ && !frameActive_, "BeginFrame requires an initialized engine and a completed previous frame");
+		for (auto& sprite : sprites_) { sprite->BeginFrame(); }
+		for (auto& object : object3Ds_) { object->BeginFrame(); }
+		for (auto& primitive : primitive3Ds_) { primitive->BeginFrame(); }
+		for (auto& object : drawModelObjects_) { object->BeginFrame(); }
+		resourceManager_.BeginFrame();
+		directionalLight_.BeginFrame();
+		frameActive_ = true;
 
 		gameTimer_.Tick();
 		drawModelObjectIndex_ = 0;
@@ -92,11 +117,14 @@ namespace RunaEngine {
 	}
 
 	void Engine::EndFrame() {
-		assert(initialized_);
+		Require(initialized_ && frameActive_, "EndFrame requires BeginFrame");
 
 		FlushSprites();
 		imGuiManager_.Render(renderer_.GetCommandList());
 		renderer_.End();
+		frameActive_ = false;
+		textureManager_.ReleaseUploadResources();
+		ReleasePendingResources();
 	}
 
 	void Engine::Shutdown() {
@@ -105,9 +133,20 @@ namespace RunaEngine {
 		}
 
 		if (initialized_) {
+			// 未送信の描画を含めて完了させてから、参照先を片付ける。
+			directXCommon_.FlushCommands();
+			frameActive_ = false;
+			textureManager_.ReleaseUploadResources();
+			sceneClearRequested_ = true;
+			ReleasePendingResources();
 			imGuiManager_.Shutdown();
 			soundManager_.Shutdown();
-			CloseWindow(winApp_.GetHwnd());
+			input_.Shutdown();
+			directionalLight_.Shutdown();
+			graphicsPipeline_.Shutdown(); spriteGraphicsPipeline_.Shutdown(); primitiveGraphicsPipeline_.Shutdown();
+			textureManager_.Shutdown(); shaderCompiler_.Shutdown();
+			if (IsWindow(winApp_.GetHwnd())) { DestroyWindow(winApp_.GetHwnd()); }
+			directXCommon_.Shutdown();
 			initialized_ = false;
 		}
 
@@ -118,7 +157,7 @@ namespace RunaEngine {
 	}
 
 	Sprite* Engine::CreateSprite(const std::string& texturePath) {
-		assert(initialized_);
+		Require(initialized_ && !sceneClearRequested_, "CreateSprite requires an initialized engine without a pending ClearScene");
 
 		std::unique_ptr<Sprite> sprite = std::make_unique<Sprite>();
 		sprite->Initialize(directXCommon_.GetDevice(), &textureManager_, texturePath);
@@ -129,7 +168,7 @@ namespace RunaEngine {
 	}
 
 	Model* Engine::CreateModel(const std::string& filePath) {
-		assert(initialized_);
+		Require(initialized_ && !sceneClearRequested_, "CreateModel requires an initialized engine without a pending ClearScene");
 		std::filesystem::path path(filePath);
 
 		std::string directoryPath = path.parent_path().generic_string();
@@ -137,12 +176,14 @@ namespace RunaEngine {
 		if (directoryPath.empty()) {
 			directoryPath = ".";
 		}
-		return resourceManager_.LoadModel(directXCommon_.GetDevice(), &textureManager_, directoryPath, fileName);
+		Model* model = resourceManager_.LoadModel(directXCommon_.GetDevice(), &textureManager_, directoryPath, fileName);
+		Require(!Pending(pendingModels_, model), "This model is pending destruction; load it after EndFrame");
+		return model;
 	}
 
 	Object3D* Engine::CreateObject3D(Model* model) {
-		assert(initialized_);
-		assert(model);
+		Require(initialized_ && !sceneClearRequested_, "CreateObject3D requires an initialized engine without a pending ClearScene");
+		Require(resourceManager_.Contains(model) && !Pending(pendingModels_, model), "CreateObject3D requires a live model created by this engine");
 
 		std::unique_ptr<Object3D> object = std::make_unique<Object3D>();
 		object->Initialize(directXCommon_.GetDevice(), model);
@@ -157,7 +198,7 @@ namespace RunaEngine {
 	}
 
 	Primitive3D* Engine::CreateTriangle3D(const Vector4& color) {
-		assert(initialized_);
+		Require(initialized_ && !sceneClearRequested_, "CreateTriangle3D requires an initialized engine without a pending ClearScene");
 
 		std::unique_ptr<Primitive3D> primitive = std::make_unique<Primitive3D>();
 		primitive->InitializeTriangle(directXCommon_.GetDevice());
@@ -168,13 +209,97 @@ namespace RunaEngine {
 		return result;
 	}
 
+	void Engine::DestroySprite(Sprite*& sprite) {
+		if (!sprite) { return; }
+		Require(Contains(sprites_, sprite) && !Pending(pendingSprites_, sprite), "DestroySprite requires a live sprite created by this engine");
+		pendingSprites_.push_back(sprite);
+		sprite = nullptr;
+		if (!frameActive_) { ReleasePendingResources(); }
+	}
+	void Engine::DestroyObject3D(Object3D*& object) {
+		if (!object) { return; }
+		Require(Contains(object3Ds_, object) && !Pending(pendingObjects_, object), "DestroyObject3D requires a live object created by this engine");
+		pendingObjects_.push_back(object);
+		object = nullptr;
+		if (!frameActive_) { ReleasePendingResources(); }
+	}
+	void Engine::DestroyPrimitive3D(Primitive3D*& primitive) {
+		if (!primitive) { return; }
+		Require(Contains(primitive3Ds_, primitive) && !Pending(pendingPrimitives_, primitive), "DestroyPrimitive3D requires a live primitive created by this engine");
+		pendingPrimitives_.push_back(primitive);
+		primitive = nullptr;
+		if (!frameActive_) { ReleasePendingResources(); }
+	}
+	void Engine::DestroyModel(Model*& model) {
+		if (!model) { return; }
+		Require(resourceManager_.Contains(model) && !Pending(pendingModels_, model), "DestroyModel requires a live model created by this engine");
+		Require(std::none_of(object3Ds_.begin(), object3Ds_.end(), [this, model](const auto& object) {
+			return object->GetModel() == model && !Pending(pendingObjects_, object.get());
+		}), "Destroy the Object3D instances using this model before DestroyModel");
+		pendingModels_.push_back(model);
+		model = nullptr;
+		if (!frameActive_) { ReleasePendingResources(); }
+	}
+	void Engine::UnloadTexture(uint32_t handle) {
+		Require(initialized_, "UnloadTexture requires Initialize");
+		textureManager_.GetTextureSize(handle); // 不正な番号を先に検出する。
+		Require(!IsTextureInUse(handle), "Texture is still used by a sprite, model or object; destroy them or use ClearScene first");
+		Require(std::find(pendingTextures_.begin(), pendingTextures_.end(), handle) == pendingTextures_.end(), "Texture unload is already pending");
+		pendingTextures_.push_back(handle);
+		if (!frameActive_) { ReleasePendingResources(); }
+	}
+	void Engine::ClearScene() {
+		Require(initialized_, "ClearScene requires Initialize");
+		sceneClearRequested_ = true;
+		if (!frameActive_) { ReleasePendingResources(); }
+	}
+	void Engine::SetObjectTexture(Object3D* object, const std::string& texturePath) {
+		Require(Contains(object3Ds_, object) && !Pending(pendingObjects_, object), "SetObjectTexture requires a live object created by this engine");
+		object->SetTextureHandle(LoadTexture(texturePath));
+	}
+	bool Engine::IsTextureInUse(uint32_t handle) const {
+		return resourceManager_.UsesTexture(handle)
+			|| std::any_of(sprites_.begin(), sprites_.end(), [handle](const auto& sprite) { return sprite->GetTextureHandle() == handle; })
+			|| std::any_of(object3Ds_.begin(), object3Ds_.end(), [handle](const auto& object) { return object->GetTextureOverride() == handle; });
+	}
+	void Engine::ReleasePendingResources() {
+		Require(!frameActive_, "Resources may only be released after the frame finishes");
+		if (!sceneClearRequested_ && pendingSprites_.empty() && pendingObjects_.empty()
+			&& pendingPrimitives_.empty() && pendingModels_.empty() && pendingTextures_.empty()) { return; }
+		// LoadTexture直後の削除でも、まだ送信していないコピー命令を先に完了させる。
+		if (textureManager_.HasPendingUploads()) {
+			directXCommon_.FlushCommands();
+			textureManager_.ReleaseUploadResources();
+		} else { directXCommon_.WaitForIdle(); }
+		if (sceneClearRequested_) {
+			spriteDrawCommands_.clear();
+			sprites_.clear(); object3Ds_.clear(); primitive3Ds_.clear(); drawModelObjects_.clear();
+			resourceManager_.Clear();
+			textureManager_.Clear();
+			drawModelObjectIndex_ = 0; spriteSubmissionIndex_ = 0;
+			sceneClearRequested_ = false;
+		} else {
+			std::erase_if(sprites_, [this](const auto& item) { return Pending(pendingSprites_, item.get()); });
+			std::erase_if(object3Ds_, [this](const auto& item) { return Pending(pendingObjects_, item.get()); });
+			std::erase_if(primitive3Ds_, [this](const auto& item) { return Pending(pendingPrimitives_, item.get()); });
+			for (auto* model : pendingModels_) {
+				Require(std::none_of(object3Ds_.begin(), object3Ds_.end(), [model](const auto& object) { return object->GetModel() == model; }), "A model pending destruction was assigned to an Object3D");
+				std::erase_if(drawModelObjects_, [model](const auto& object) { return object->GetModel() == model; });
+				resourceManager_.DestroyModel(model);
+			}
+			for (uint32_t handle : pendingTextures_) {
+				Require(!IsTextureInUse(handle), "A texture pending unload was assigned to a live object");
+				textureManager_.Unload(handle);
+			}
+		}
+		pendingSprites_.clear(); pendingObjects_.clear(); pendingPrimitives_.clear(); pendingModels_.clear(); pendingTextures_.clear();
+	}
+
 	void Engine::DrawSprite(Sprite* sprite, const Vector2& position) {
-		assert(sprite);
 		DrawSprite(sprite, Vector3{ position.x, position.y, 0.0f });
 	}
 
 	void Engine::DrawSprite(Sprite* sprite, const Vector3& translate) {
-		assert(sprite);
 		Transform transform{
 			{ 1.0f, 1.0f, 1.0f },
 			{ 0.0f, 0.0f, 0.0f },
@@ -184,12 +309,9 @@ namespace RunaEngine {
 	}
 
 	void Engine::DrawSprite(Sprite* sprite, const Transform& transform) {
-		assert(sprite);
-		spriteDrawCommands_.push_back({
-			   sprite,
-			   transform,
-			   spriteSubmissionIndex_++
-			});
+		Require(frameActive_ && sprite, "DrawSprite requires BeginFrame and a valid sprite");
+		Require(Contains(sprites_, sprite) && !Pending(pendingSprites_, sprite) && !sceneClearRequested_, "Sprite has been destroyed or ClearScene is pending");
+		spriteDrawCommands_.push_back(sprite->CaptureDrawCommand(transform, spriteSubmissionIndex_++));
 	}
 
 	void Engine::DrawModel(Model* model, const Vector3& translate) {
@@ -231,7 +353,7 @@ namespace RunaEngine {
 		const Transform& transform,
 		const ModelDrawParameters& parameters
 	) {
-		assert(object);
+		Require(frameActive_ && (Contains(object3Ds_, object) || Contains(drawModelObjects_, object)) && !Pending(pendingObjects_, object), "DrawObject3D requires BeginFrame and a live object");
 
 		object->GetTransform() = transform;
 		DrawObject3D(object, parameters);
@@ -242,7 +364,9 @@ namespace RunaEngine {
 	}
 
 	void Engine::DrawObject3D(Object3D* object, const ModelDrawParameters& parameters) {
-		assert(object);
+		Require(frameActive_ && object, "DrawObject3D requires BeginFrame and a valid object");
+		Require((Contains(object3Ds_, object) || Contains(drawModelObjects_, object)) && !Pending(pendingObjects_, object) && !sceneClearRequested_, "Object has been destroyed or ClearScene is pending");
+		Require(resourceManager_.Contains(object->GetModel()) && !Pending(pendingModels_, object->GetModel()), "Object refers to a destroyed model");
 
 		object->Update(viewMatrix_, projectionMatrix_);
 		renderer_.Draw(*object, parameters);
@@ -258,31 +382,32 @@ namespace RunaEngine {
 	}
 
 	void Engine::DrawPrimitive3D(Primitive3D* primitive, const Transform& transform) {
-		assert(primitive);
+		Require(frameActive_ && Contains(primitive3Ds_, primitive) && !Pending(pendingPrimitives_, primitive), "DrawPrimitive3D requires BeginFrame and a live primitive");
 
 		primitive->GetTransform() = transform;
 		DrawPrimitive3D(primitive);
 	}
 
 	void Engine::DrawPrimitive3D(Primitive3D* primitive) {
-		assert(primitive);
+		Require(frameActive_ && primitive, "DrawPrimitive3D requires BeginFrame and a valid primitive");
+		Require(Contains(primitive3Ds_, primitive) && !Pending(pendingPrimitives_, primitive) && !sceneClearRequested_, "Primitive has been destroyed or ClearScene is pending");
 
 		primitive->Update(viewMatrix_, projectionMatrix_);
 		renderer_.Draw(*primitive);
 	}
 
 	uint32_t Engine::LoadTexture(const std::string& texturePath) {
-		assert(initialized_);
+		Require(initialized_ && !sceneClearRequested_, "LoadTexture requires Initialize without a pending ClearScene");
 		return textureManager_.Load(texturePath);
 	}
 
 	void Engine::SetModelTexture(Model* model, const std::string& texturePath) {
-		assert(model);
+		Require(resourceManager_.Contains(model) && !Pending(pendingModels_, model), "SetModelTexture requires a live model");
 		model->SetTextureHandle(LoadTexture(texturePath));
 	}
 
 	void Engine::SetSpriteTexture(Sprite* sprite, const std::string& texturePath) {
-		assert(sprite);
+		Require(Contains(sprites_, sprite) && !Pending(pendingSprites_, sprite), "SetSpriteTexture requires a live sprite");
 		sprite->SetTextureHandle(LoadTexture(texturePath));
 	}
 
@@ -362,7 +487,7 @@ namespace RunaEngine {
 	}
 
 	Object3D* Engine::GetDrawModelObject(Model* model) {
-		assert(model);
+		Require(frameActive_ && resourceManager_.Contains(model) && !Pending(pendingModels_, model) && !sceneClearRequested_, "DrawModel requires BeginFrame and a live model");
 
 		if (drawModelObjectIndex_ >= drawModelObjects_.size()) {
 			std::unique_ptr<Object3D> object = std::make_unique<Object3D>();
@@ -382,6 +507,7 @@ namespace RunaEngine {
 			cameraTransform_.rotate,
 			cameraTransform_.translate
 		);
+		MakeNormalMatrix(cameraMatrix); // 逆行列を作れないカメラ設定を検出する。
 		viewMatrix_ = Inverse(cameraMatrix);
 		projectionMatrix_ = MakePerspectiveFovMatrix(
 			0.45f,
@@ -398,8 +524,8 @@ namespace RunaEngine {
 			spriteDrawCommands_.end(),
 			[](const SpriteDrawCommand& a, const SpriteDrawCommand& b)
 			{
-				const int32_t aOrder = a.sprite->GetDrawOrder();
-				const int32_t bOrder = b.sprite->GetDrawOrder();
+				const int32_t aOrder = a.drawOrder;
+				const int32_t bOrder = b.drawOrder;
 
 				if (aOrder != bOrder) {
 					return aOrder < bOrder;
@@ -410,9 +536,7 @@ namespace RunaEngine {
 		);
 
 		for (const SpriteDrawCommand& command : spriteDrawCommands_) {
-			command.sprite->GetTransform() = command.transform;
-			command.sprite->Update(width_, height_);
-			renderer_.Draw(*command.sprite);
+			renderer_.Draw(*command.sprite, command, width_, height_);
 		}
 
 		spriteDrawCommands_.clear();
@@ -475,6 +599,14 @@ namespace RunaEngine {
 	void DrawSprite(Sprite* sprite, const float& posX, const float& posY) {
 		GetEngine().DrawSprite(sprite, Vector2{ posX,posY });
 	}
+
+	void DestroySprite(Sprite*& sprite) { GetEngine().DestroySprite(sprite); }
+	void DestroyObject3D(Object3D*& object) { GetEngine().DestroyObject3D(object); }
+	void DestroyPrimitive3D(Primitive3D*& primitive) { GetEngine().DestroyPrimitive3D(primitive); }
+	void DestroyModel(Model*& model) { GetEngine().DestroyModel(model); }
+	void UnloadTexture(uint32_t handle) { GetEngine().UnloadTexture(handle); }
+	void ClearScene() { GetEngine().ClearScene(); }
+	void SetObjectTexture(Object3D* object, const std::string& texturePath) { GetEngine().SetObjectTexture(object, texturePath); }
 
 	void DrawSprite(Sprite* sprite, const Vector2& position) {
 		GetEngine().DrawSprite(sprite, position);

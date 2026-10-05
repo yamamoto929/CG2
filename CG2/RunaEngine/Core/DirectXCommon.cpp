@@ -2,17 +2,15 @@
 #include "ConvertString.h"
 #include "Log.h"
 #include <format>
+#include "EngineError.h"
 DirectXCommon::~DirectXCommon() {
-	if (fenceEvent_) {
-		CloseHandle(fenceEvent_);
-		fenceEvent_ = nullptr;
-	}
+	try { Shutdown(); } catch (const std::exception& error) { Log(error.what()); }
 }
 
 void DirectXCommon::Initialize(HWND hwnd, int32_t width, int32_t height) {
+	Require(width > 0 && height > 0, "Window dimensions must be positive");
 	HRESULT hr = CreateDXGIFactory(IID_PPV_ARGS(&dxgiFactory_));
-	// 初期化の根本的な部分でエラーが出た場合はプログラムが間違っているか、どうにもできない場合が多いのでassertにしておく
-	assert(SUCCEEDED(hr));
+	CheckHR(hr, std::string(__FILE__) + ":" + std::to_string(__LINE__));
 
 	Microsoft::WRL::ComPtr<IDXGIAdapter4> useAdapter = nullptr;
 	for (UINT i = 0;dxgiFactory_->EnumAdapterByGpuPreference(i, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE,
@@ -21,7 +19,7 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t width, int32_t height) {
 		// アダプタの情報を取得する
 		DXGI_ADAPTER_DESC3 adapterDesc{};
 		hr = useAdapter->GetDesc3(&adapterDesc);
-		assert(SUCCEEDED(hr)); // 取得できないのは一大事
+		CheckHR(hr, std::string(__FILE__) + ":" + std::to_string(__LINE__)); // 取得できないのは一大事
 		// ソフトウェアアダプタでなければ採用!
 		if (!(adapterDesc.Flags & DXGI_ADAPTER_FLAG3_SOFTWARE)) {
 			// 採用したアダプタの情報をログに出力。wstringの方なので注意
@@ -32,7 +30,7 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t width, int32_t height) {
 	}
 
 	// 適切なアダプタが見つからなかったので起動できない
-	assert(useAdapter != nullptr);
+	Require(useAdapter != nullptr, "No hardware graphics adapter found");
 
 	// 機能レベルとログ出力用の文字列
 	D3D_FEATURE_LEVEL featureLevels[] = {
@@ -51,7 +49,7 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t width, int32_t height) {
 		}
 	}
 	// デバイスの生成がうまくいかなかったので起動できない
-	assert(device_ != nullptr);
+	Require(device_ != nullptr, "Cannot create a DirectX 12 device");
 	Log("Complete create D3D12Device!!!\n");
 
 	// コマンドキューを生成する
@@ -59,19 +57,19 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t width, int32_t height) {
 	hr = device_->CreateCommandQueue(&commandQueueDesc,
 		IID_PPV_ARGS(&commandQueue_));
 	// コマンドキューの生成がうまくいかなかったので生成できない
-	assert(SUCCEEDED(hr));
+	CheckHR(hr, std::string(__FILE__) + ":" + std::to_string(__LINE__));
 
 	// コマンドアロケーターを生成する
 	hr = device_->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT,
 		IID_PPV_ARGS(&commandAllocator_));
 	// コマンドアロケーターの生成がうまくいかなかったので生成できない
-	assert(SUCCEEDED(hr));
+	CheckHR(hr, std::string(__FILE__) + ":" + std::to_string(__LINE__));
 
 	// コマンドリストを生成する
 	hr = device_->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT,
 		commandAllocator_.Get(), nullptr, IID_PPV_ARGS(&commandList_));
 	// コマンドリストの生成がうまくいかなかったので生成できない
-	assert(SUCCEEDED(hr));
+	CheckHR(hr, std::string(__FILE__) + ":" + std::to_string(__LINE__));
 
 	// スワップチェーンを生成する
 	swapChainDesc_.Width = width; // 画面の幅
@@ -85,7 +83,7 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t width, int32_t height) {
 	hr = dxgiFactory_->CreateSwapChainForHwnd(commandQueue_.Get(), hwnd, &swapChainDesc_,
 		nullptr, nullptr, reinterpret_cast<IDXGISwapChain1**>(swapChain_.GetAddressOf()));
 
-	assert(SUCCEEDED(hr));
+	CheckHR(hr, std::string(__FILE__) + ":" + std::to_string(__LINE__));
 
 	// RTV用ディスクリプタヒープの生成
 	rtvDescriptorHeap_.Initialize(device_.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_RTV, kSwapChainBufferCount, false);
@@ -93,18 +91,18 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t width, int32_t height) {
 	// SwapChainからResourceを引っ張ってくる
 	for (uint32_t i = 0; i < kSwapChainBufferCount; ++i) {
 		hr = swapChain_->GetBuffer(i, IID_PPV_ARGS(&swapChainResources_[i]));
-		assert(SUCCEEDED(hr));
+		CheckHR(hr, std::string(__FILE__) + ":" + std::to_string(__LINE__));
 	}
 
 	CreateRenderTargetView();
 
 	// 初期値0でFenceを作る
 	hr = device_->CreateFence(fenceValue_, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence_));
-	assert(SUCCEEDED(hr));
+	CheckHR(hr, std::string(__FILE__) + ":" + std::to_string(__LINE__));
 
 	// FenceもSignalを待つためのイベントを作成する
 	fenceEvent_ = CreateEvent(NULL, FALSE, FALSE, NULL);
-	assert(fenceEvent_ != nullptr);
+	Require(fenceEvent_ != nullptr, "Cannot create GPU fence event");
 
 	// クライアント領域のサイズと一緒にして画面全体に表示
 	viewport_.Width = static_cast<float>(width);
@@ -176,33 +174,42 @@ void DirectXCommon::PostDraw() {
 
 	// TransitionBarrierを張る
 	commandList_->ResourceBarrier(1, &barrier);
-	// コマンドリストの内容を確定させる。すべてのコマンドを頼んでからCloseすること
-	HRESULT hr = commandList_->Close();
-	assert(SUCCEEDED(hr));
-	// GPUにコマンドリストの実行を行わせる
-	ID3D12CommandList* commandLists[] = { commandList_.Get()};
-	commandQueue_->ExecuteCommandLists(1, commandLists);
-	// GPUにOSに画面の交換を行うよう通知する
-	swapChain_->Present(1, 0);
-	// Fenceの値を更新
-	fenceValue_++;
-	// GPUがここまでたどり着いたときに、Fenceの値を指定した値に代入するようにSignalを送る
-	commandQueue_->Signal(fence_.Get(), fenceValue_);
-	// Fenceの値が指定したSignal値にたどり着いているか確認する
-	// GetCompletedValueの初期値はFence作成時に渡した初期値
-	if (fence_->GetCompletedValue() < fenceValue_) {
-		// 指定したSignalにたどり着いていないので、たどり着くようにイベントを設定する
-		fence_->SetEventOnCompletion(fenceValue_, fenceEvent_);
-		// イベント待つ
-		WaitForSingleObject(fenceEvent_, INFINITE);
-	}
+    FlushCommands();
+    CheckHR(swapChain_->Present(1, 0), "SwapChain::Present");
+}
 
-	// 次のフレーム用のコマンドリストを準備
-	hr = commandAllocator_->Reset();
-	assert(SUCCEEDED(hr));
+void DirectXCommon::WaitForIdle() {
+    if (!commandQueue_ || !fence_) { return; }
+    const uint64_t value = ++fenceValue_;
+    CheckHR(commandQueue_->Signal(fence_.Get(), value), "CommandQueue::Signal");
+    if (fence_->GetCompletedValue() == UINT64_MAX) {
+        CheckHR(device_->GetDeviceRemovedReason(), "GPU device removed");
+    }
+    if (fence_->GetCompletedValue() < value) {
+        CheckHR(fence_->SetEventOnCompletion(value, fenceEvent_), "Fence::SetEventOnCompletion");
+        Require(WaitForSingleObject(fenceEvent_, INFINITE) == WAIT_OBJECT_0, "GPU fence wait failed");
+    }
+    CheckHR(device_->GetDeviceRemovedReason(), "GPU device status after fence wait");
+}
 
-	hr = commandList_->Reset(commandAllocator_.Get(), nullptr);
-	assert(SUCCEEDED(hr));
+void DirectXCommon::FlushCommands() {
+    if (!commandList_) { return; }
+    CheckHR(commandList_->Close(), "CommandList::Close");
+    ID3D12CommandList* lists[] = {commandList_.Get()};
+    commandQueue_->ExecuteCommandLists(1, lists);
+    WaitForIdle();
+    CheckHR(commandAllocator_->Reset(), "CommandAllocator::Reset");
+    CheckHR(commandList_->Reset(commandAllocator_.Get(), nullptr), "CommandList::Reset");
+}
+
+void DirectXCommon::Shutdown() {
+    WaitForIdle();
+    commandList_.Reset(); commandAllocator_.Reset(); swapChain_.Reset();
+    for (auto& resource : swapChainResources_) { resource.Reset(); }
+    depthStencilResource_.Reset(); rtvDescriptorHeap_.Reset(); dsvDescriptorHeap_.Reset();
+    fence_.Reset(); commandQueue_.Reset(); device_.Reset(); dxgiFactory_.Reset();
+    if (fenceEvent_) { CloseHandle(fenceEvent_); fenceEvent_ = nullptr; }
+    fenceValue_ = 0;
 }
 
 void DirectXCommon::CreateRenderTargetView() {
@@ -252,7 +259,7 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateDepthStencilTextureR
 		D3D12_RESOURCE_STATE_DEPTH_WRITE, // 深度値を書き込む状態にしておく
 		&depthClearValue, // Clear最適値
 		IID_PPV_ARGS(&resource));
-	assert(SUCCEEDED(hr));
+	CheckHR(hr, std::string(__FILE__) + ":" + std::to_string(__LINE__));
 
 	return resource;
 }

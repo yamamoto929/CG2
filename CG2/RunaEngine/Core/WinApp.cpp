@@ -1,5 +1,6 @@
 #include "WinApp.h"
 #include "ConvertString.h"
+#include "EngineError.h"
 #ifdef USE_IMGUI
 #include "externals/imgui/imgui.h"
 #include "externals/imgui/imgui_impl_dx12.h"
@@ -36,7 +37,7 @@ void WinApp::CreateNewWindow(int32_t width, int32_t height, const std::string& t
 	// ウィンドウサイズを表す構造体にクライアント領域を入れる
 	RECT wrc = { 0, 0, width, height };
 	// クライアント領域を元に実際のサイズにwrcを変更してもらう
-	AdjustWindowRect(&wrc, kWindowStyle, false);
+	Require(AdjustWindowRect(&wrc, kWindowStyle, false) != FALSE, "AdjustWindowRect failed");
 
 	// ウィンドウプロシージャ
 	windowClass_.lpfnWndProc = WindowProc;
@@ -47,7 +48,7 @@ void WinApp::CreateNewWindow(int32_t width, int32_t height, const std::string& t
 	// カーソル
 	windowClass_.hCursor = LoadCursor(nullptr, IDC_ARROW);
 	// ウィンドウクラスを登録する
-	RegisterClass(&windowClass_);
+	Require(RegisterClass(&windowClass_) != 0 || GetLastError() == ERROR_CLASS_ALREADY_EXISTS, "RegisterClass failed");
 
 	// ウィンドウの生成
 	hwnd_ = CreateWindow(
@@ -63,5 +64,7 @@ void WinApp::CreateNewWindow(int32_t width, int32_t height, const std::string& t
 		windowClass_.hInstance,			// インスタンスハンドル
 		nullptr);				// オプション
 
-	ShowWindow(hwnd_, SW_SHOW);
+	Require(hwnd_ != nullptr, "CreateWindow failed");
+	STARTUPINFO startupInfo{}; startupInfo.cb = sizeof(startupInfo); GetStartupInfo(&startupInfo);
+	ShowWindow(hwnd_, (startupInfo.dwFlags & STARTF_USESHOWWINDOW) ? startupInfo.wShowWindow : SW_SHOW);
 }

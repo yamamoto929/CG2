@@ -18,6 +18,7 @@ namespace RunaEngine{
 		void InitializeTriangle(ID3D12Device* device);
 		void Update(const Matrix4x4& viewMatrix, const Matrix4x4& projectionMatrix);
 		void Draw(ID3D12GraphicsCommandList* commandList);
+		void BeginFrame() { material_.BeginFrame(); transformationMatrix_.BeginFrame(); }
 
 		Transform& GetTransform() { return transform_; }
 		const Transform& GetTransform() const { return transform_; }
@@ -39,11 +40,11 @@ namespace RunaEngine{
 		D3D12_VERTEX_BUFFER_VIEW vertexBufferView_{};
 		uint32_t vertexCount_ = 0;
 
-		ConstantBuffer<Material> material_;
-		Material* materialData_ = nullptr;
+		FrameBuffer<Material> material_;
+		Material materialData_{};
 
-		ConstantBuffer<TransformationMatrix> transformationMatrix_;
-		TransformationMatrix* transformationMatrixData_ = nullptr;
+		FrameBuffer<TransformationMatrix> transformationMatrix_;
+		TransformationMatrix transformationMatrixData_{};
 
 		Matrix4x4 worldMatrix_{};
 		Matrix4x4 wvpMatrix_{};

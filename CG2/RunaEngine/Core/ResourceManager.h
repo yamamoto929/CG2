@@ -4,6 +4,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <unordered_map>
 
 class TextureManager;
 struct ID3D12Device;
@@ -16,8 +17,14 @@ public:
 		const std::string& directoryPath,
 		const std::string& fileName
 	);
+	void BeginFrame();
+	bool Contains(const RunaEngine::Model* model) const;
+	bool UsesTexture(uint32_t handle) const;
+	void DestroyModel(RunaEngine::Model* model);
+	void Clear();
 
 private:
 	ModelLoader modelLoader_;
 	std::vector<std::unique_ptr<RunaEngine::Model>> models_;
+	std::unordered_map<std::string, RunaEngine::Model*> modelCache_;
 };

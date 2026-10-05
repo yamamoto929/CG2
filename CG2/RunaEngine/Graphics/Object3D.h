@@ -20,10 +20,9 @@ namespace RunaEngine{
 			{ 0.0f, 0.0f, 0.0f },
 			{ 0.0f, 0.0f, 0.0f },
 		};
-		ConstantBuffer<TransformationMatrix> transformationMatrix_;
-		TransformationMatrix* transformationMatrixData_ = nullptr;
-		ConstantBuffer<Material> material_;
-		Material* materialData_ = nullptr;
+		FrameBuffer<TransformationMatrix> transformationMatrix_;
+		TransformationMatrix transformationMatrixData_{};
+		std::optional<uint32_t> textureOverride_;
 		Model* model_ = nullptr;
 		Matrix4x4 worldMatrix_{};
 		Matrix4x4 wvpMatrix_{};
@@ -33,6 +32,10 @@ namespace RunaEngine{
 
 		void SetModel(Model* model) { model_ = model; }
 		Model* GetModel() const { return model_; }
+		void BeginFrame() { transformationMatrix_.BeginFrame(); }
+		void SetTextureHandle(uint32_t handle) { textureOverride_ = handle; }
+		void ClearTextureOverride() { textureOverride_.reset(); }
+		std::optional<uint32_t> GetTextureOverride() const { return textureOverride_; }
 
 		Transform& GetTransform() { return transform_; }
 		const Transform& GetTransform() const { return transform_; }

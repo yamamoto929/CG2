@@ -13,6 +13,7 @@ void Log(const std::string& message) {
 }
 
 void InitLog() {
+	if (gLogFile.is_open()) { gLogFile.close(); }
 	std::filesystem::create_directory("logs");
 
 	auto now = std::chrono::system_clock::now();

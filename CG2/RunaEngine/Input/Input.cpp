@@ -4,29 +4,38 @@
 #include <cstring>
 #include <algorithm>
 #include <cmath>
+#include "EngineError.h"
+void Input::Shutdown() {
+	if (keyboard_) { keyboard_->Unacquire(); }
+	if (mouse_) { mouse_->Unacquire(); }
+	keyboard_.Reset(); mouse_.Reset(); directInput_.Reset(); hwnd_ = nullptr;
+	std::memset(key_, 0, sizeof(key_)); std::memset(preKey_, 0, sizeof(preKey_));
+	mouseState_ = {}; preMouseState_ = {}; currentGamepad_ = {}; previousGamepad_ = {};
+	activeGamepadIndex_ = XUSER_MAX_COUNT;
+}
 void Input::Initialize(HINSTANCE hInstance, HWND hwnd) {
 	hwnd_ = hwnd;
 	// DirectInput
 	HRESULT hr = DirectInput8Create(hInstance, DIRECTINPUT_VERSION, IID_IDirectInput8, (void**)&directInput_, nullptr);
-	assert(SUCCEEDED(hr));
+	CheckHR(hr, "Input initialization");
 	// キーボード
 	hr = directInput_->CreateDevice(GUID_SysKeyboard, &keyboard_, NULL);
-	assert(SUCCEEDED(hr));
+	CheckHR(hr, "Input initialization");
 
 	hr = keyboard_->SetDataFormat(&c_dfDIKeyboard);
-	assert(SUCCEEDED(hr));
+	CheckHR(hr, "Input initialization");
 
 	hr = keyboard_->SetCooperativeLevel(hwnd, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE | DISCL_NOWINKEY);
-	assert(SUCCEEDED(hr));
+	CheckHR(hr, "Input initialization");
 	// マウス
 	hr = directInput_->CreateDevice(GUID_SysMouse, &mouse_, NULL);
-	assert(SUCCEEDED(hr));
+	CheckHR(hr, "Input initialization");
 
 	hr = mouse_->SetDataFormat(&c_dfDIMouse);
-	assert(SUCCEEDED(hr));
+	CheckHR(hr, "Input initialization");
 
 	hr = mouse_->SetCooperativeLevel(hwnd, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE);
-	assert(SUCCEEDED(hr));
+	CheckHR(hr, "Input initialization");
 }
 
 void Input::Update() {

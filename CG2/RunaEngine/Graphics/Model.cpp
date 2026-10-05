@@ -1,3 +1,4 @@
+#include "EngineError.h"
 #include "Model.h"
 #include <cassert>
 #include <cstring>
@@ -5,10 +6,13 @@
 
 namespace RunaEngine{
 	void Model::Initialize(ID3D12Device* device, TextureManager* textureManager, ModelData* modelData) {
-		assert(device);
-		assert(textureManager);
-		assert(modelData);
-		assert(!modelData->vertices.empty());
+		Require(device != nullptr, "device is not initialized");
+		Require(textureManager != nullptr, "textureManager is not initialized");
+		Require(modelData != nullptr, "modelData is not initialized");
+		Require(!modelData->vertices.empty(), "Model contains no triangles");
+		Require(modelData->vertices.size() <= UINT_MAX / sizeof(VertexData), "Model vertex buffer is too large");
+		materials_ = modelData->materials;
+		materialBuffers_.Initialize(device);
 
 		vertexResource_ = CreateBufferResource(device, sizeof(VertexData) * modelData->vertices.size());
 		// 頂点バッファビューを作成
@@ -18,8 +22,9 @@ namespace RunaEngine{
 
 		// 頂点リソースにデータを書き込む
 		VertexData* vertexData = nullptr;
-		vertexResource_->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));
+		CheckHR(vertexResource_->Map(0, nullptr, reinterpret_cast<void**>(&vertexData)), "Model vertex buffer Map");
 		std::memcpy(vertexData, modelData->vertices.data(), sizeof(VertexData) * modelData->vertices.size());
+		vertexResource_->Unmap(0, nullptr);
 
 		fallbackTextureHandle_ =
 			textureManager->Load("RunaEngine/Graphics/Resources/white.png");
@@ -42,17 +47,29 @@ namespace RunaEngine{
 		}
 	}
 
-	void Model::Draw(ID3D12GraphicsCommandList* commandList, TextureManager* textureManager) {
-		assert(commandList);
-		assert(textureManager);
+	void Model::Draw(ID3D12GraphicsCommandList* commandList, TextureManager* textureManager,
+		const ModelDrawParameters& parameters) {
+		Require(commandList != nullptr, "commandList is not initialized");
+		Require(textureManager != nullptr, "textureManager is not initialized");
 
 		commandList->IASetVertexBuffers(0, 1, &vertexBufferView_);
 		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 		for (const MeshData& mesh : meshes_) {
 			for (const SubMeshData& subMesh : mesh.subMeshes) {
+				Material material{};
+				material.color = parameters.color;
+				if (const auto found = materials_.find(subMesh.materialName); found != materials_.end()) {
+					const auto& color = found->second.color;
+					material.color = {material.color.x * color.x, material.color.y * color.y,
+						material.color.z * color.z, material.color.w * color.w};
+				}
+				material.lightingMode = parameters.lightingMode;
+				material.uvTransform = parameters.uvTransform;
+				commandList->SetGraphicsRootConstantBufferView(0, materialBuffers_.Write(material));
 				const uint32_t textureHandle =
-					ResolveTextureHandle(subMesh.materialName);
+					parameters.textureOverride.value_or(ResolveTextureHandle(subMesh.materialName));
+				textureManager->GetTextureSize(textureHandle); // 0番はImGui専用。モデルの画像としては受け付けない。
 				commandList->SetGraphicsRootDescriptorTable(
 					2,
 					textureManager->GetSrvHandleGPU(textureHandle)
@@ -65,6 +82,14 @@ namespace RunaEngine{
 				);
 			}
 		}
+	}
+
+	bool Model::UsesTexture(uint32_t handle) const {
+		if (handle == fallbackTextureHandle_ || textureOverride_ == handle) { return true; }
+		for (const auto& entry : materialTextureHandles_) {
+			if (entry.second == handle) { return true; }
+		}
+		return false;
 	}
 
 	uint32_t Model::ResolveTextureHandle(const std::string& materialName) const {
@@ -121,7 +146,7 @@ namespace RunaEngine{
 			nullptr,
 			IID_PPV_ARGS(&resource)
 		);
-		assert(SUCCEEDED(hr));
+		CheckHR(hr, "Model::CreateCommittedResource");
 
 		return resource;
 	}

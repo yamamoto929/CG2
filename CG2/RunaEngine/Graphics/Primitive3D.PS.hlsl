@@ -45,11 +45,12 @@ PixelShaderOutput main(VertexShaderOutput input) {
         diffuse = saturate(NdotL);
     }
 
-    output.color =
-        baseColor *
-        gDirectionalLight.color *
+    output.color.rgb =
+        baseColor.rgb *
+        gDirectionalLight.color.rgb *
         diffuse *
         gDirectionalLight.intensity;
 
+    output.color.a = baseColor.a;
     return output;
 }

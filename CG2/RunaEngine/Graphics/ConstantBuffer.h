@@ -3,23 +3,27 @@
 #include <cstddef>
 #include <d3d12.h>
 #include <wrl.h>
+#include "EngineError.h"
+#include <memory>
+#include <vector>
 #pragma comment(lib, "d3d12.lib")
 
 template <class T>
 class ConstantBuffer {
 public:
 	void Initialize(ID3D12Device* device) {
-		assert(device);
+		Require(device != nullptr, "ConstantBuffer: device is null");
 
 		resource_ = CreateBufferResource(device, AlignConstantBufferSize(sizeof(T)));
-		resource_->Map(0, nullptr, reinterpret_cast<void**>(&data_));
+		const D3D12_RANGE readRange{0, 0};
+		CheckHR(resource_->Map(0, &readRange, reinterpret_cast<void**>(&data_)), "ConstantBuffer::Map");
 		*data_ = {};
 	}
 
 	T* GetData() const { return data_; }
 
 	D3D12_GPU_VIRTUAL_ADDRESS GetGPUVirtualAddress() const {
-		assert(resource_);
+		Require(resource_ != nullptr, "ConstantBuffer is not initialized");
 		return resource_->GetGPUVirtualAddress();
 	}
 
@@ -50,10 +54,37 @@ private:
 			nullptr,
 			IID_PPV_ARGS(&resource)
 		);
-		assert(SUCCEEDED(hr));
+		CheckHR(hr, "ConstantBuffer::CreateCommittedResource");
 		return resource;
 	}
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> resource_;
 	T* data_ = nullptr;
+};
+
+// 1回の描画ごとに別の保存場所へコピーする。GPU完了後だけBeginFrameで再利用する。
+template <class T>
+class FrameBuffer {
+public:
+    void Initialize(ID3D12Device* device) {
+        Require(device != nullptr, "FrameBuffer: device is null");
+        buffers_.clear(); next_ = 0; device_ = device;
+    }
+    void BeginFrame() { next_ = 0; }
+    void Clear() { buffers_.clear(); next_ = 0; device_ = nullptr; }
+    D3D12_GPU_VIRTUAL_ADDRESS Write(const T& value) {
+        Require(device_ != nullptr, "FrameBuffer is not initialized");
+        if (next_ == buffers_.size()) {
+            auto buffer = std::make_unique<ConstantBuffer<T>>();
+            buffer->Initialize(device_);
+            buffers_.push_back(std::move(buffer));
+        }
+        auto& buffer = *buffers_[next_++];
+        *buffer.GetData() = value;
+        return buffer.GetGPUVirtualAddress();
+    }
+private:
+    ID3D12Device* device_ = nullptr;
+    size_t next_ = 0;
+    std::vector<std::unique_ptr<ConstantBuffer<T>>> buffers_;
 };

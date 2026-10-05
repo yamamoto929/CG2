@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdint>
 #include <d3d12.h>
 #pragma comment(lib,"d3d12.lib")
 
@@ -10,6 +11,7 @@ namespace RunaEngine{
 	class Object3D;
 	class Primitive3D;
 	class Sprite;
+	struct SpriteDrawCommand;
 }
 
 class PrimitiveGraphicsPipeline;
@@ -31,6 +33,7 @@ public:
 	void Draw(RunaEngine::Object3D& object, const RunaEngine::ModelDrawParameters& parameters);
 	void Draw(RunaEngine::Primitive3D& primitive);
 	void Draw(RunaEngine::Sprite& sprite);
+	void Draw(RunaEngine::Sprite& sprite, const RunaEngine::SpriteDrawCommand& command, int32_t width, int32_t height);
 	void End();
 
 	ID3D12GraphicsCommandList* GetCommandList() const;

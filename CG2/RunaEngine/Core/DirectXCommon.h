@@ -26,7 +26,7 @@ private:
 
 	Microsoft::WRL::ComPtr<ID3D12Fence> fence_ = nullptr;
 	void CreateRenderTargetView();
-	HANDLE fenceEvent_;
+	HANDLE fenceEvent_ = nullptr;
 
 	DXGI_FORMAT rtvDescFormat_;
 
@@ -47,6 +47,9 @@ public:
 	void Initialize(HWND hwnd, int32_t width, int32_t height);
 	void PreDraw();
 	void PostDraw();
+	void WaitForIdle();
+	void FlushCommands();
+	void Shutdown();
 	DXGI_FORMAT GetDXGIFormat()const { return rtvDescFormat_; }
 	ID3D12GraphicsCommandList* GetCommandList() const { return commandList_.Get(); }
 	ID3D12Device* GetDevice() const { return device_.Get(); }

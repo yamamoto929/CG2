@@ -14,6 +14,7 @@ public:
 	);
 
 	void Set(ID3D12GraphicsCommandList* commandList);
+	void Shutdown() { pipelineState_.Reset(); rootSignature_.Reset(); }
 
 private:
 	void CreateRootSignature(ID3D12Device* device);

@@ -1,213 +1,231 @@
 #include "ModelLoader.h"
-#include "Vector2.h"
-#include "Vector3.h"
-#include "Vector4.h"
-#include <cassert>
-#include <cstdint>
+#include "EngineError.h"
+#include <array>
+#include <algorithm>
+#include <charconv>
+#include <cmath>
+#include <filesystem>
 #include <fstream>
+#include <numeric>
 #include <sstream>
-#include <utility>
-#include <vector>
 
 namespace {
-	uint32_t ParseObjIndex(const std::string& index) {
-		return index.empty() ? 0u : static_cast<uint32_t>(std::stoi(index));
-	}
+    using namespace RunaEngine;
+    std::string Trim(const std::string& value) {
+        const auto first = value.find_first_not_of(" \t\r\n");
+        if (first == std::string::npos) { return {}; }
+        auto text = value.substr(first, value.find_last_not_of(" \t\r\n") - first + 1);
+        if (text.size() >= 2 && text.front() == '"' && text.back() == '"') {
+            text = text.substr(1, text.size() - 2);
+        }
+        return text;
+    }
+    size_t ResolveIndex(const std::string& text, size_t count, const std::string& context) {
+        int64_t raw = 0;
+        const auto parsed = std::from_chars(text.data(), text.data() + text.size(), raw);
+        Require(parsed.ec == std::errc{} && parsed.ptr == text.data() + text.size() && raw != 0,
+            context + ": invalid OBJ index '" + text + "'");
+        const int64_t index = raw > 0 ? raw - 1 : static_cast<int64_t>(count) + raw;
+        Require(index >= 0 && index < static_cast<int64_t>(count), context + ": OBJ index out of range");
+        return static_cast<size_t>(index);
+    }
+    void ReadVector(std::istringstream& stream, Vector3& value, const std::string& context) {
+        Require(bool(stream >> value.x >> value.y >> value.z) && std::isfinite(value.x) &&
+            std::isfinite(value.y) && std::isfinite(value.z), context + ": invalid vector");
+    }
+    Vector3 Cross(const Vector3& a, const Vector3& b) {
+        return {a.y*b.z-a.z*b.y, a.z*b.x-a.x*b.z, a.x*b.y-a.y*b.x};
+    }
+    // 凹多角形にも対応するため、面を2Dに投影し、内側にある三角形から切り出す。
+    std::vector<std::array<size_t, 3>> Triangulate(const std::vector<VertexData>& face, const std::string& context) {
+        Require(face.size() >= 3 && face.size() <= 4096, context + ": invalid polygon vertex count");
+        Vector3 normal{};
+        for (size_t i = 0; i < face.size(); ++i) {
+            const auto& a = face[i].position;
+            const auto& b = face[(i + 1) % face.size()].position;
+            normal.x += (a.y-b.y)*(a.z+b.z);
+            normal.y += (a.z-b.z)*(a.x+b.x);
+            normal.z += (a.x-b.x)*(a.y+b.y);
+        }
+        const int drop = std::abs(normal.x) >= std::abs(normal.y) && std::abs(normal.x) >= std::abs(normal.z)
+            ? 0 : (std::abs(normal.y) >= std::abs(normal.z) ? 1 : 2);
+        std::vector<std::array<double, 2>> points;
+        for (const auto& vertex : face) {
+            const auto& p = vertex.position;
+            points.push_back(drop == 0 ? std::array<double, 2>{p.y,p.z} :
+                (drop == 1 ? std::array<double, 2>{p.x,p.z} : std::array<double, 2>{p.x,p.y}));
+        }
+        auto turn = [&](size_t a, size_t b, size_t c) {
+            return (points[b][0]-points[a][0])*(points[c][1]-points[a][1]) -
+                (points[b][1]-points[a][1])*(points[c][0]-points[a][0]);
+        };
+        double area = 0;
+        double extent = 0;
+        for (size_t i = 0; i < points.size(); ++i) {
+            const auto& a = points[i]; const auto& b = points[(i+1)%points.size()];
+            area += (a[0]-points[0][0])*(b[1]-points[0][1]) - (b[0]-points[0][0])*(a[1]-points[0][1]);
+            extent = (std::max)(extent, (std::max)(std::abs(a[0]-points[0][0]), std::abs(a[1]-points[0][1])));
+        }
+        const double epsilon = (std::max)(extent*extent*1e-10, 1e-30);
+        Require(std::abs(area) > epsilon, context + ": degenerate polygon");
+        const double sign = area > 0 ? 1 : -1;
+        std::vector<size_t> remaining(face.size());
+        std::iota(remaining.begin(), remaining.end(), 0);
+        std::vector<std::array<size_t, 3>> triangles;
+        while (remaining.size() > 3) {
+            bool clipped = false;
+            for (size_t i = 0; i < remaining.size(); ++i) {
+                const size_t a = remaining[(i+remaining.size()-1)%remaining.size()];
+                const size_t b = remaining[i]; const size_t c = remaining[(i+1)%remaining.size()];
+                if (sign*turn(a,b,c) <= epsilon) { continue; }
+                bool containsPoint = false;
+                for (const size_t p : remaining) {
+                    if (p != a && p != b && p != c && sign*turn(a,b,p) >= -epsilon &&
+                        sign*turn(b,c,p) >= -epsilon && sign*turn(c,a,p) >= -epsilon) { containsPoint = true; break; }
+                }
+                if (!containsPoint) {
+                    triangles.push_back({c,b,a}); // X反転で裏返った面の頂点順を戻す
+                    remaining.erase(remaining.begin()+static_cast<std::ptrdiff_t>(i));
+                    clipped = true; break;
+                }
+            }
+            Require(clipped, context + ": polygon cannot be triangulated (overlap or degenerate edges)");
+        }
+        Require(sign*turn(remaining[0],remaining[1],remaining[2]) > epsilon, context + ": degenerate triangle");
+        triangles.push_back({remaining[2],remaining[1],remaining[0]});
+        return triangles;
+    }
 }
 
-RunaEngine::ModelData ModelLoader::LoadObjFile(
-	const std::string& directoryPath,
-	const std::string& filename
-) {
-	RunaEngine::ModelData modelData;
-	std::vector<RunaEngine::Vector4> positions;
-	std::vector<RunaEngine::Vector3> normals;
-	std::vector<RunaEngine::Vector2> texCoords;
-
-	RunaEngine::MeshData currentMesh{};
-	RunaEngine::SubMeshData currentSubMesh{};
-	std::string currentMaterialName;
-	bool hasCurrentMesh = false;
-	bool hasCurrentSubMesh = false;
-
-	auto FinishCurrentSubMesh = [&]() {
-		if (!hasCurrentSubMesh) {
-			return;
-		}
-
-		const uint32_t currentVertexCount =
-			static_cast<uint32_t>(modelData.vertices.size());
-		currentSubMesh.vertexCount =
-			currentVertexCount - currentSubMesh.firstVertex;
-
-		if (currentSubMesh.vertexCount > 0) {
-			currentMesh.subMeshes.push_back(std::move(currentSubMesh));
-		}
-
-		currentSubMesh = {};
-		hasCurrentSubMesh = false;
-	};
-
-	auto FinishCurrentMesh = [&]() {
-		FinishCurrentSubMesh();
-		if (hasCurrentMesh && !currentMesh.subMeshes.empty()) {
-			modelData.meshes.push_back(std::move(currentMesh));
-		}
-
-		currentMesh = {};
-		hasCurrentMesh = false;
-	};
-
-	auto StartMesh = [&](const std::string& meshName) {
-		FinishCurrentMesh();
-		currentMesh = {};
-		currentMesh.name = meshName.empty() ? "default" : meshName;
-		hasCurrentMesh = true;
-	};
-
-	auto EnsureCurrentMesh = [&]() {
-		if (!hasCurrentMesh) {
-			currentMesh = {};
-			currentMesh.name = "default";
-			hasCurrentMesh = true;
-		}
-	};
-
-	auto StartSubMesh = [&](const std::string& materialName) {
-		EnsureCurrentMesh();
-		FinishCurrentSubMesh();
-		currentSubMesh = {};
-		currentSubMesh.materialName = materialName;
-		currentSubMesh.firstVertex =
-			static_cast<uint32_t>(modelData.vertices.size());
-		hasCurrentSubMesh = true;
-	};
-
-	auto EnsureCurrentSubMesh = [&]() {
-		EnsureCurrentMesh();
-		if (!hasCurrentSubMesh) {
-			StartSubMesh(currentMaterialName);
-		}
-	};
-
-	std::ifstream file(directoryPath + "/" + filename);
-	assert(file.is_open());
-
-	std::string line;
-	while (std::getline(file, line)) {
-		std::string identifier;
-		std::istringstream s(line);
-		s >> identifier;
-
-		if (identifier == "v") {
-			RunaEngine::Vector4 position;
-			s >> position.x >> position.y >> position.z;
-			position.w = 1.0f;
-			position.x *= -1.0f;
-			positions.push_back(position);
-		} else if (identifier == "vt") {
-			RunaEngine::Vector2 texCoord;
-			s >> texCoord.x >> texCoord.y;
-			texCoord.y = 1.0f - texCoord.y;
-			texCoords.push_back(texCoord);
-		} else if (identifier == "vn") {
-			RunaEngine::Vector3 normal;
-			s >> normal.x >> normal.y >> normal.z;
-			normal.x *= -1.0f;
-			normals.push_back(normal);
-		} else if (identifier == "o" || identifier == "g") {
-			std::string meshName;
-			s >> meshName;
-			StartMesh(meshName);
-		} else if (identifier == "usemtl") {
-			s >> currentMaterialName;
-			StartSubMesh(currentMaterialName);
-		} else if (identifier == "f") {
-			EnsureCurrentSubMesh();
-
-			std::vector<RunaEngine::VertexData> faceVertices;
-			std::string vertexDefinition;
-			while (s >> vertexDefinition) {
-				std::istringstream v(vertexDefinition);
-				uint32_t elementIndices[3] = {};
-				for (int32_t element = 0; element < 3; ++element) {
-					std::string index;
-					if (std::getline(v, index, '/')) {
-						elementIndices[element] = ParseObjIndex(index);
-					}
-				}
-
-				assert(elementIndices[0] > 0);
-				assert(elementIndices[0] <= positions.size());
-				RunaEngine::Vector4 position = positions[elementIndices[0] - 1];
-
-				RunaEngine::Vector2 texCoord{ 0.0f, 0.0f };
-				if (elementIndices[1] != 0) {
-					assert(elementIndices[1] <= texCoords.size());
-					texCoord = texCoords[elementIndices[1] - 1];
-				}
-
-				RunaEngine::Vector3 normal{ 0.0f, 0.0f, 0.0f };
-				if (elementIndices[2] != 0) {
-					assert(elementIndices[2] <= normals.size());
-					normal = normals[elementIndices[2] - 1];
-				}
-
-				faceVertices.push_back({ position, texCoord, normal });
-			}
-
-			assert(faceVertices.size() >= 3);
-			for (size_t vertexIndex = 1; vertexIndex + 1 < faceVertices.size(); ++vertexIndex) {
-				modelData.vertices.push_back(faceVertices[vertexIndex + 1]);
-				modelData.vertices.push_back(faceVertices[vertexIndex]);
-				modelData.vertices.push_back(faceVertices[0]);
-			}
-		} else if (identifier == "mtllib") {
-			std::string materialFilename;
-			s >> materialFilename;
-			auto loadedMaterials =
-				LoadMaterialTemplateFile(directoryPath, materialFilename);
-			for (auto& [materialName, material] : loadedMaterials) {
-				modelData.materials.insert_or_assign(
-					materialName,
-					std::move(material)
-				);
-			}
-		}
-	}
-
-	FinishCurrentMesh();
-	return modelData;
+RunaEngine::ModelData ModelLoader::LoadObjFile(const std::string& directory, const std::string& filename) {
+    using namespace RunaEngine;
+    const auto path = std::filesystem::path(directory) / filename;
+    std::ifstream file(path);
+    Require(file.is_open(), "Cannot open OBJ: " + path.generic_string());
+    ModelData data;
+    std::vector<Vector4> positions;
+    std::vector<Vector2> uvs;
+    std::vector<Vector3> normals;
+    std::string meshName = "default", materialName, line;
+    size_t lineNumber = 0;
+    while (std::getline(file, line)) {
+        ++lineNumber;
+        line = line.substr(0, line.find('#'));
+        std::istringstream stream(line);
+        std::string type; stream >> type;
+        const std::string context = path.generic_string()+":"+std::to_string(lineNumber);
+        if (type == "v") {
+            Vector3 p{}; ReadVector(stream,p,context);
+            positions.push_back({-p.x,p.y,p.z,1});
+        } else if (type == "vt") {
+            Vector2 uv{};
+            Require(bool(stream >> uv.x >> uv.y) && std::isfinite(uv.x) && std::isfinite(uv.y), context+": invalid UV");
+            uvs.push_back({uv.x,1-uv.y});
+        } else if (type == "vn") {
+            Vector3 n{}; ReadVector(stream,n,context); n.x = -n.x;
+            Require(n.Length() > 0 && std::isfinite(n.Length()), context+": invalid normal");
+            const auto length=n.Length(); n={n.x/length,n.y/length,n.z/length}; normals.push_back(n);
+        } else if (type == "o" || type == "g") {
+            std::getline(stream,meshName); meshName=Trim(meshName);
+            if (meshName.empty()) { meshName="default"; }
+            if (!data.meshes.empty() && !data.meshes.back().subMeshes.empty()) { data.meshes.push_back({meshName,{}}); }
+            else if (!data.meshes.empty()) { data.meshes.back().name=meshName; }
+        } else if (type == "usemtl") {
+            std::getline(stream,materialName); materialName=Trim(materialName);
+            Require(!materialName.empty(), context+": empty material name");
+        } else if (type == "mtllib") {
+            std::string mtl; std::getline(stream,mtl); mtl=Trim(mtl);
+            Require(!mtl.empty(),context+": empty MTL path");
+            // 空白を含む単一のパスを優先。存在しなければ複数のMTL名として読む。
+            std::vector<std::string> files;
+            if (std::filesystem::exists(path.parent_path()/mtl)) { files.push_back(mtl); }
+            else { std::istringstream names(mtl); while(names>>mtl) { files.push_back(mtl); } }
+            for(const auto& name:files) {
+                const auto mtlPath=path.parent_path()/name;
+                auto materials=LoadMaterialTemplateFile(mtlPath.parent_path().generic_string(),mtlPath.filename().generic_string());
+                for(auto& entry:materials) { data.materials.insert_or_assign(entry.first,std::move(entry.second)); }
+            }
+        } else if (type == "f") {
+            std::vector<VertexData> face;
+            std::vector<bool> missingNormals;
+            std::string token;
+            while(stream>>token) {
+                std::array<std::string,3> parts{};
+                std::istringstream definition(token);
+                for(auto& part:parts) { std::getline(definition,part,'/'); }
+                std::string excess;
+                Require(!std::getline(definition,excess,'/'),context+": invalid face token");
+                VertexData vertex{};
+                vertex.position=positions[ResolveIndex(parts[0],positions.size(),context)];
+                if(!parts[1].empty()) { vertex.texCoord=uvs[ResolveIndex(parts[1],uvs.size(),context)]; }
+                if(!parts[2].empty()) { vertex.normal=normals[ResolveIndex(parts[2],normals.size(),context)]; }
+                missingNormals.push_back(parts[2].empty()); face.push_back(vertex);
+            }
+            const auto triangles=Triangulate(face,context);
+            Require(data.vertices.size()+triangles.size()*3 <= UINT32_MAX,context+": too many vertices");
+            if(data.meshes.empty()) { data.meshes.push_back({meshName,{}}); }
+            auto& mesh=data.meshes.back();
+            if(mesh.subMeshes.empty() || mesh.subMeshes.back().materialName!=materialName) {
+                mesh.subMeshes.push_back({materialName,static_cast<uint32_t>(data.vertices.size()),0});
+            }
+            for(const auto& triangle:triangles) {
+                const auto& a=face[triangle[0]].position;
+                const auto& b=face[triangle[1]].position;
+                const auto& c=face[triangle[2]].position;
+                auto normal=Cross({b.x-a.x,b.y-a.y,b.z-a.z},{c.x-a.x,c.y-a.y,c.z-a.z});
+                const float length=normal.Length();
+                Require(length>0 && std::isfinite(length),context+": degenerate triangle normal");
+                normal={normal.x/length,normal.y/length,normal.z/length};
+                for(const size_t index:triangle) {
+                    auto vertex=face[index];
+                    if(missingNormals[index]) { vertex.normal=normal; }
+                    data.vertices.push_back(vertex);
+                }
+                mesh.subMeshes.back().vertexCount+=3;
+            }
+        }
+    }
+    std::erase_if(data.meshes,[](const auto& mesh){return mesh.subMeshes.empty();});
+    Require(!data.vertices.empty(),"OBJ contains no faces: "+path.generic_string());
+    for(const auto& mesh:data.meshes) { for(const auto& sub:mesh.subMeshes) {
+        Require(sub.materialName.empty() || data.materials.contains(sub.materialName),
+            "Undefined OBJ material '"+sub.materialName+"': "+path.generic_string());
+    }}
+    return data;
 }
 
-std::unordered_map<std::string, RunaEngine::MaterialData>
-ModelLoader::LoadMaterialTemplateFile(
-	const std::string& directoryPath,
-	const std::string& filename
-) {
-	std::unordered_map<std::string, RunaEngine::MaterialData> materials;
-	RunaEngine::MaterialData* currentMaterial = nullptr;
-
-	std::ifstream file(directoryPath + "/" + filename);
-	assert(file.is_open());
-
-	std::string line;
-	while (std::getline(file, line)) {
-		std::string identifier;
-		std::istringstream s(line);
-		s >> identifier;
-
-		if (identifier == "newmtl") {
-			std::string materialName;
-			s >> materialName;
-			currentMaterial = &materials[materialName];
-		} else if (identifier == "map_Kd" && currentMaterial) {
-			std::string textureFilename;
-			s >> textureFilename;
-			currentMaterial->textureFilePath =
-				directoryPath + "/" + textureFilename;
-		}
-	}
-
-	return materials;
+std::unordered_map<std::string,RunaEngine::MaterialData> ModelLoader::LoadMaterialTemplateFile(
+    const std::string& directory,const std::string& filename) {
+    const auto path=std::filesystem::path(directory)/filename;
+    std::ifstream file(path);
+    Require(file.is_open(),"Cannot open MTL: "+path.generic_string());
+    std::unordered_map<std::string,RunaEngine::MaterialData> materials;
+    RunaEngine::MaterialData* current=nullptr;
+    std::string line;
+    size_t lineNumber=0;
+    while(std::getline(file,line)) {
+        ++lineNumber; line=line.substr(0,line.find('#'));
+        std::istringstream stream(line); std::string type; stream>>type;
+        const auto context=path.generic_string()+":"+std::to_string(lineNumber);
+        if(type=="newmtl") {
+            std::string name; std::getline(stream,name); name=Trim(name);
+            Require(!name.empty(),context+": empty material name"); current=&materials[name];
+        } else if(current && type=="Kd") {
+            RunaEngine::Vector3 color{}; ReadVector(stream,color,context);
+            current->color.x=color.x; current->color.y=color.y; current->color.z=color.z;
+        } else if(current && type=="Ks") { ReadVector(stream,current->specular,context);
+        } else if(current && type=="Ns") {
+            Require(bool(stream>>current->shininess) && std::isfinite(current->shininess) && current->shininess>=0,
+                context+": invalid shininess");
+        } else if(current && (type=="d" || type=="Tr")) {
+            float alpha=0;
+            Require(bool(stream>>alpha) && std::isfinite(alpha) && alpha>=0 && alpha<=1,context+": invalid opacity");
+            current->color.w=type=="d"?alpha:1-alpha;
+        } else if(current && type=="map_Kd") {
+            std::string name; std::getline(stream,name); name=Trim(name);
+            Require(!name.empty() && name.front()!='-',context+": map_Kd options are not supported; use an image path");
+            current->textureFilePath=(path.parent_path()/name).lexically_normal().generic_string();
+        }
+    }
+    return materials;
 }

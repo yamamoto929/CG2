@@ -1,3 +1,4 @@
+#include "EngineError.h"
 #include "Primitive3D.h"
 #include "AffineMatrix.h"
 #include <cassert>
@@ -5,7 +6,7 @@
 
 namespace RunaEngine{
 	void Primitive3D::InitializeTriangle(ID3D12Device* device) {
-		assert(device);
+		Require(device != nullptr, "device is not initialized");
 
 		VertexData vertices[3] = {
 			{
@@ -31,61 +32,56 @@ namespace RunaEngine{
 		vertexBufferView_.StrideInBytes = sizeof(VertexData);
 
 		VertexData* vertexData = nullptr;
-		vertexResource_->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));
+		CheckHR(vertexResource_->Map(0, nullptr, reinterpret_cast<void**>(&vertexData)), "Primitive3D::Map");
 		std::memcpy(vertexData, vertices, sizeof(vertices));
+		vertexResource_->Unmap(0, nullptr);
 		vertexCount_ = 3;
 
 		material_.Initialize(device);
-		materialData_ = material_.GetData();
-		materialData_->color = { 1.0f, 0.2f, 0.1f, 1.0f };
-		materialData_->lightingMode = LightingMode::NONE;
-		materialData_->uvTransform = MakeIdentityMatrix();
+		materialData_.color = { 1.0f, 0.2f, 0.1f, 1.0f };
+		materialData_.lightingMode = LightingMode::NONE;
+		materialData_.uvTransform = MakeIdentityMatrix();
 
 		worldMatrix_ = MakeIdentityMatrix();
 		wvpMatrix_ = MakeIdentityMatrix();
 		transformationMatrix_.Initialize(device);
-		transformationMatrixData_ = transformationMatrix_.GetData();
-		transformationMatrixData_->World = worldMatrix_;
-		transformationMatrixData_->WVP = wvpMatrix_;
+		transformationMatrixData_.World = worldMatrix_;
+		transformationMatrixData_.WVP = wvpMatrix_;
+		transformationMatrixData_.WorldInverseTranspose = MakeNormalMatrix(worldMatrix_);
 	}
 
 	void Primitive3D::Update(const Matrix4x4& viewMatrix, const Matrix4x4& projectionMatrix) {
-		assert(transformationMatrixData_);
 
 		worldMatrix_ = MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
 		wvpMatrix_ = Multiply(worldMatrix_, Multiply(viewMatrix, projectionMatrix));
 
-		transformationMatrixData_->World = worldMatrix_;
-		transformationMatrixData_->WVP = wvpMatrix_;
+		transformationMatrixData_.World = worldMatrix_;
+		transformationMatrixData_.WVP = wvpMatrix_;
+		transformationMatrixData_.WorldInverseTranspose = MakeNormalMatrix(worldMatrix_);
 	}
 
 	void Primitive3D::Draw(ID3D12GraphicsCommandList* commandList) {
-		assert(commandList);
-		assert(materialData_);
-		assert(transformationMatrixData_);
+		Require(commandList != nullptr, "commandList is not initialized");
 
 		commandList->IASetVertexBuffers(0, 1, &vertexBufferView_);
 		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-		commandList->SetGraphicsRootConstantBufferView(0, material_.GetGPUVirtualAddress());
-		commandList->SetGraphicsRootConstantBufferView(1, transformationMatrix_.GetGPUVirtualAddress());
+		commandList->SetGraphicsRootConstantBufferView(0, material_.Write(materialData_));
+		commandList->SetGraphicsRootConstantBufferView(1, transformationMatrix_.Write(transformationMatrixData_));
 
 		commandList->DrawInstanced(vertexCount_, 1, 0, 0);
 	}
 
 	void Primitive3D::SetColor(const Vector4& color) {
-		assert(materialData_);
-		materialData_->color = color;
+		materialData_.color = color;
 	}
 
 	const Vector4& Primitive3D::GetColor() const {
-		assert(materialData_);
-		return materialData_->color;
+		return materialData_.color;
 	}
 
 	void Primitive3D::SetLightingMode(LightingMode lightingMode) {
-		assert(materialData_);
-		materialData_->lightingMode = lightingMode;
+		materialData_.lightingMode = lightingMode;
 	}
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> Primitive3D::CreateBufferResource(ID3D12Device* device, size_t sizeInBytes) {
@@ -110,7 +106,7 @@ namespace RunaEngine{
 			nullptr,
 			IID_PPV_ARGS(&resource)
 		);
-		assert(SUCCEEDED(hr));
+		CheckHR(hr, "Primitive3D::CreateCommittedResource");
 
 		return resource;
 	}

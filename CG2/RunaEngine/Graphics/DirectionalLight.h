@@ -14,20 +14,22 @@ struct DirectionalLightData {
 class DirectionalLight {
 public:
 	void Initialize(ID3D12Device* device);
+	void BeginFrame() { buffer_.BeginFrame(); }
+	void Shutdown() { buffer_.Clear(); }
 	void SetCommand(ID3D12GraphicsCommandList* commandList, UINT rootParameterIndex = 3);
 
 	void SetColor(const RunaEngine::Vector4& color);
 	void SetDirection(const RunaEngine::Vector3& direction);
 	void SetIntensity(float intensity);
 
-	const RunaEngine::Vector4& GetColor() const { return data_->color; }
-	const RunaEngine::Vector3& GetDirection() const { return data_->direction; }
-	float GetIntensity() const { return data_->intensity; }
+	const RunaEngine::Vector4& GetColor() const { return data_.color; }
+	const RunaEngine::Vector3& GetDirection() const { return data_.direction; }
+	float GetIntensity() const { return data_.intensity; }
 
-	DirectionalLightData* GetData() { return data_; }
-	const DirectionalLightData* GetData() const { return data_; }
+	DirectionalLightData* GetData() { return &data_; }
+	const DirectionalLightData* GetData() const { return &data_; }
 
 private:
-	ConstantBuffer<DirectionalLightData> buffer_;
-	DirectionalLightData* data_ = nullptr;
+	FrameBuffer<DirectionalLightData> buffer_;
+	DirectionalLightData data_{};
 };

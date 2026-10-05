@@ -69,6 +69,11 @@ void Renderer::Draw(RunaEngine::Sprite& sprite) {
 	sprite.Draw(GetCommandList(), textureManager_);
 }
 
+void Renderer::Draw(RunaEngine::Sprite& sprite, const RunaEngine::SpriteDrawCommand& command, int32_t width, int32_t height) {
+	spriteGraphicsPipeline_->Set(GetCommandList());
+	sprite.Draw(GetCommandList(), textureManager_, command, width, height);
+}
+
 void Renderer::End() {
 	assert(directXCommon_);
 	directXCommon_->PostDraw();

@@ -51,6 +51,13 @@ public:
 	Object3D* CreateObject3D(Model* model);
 	Primitive3D* CreateTriangle3D();
 	Primitive3D* CreateTriangle3D(const Vector4& color);
+	void DestroySprite(Sprite*& sprite);
+	void DestroyObject3D(Object3D*& object);
+	void DestroyPrimitive3D(Primitive3D*& primitive);
+	void DestroyModel(Model*& model);
+	void UnloadTexture(uint32_t handle);
+	void ClearScene();
+	void SetObjectTexture(Object3D* object, const std::string& texturePath);
 
 	void DrawSprite(Sprite* sprite, const Vector2& position);
 	void DrawSprite(Sprite* sprite, const Vector3& translate);
@@ -110,6 +117,15 @@ private:
 	int32_t height_ = 0;
 	bool initialized_ = false;
 	bool comInitialized_ = false;
+	bool frameActive_ = false;
+	bool sceneClearRequested_ = false;
+	std::vector<Sprite*> pendingSprites_;
+	std::vector<Object3D*> pendingObjects_;
+	std::vector<Primitive3D*> pendingPrimitives_;
+	std::vector<Model*> pendingModels_;
+	std::vector<uint32_t> pendingTextures_;
+	void ReleasePendingResources();
+	bool IsTextureInUse(uint32_t handle) const;
 
 	WinApp winApp_;
 	DirectXCommon directXCommon_;
@@ -160,6 +176,13 @@ Model* CreateModel(const std::string& filePath);
 Object3D* CreateObject3D(Model* model);
 Primitive3D* CreateTriangle3D();
 Primitive3D* CreateTriangle3D(const Vector4& color);
+void DestroySprite(Sprite*& sprite);
+void DestroyObject3D(Object3D*& object);
+void DestroyPrimitive3D(Primitive3D*& primitive);
+void DestroyModel(Model*& model);
+void UnloadTexture(uint32_t handle);
+void ClearScene();
+void SetObjectTexture(Object3D* object, const std::string& texturePath);
 
 void DrawSprite(Sprite* sprite, const float& posX, const float& posY);
 void DrawSprite(Sprite* sprite, const Vector2& position);

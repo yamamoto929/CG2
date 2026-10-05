@@ -20,15 +20,26 @@ public:
 	ID3D12DescriptorHeap* GetSrvDescriptorHeap() const;
 	D3D12_CPU_DESCRIPTOR_HANDLE GetSrvHandleCPU(uint32_t index);
 	TextureSize GetTextureSize(uint32_t textureHandle)const;
+	void ReleaseUploadResources(); // GPU完了後だけ呼ぶ
+	bool HasPendingUploads() const { return !intermediateResources_.empty(); }
+	void Unload(uint32_t handle); // GPU完了後、参照がなくなった画像だけ
+	void Clear(); // 0番のImGui用ディスクリプタは残す
+	void Shutdown() { Clear(); srvDescriptorHeap_.Reset(); device_ = nullptr; commandList_ = nullptr; }
+	size_t GetLoadedTextureCount() const { return textureResources_.size(); }
+	size_t GetPendingUploadCount() const { return intermediateResources_.size(); }
 private:
 
 	DescriptorHeap srvDescriptorHeap_;
 	ID3D12Device* device_ = nullptr;
 	ID3D12GraphicsCommandList* commandList_ = nullptr;
 
-	uint32_t nextIndex_ = 0;
+	uint32_t nextIndex_ = 1;
+	uint32_t maxTextureCount_ = 0;
+	uint32_t nextDescriptorIndex_ = 1;
+	std::vector<uint32_t> freeDescriptorIndices_;
+	std::unordered_map<uint32_t, uint32_t> descriptorIndices_;
 	std::unordered_map<std::string, uint32_t> textureHandles_;
-	std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> textureResources_;
+	std::unordered_map<uint32_t, Microsoft::WRL::ComPtr<ID3D12Resource>> textureResources_;
 	std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> intermediateResources_;
 
 	DirectX::ScratchImage LoadTexture(const std::string& filePath);

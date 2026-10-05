@@ -1,3 +1,4 @@
+#include "EngineError.h"
 #include "GraphicsPipeline.h"
 #include <cassert>
 #include "Log.h"
@@ -12,9 +13,9 @@ void GraphicsPipeline::Initialize(
 }
 
 void GraphicsPipeline::Set(ID3D12GraphicsCommandList* commandList) {
-    assert(commandList);
-    assert(rootSignature_);
-    assert(pipelineState_);
+    Require(commandList != nullptr, "commandList is not initialized");
+    Require(rootSignature_ != nullptr, "rootSignature_ is not initialized");
+    Require(pipelineState_ != nullptr, "pipelineState_ is not initialized");
 
     commandList->SetGraphicsRootSignature(rootSignature_.Get());
     commandList->SetPipelineState(pipelineState_.Get());
@@ -25,7 +26,7 @@ ID3D12RootSignature* GraphicsPipeline::GetRootSignature() const {
 }
 
 void GraphicsPipeline::CreateRootSignature(ID3D12Device* device) {
-    assert(device);
+    Require(device != nullptr, "device is not initialized");
 
     HRESULT hr;
 
@@ -89,7 +90,7 @@ void GraphicsPipeline::CreateRootSignature(ID3D12Device* device) {
         if (errorBlob) {
             Log(reinterpret_cast<char*>(errorBlob->GetBufferPointer()));
         }
-        assert(false);
+        CheckHR(hr, "D3D12SerializeRootSignature");
     }
 
     hr = device->CreateRootSignature(
@@ -98,7 +99,7 @@ void GraphicsPipeline::CreateRootSignature(ID3D12Device* device) {
         signatureBlob->GetBufferSize(),
         IID_PPV_ARGS(&rootSignature_)
     );
-    assert(SUCCEEDED(hr));
+    CheckHR(hr, std::string(__FILE__) + ":" + std::to_string(__LINE__));
 }
 
 void GraphicsPipeline::CreatePipelineState(
@@ -107,9 +108,9 @@ void GraphicsPipeline::CreatePipelineState(
     DXGI_FORMAT rtvFormat,
     DXGI_FORMAT dsvFormat
 ) {
-    assert(device);
-    assert(shaderCompiler);
-    assert(rootSignature_);
+    Require(device != nullptr, "device is not initialized");
+    Require(shaderCompiler != nullptr, "shaderCompiler is not initialized");
+    Require(rootSignature_ != nullptr, "rootSignature_ is not initialized");
 
     HRESULT hr;
 
@@ -180,5 +181,5 @@ void GraphicsPipeline::CreatePipelineState(
         &graphicsPipelineStateDesc,
         IID_PPV_ARGS(&pipelineState_)
     );
-    assert(SUCCEEDED(hr));
+    CheckHR(hr, std::string(__FILE__) + ":" + std::to_string(__LINE__));
 }

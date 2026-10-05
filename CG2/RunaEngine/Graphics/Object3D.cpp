@@ -1,3 +1,4 @@
+#include "EngineError.h"
 #include "Object3D.h"
 #include "AffineMatrix.h"
 #include "Model.h"
@@ -5,32 +6,28 @@
 
 namespace RunaEngine {
 	void Object3D::Initialize(ID3D12Device* device, RunaEngine::Model* model) {
-		assert(device);
-		assert(model);
+		Require(device != nullptr, "device is not initialized");
+		Require(model != nullptr, "model is not initialized");
 
 		model_ = model;
 		worldMatrix_ = MakeIdentityMatrix();
 		wvpMatrix_ = MakeIdentityMatrix();
 
 		transformationMatrix_.Initialize(device);
-		transformationMatrixData_ = transformationMatrix_.GetData();
-
-		transformationMatrixData_->World = worldMatrix_;
-		transformationMatrixData_->WVP = wvpMatrix_;
-
-		material_.Initialize(device);
-		materialData_ = material_.GetData();
+		transformationMatrixData_.World = worldMatrix_;
+		transformationMatrixData_.WVP = wvpMatrix_;
+		transformationMatrixData_.WorldInverseTranspose = MakeIdentityMatrix();
 	}
 
 	void Object3D::Update(const Matrix4x4& viewMatrix, const Matrix4x4& projectionMatrix) {
-		assert(model_);
-		assert(transformationMatrixData_);
+		Require(model_ != nullptr, "model_ is not initialized");
 
 		worldMatrix_ = MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
 		wvpMatrix_ = Multiply(worldMatrix_, Multiply(viewMatrix, projectionMatrix));
 
-		transformationMatrixData_->World = worldMatrix_;
-		transformationMatrixData_->WVP = wvpMatrix_;
+		transformationMatrixData_.World = worldMatrix_;
+		transformationMatrixData_.WVP = wvpMatrix_;
+		transformationMatrixData_.WorldInverseTranspose = MakeNormalMatrix(worldMatrix_);
 	}
 
 	void Object3D::Draw(
@@ -38,23 +35,16 @@ namespace RunaEngine {
 		TextureManager* textureManager,
 		const ModelDrawParameters& parameters
 	) {
-		assert(model_);
-		assert(transformationMatrixData_);
-		assert(materialData_);
-
-		materialData_->color = parameters.color;
-		materialData_->lightingMode = parameters.lightingMode;
-		materialData_->uvTransform = parameters.uvTransform;
-
-		commandList->SetGraphicsRootConstantBufferView(
-			0,
-			material_.GetGPUVirtualAddress()
-		);
+		Require(model_ != nullptr, "model_ is not initialized");
 		commandList->SetGraphicsRootConstantBufferView(
 			1,
-			transformationMatrix_.GetGPUVirtualAddress()
+			transformationMatrix_.Write(transformationMatrixData_)
 		);
 
-		model_->Draw(commandList, textureManager);
+		auto drawParameters = parameters;
+		if (!drawParameters.textureOverride && textureOverride_) {
+			drawParameters.textureOverride = textureOverride_;
+		}
+		model_->Draw(commandList, textureManager, drawParameters);
 	}
 }

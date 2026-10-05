@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="ソース ファイル">
@@ -358,5 +358,13 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="RunaEngine\externals\imgui\LICENSE.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="RunaEngine\Graphics\TransformationMatrix.cpp">
+      <Filter>RunaEngine\Graphics</Filter>
+    </ClCompile>
+    <ClInclude Include="RunaEngine\Core\EngineError.h">
+      <Filter>RunaEngine\Core</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

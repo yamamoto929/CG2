@@ -11,6 +11,7 @@ private:
 	Microsoft::WRL::ComPtr<IDxcIncludeHandler> includeHandler_ = nullptr;
 public:
 	void Initialize();
+	void Shutdown() { includeHandler_.Reset(); dxcCompiler_.Reset(); dxcUtils_.Reset(); }
 	Microsoft::WRL::ComPtr<IDxcBlob> Compile(const std::wstring& filePath, const wchar_t* profile);
 };
 
