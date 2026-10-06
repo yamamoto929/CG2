@@ -1,5 +1,4 @@
 #include "ModelLoader.h"
-#include "EngineError.h"
 #include <array>
 #include <algorithm>
 #include <charconv>
@@ -20,25 +19,23 @@ namespace {
         }
         return text;
     }
-    size_t ResolveIndex(const std::string& text, size_t count, const std::string& context) {
+    size_t ResolveIndex(const std::string& text, size_t count) {
         int64_t raw = 0;
         const auto parsed = std::from_chars(text.data(), text.data() + text.size(), raw);
-        Require(parsed.ec == std::errc{} && parsed.ptr == text.data() + text.size() && raw != 0,
-            context + ": invalid OBJ index '" + text + "'");
+        if (parsed.ec != std::errc{} || parsed.ptr != text.data() + text.size() || raw == 0) { return count; }
         const int64_t index = raw > 0 ? raw - 1 : static_cast<int64_t>(count) + raw;
-        Require(index >= 0 && index < static_cast<int64_t>(count), context + ": OBJ index out of range");
+        if (index < 0 || index >= static_cast<int64_t>(count)) { return count; }
         return static_cast<size_t>(index);
     }
-    void ReadVector(std::istringstream& stream, Vector3& value, const std::string& context) {
-        Require(bool(stream >> value.x >> value.y >> value.z) && std::isfinite(value.x) &&
-            std::isfinite(value.y) && std::isfinite(value.z), context + ": invalid vector");
+    bool ReadVector(std::istringstream& stream, Vector3& value) {
+        return bool(stream >> value.x >> value.y >> value.z);
     }
     Vector3 Cross(const Vector3& a, const Vector3& b) {
         return {a.y*b.z-a.z*b.y, a.z*b.x-a.x*b.z, a.x*b.y-a.y*b.x};
     }
     // 凹多角形にも対応するため、面を2Dに投影し、内側にある三角形から切り出す。
-    std::vector<std::array<size_t, 3>> Triangulate(const std::vector<VertexData>& face, const std::string& context) {
-        Require(face.size() >= 3 && face.size() <= 4096, context + ": invalid polygon vertex count");
+    std::vector<std::array<size_t, 3>> Triangulate(const std::vector<VertexData>& face) {
+        if (face.size() < 3) { return {}; }
         Vector3 normal{};
         for (size_t i = 0; i < face.size(); ++i) {
             const auto& a = face[i].position;
@@ -67,7 +64,7 @@ namespace {
             extent = (std::max)(extent, (std::max)(std::abs(a[0]-points[0][0]), std::abs(a[1]-points[0][1])));
         }
         const double epsilon = (std::max)(extent*extent*1e-10, 1e-30);
-        Require(std::abs(area) > epsilon, context + ": degenerate polygon");
+        if (std::abs(area) <= epsilon) { return {}; }
         const double sign = area > 0 ? 1 : -1;
         std::vector<size_t> remaining(face.size());
         std::iota(remaining.begin(), remaining.end(), 0);
@@ -89,9 +86,9 @@ namespace {
                     clipped = true; break;
                 }
             }
-            Require(clipped, context + ": polygon cannot be triangulated (overlap or degenerate edges)");
+            if (!clipped) { return {}; }
         }
-        Require(sign*turn(remaining[0],remaining[1],remaining[2]) > epsilon, context + ": degenerate triangle");
+        if (sign*turn(remaining[0],remaining[1],remaining[2]) <= epsilon) { return {}; }
         triangles.push_back({remaining[2],remaining[1],remaining[0]});
         return triangles;
     }
@@ -101,29 +98,27 @@ RunaEngine::ModelData ModelLoader::LoadObjFile(const std::string& directory, con
     using namespace RunaEngine;
     const auto path = std::filesystem::path(directory) / filename;
     std::ifstream file(path);
-    Require(file.is_open(), "Cannot open OBJ: " + path.generic_string());
+    if (!file.is_open()) { return {}; }
     ModelData data;
     std::vector<Vector4> positions;
     std::vector<Vector2> uvs;
     std::vector<Vector3> normals;
     std::string meshName = "default", materialName, line;
-    size_t lineNumber = 0;
+
     while (std::getline(file, line)) {
-        ++lineNumber;
         line = line.substr(0, line.find('#'));
         std::istringstream stream(line);
         std::string type; stream >> type;
-        const std::string context = path.generic_string()+":"+std::to_string(lineNumber);
         if (type == "v") {
-            Vector3 p{}; ReadVector(stream,p,context);
+            Vector3 p{}; if (!ReadVector(stream,p)) { return {}; }
             positions.push_back({-p.x,p.y,p.z,1});
         } else if (type == "vt") {
             Vector2 uv{};
-            Require(bool(stream >> uv.x >> uv.y) && std::isfinite(uv.x) && std::isfinite(uv.y), context+": invalid UV");
+            if (!(stream >> uv.x >> uv.y)) { return {}; }
             uvs.push_back({uv.x,1-uv.y});
         } else if (type == "vn") {
-            Vector3 n{}; ReadVector(stream,n,context); n.x = -n.x;
-            Require(n.Length() > 0 && std::isfinite(n.Length()), context+": invalid normal");
+            Vector3 n{}; if (!ReadVector(stream,n)) { return {}; } n.x = -n.x;
+            if (n.Length() == 0) { return {}; }
             const auto length=n.Length(); n={n.x/length,n.y/length,n.z/length}; normals.push_back(n);
         } else if (type == "o" || type == "g") {
             std::getline(stream,meshName); meshName=Trim(meshName);
@@ -132,10 +127,10 @@ RunaEngine::ModelData ModelLoader::LoadObjFile(const std::string& directory, con
             else if (!data.meshes.empty()) { data.meshes.back().name=meshName; }
         } else if (type == "usemtl") {
             std::getline(stream,materialName); materialName=Trim(materialName);
-            Require(!materialName.empty(), context+": empty material name");
+            if (materialName.empty()) { return {}; }
         } else if (type == "mtllib") {
             std::string mtl; std::getline(stream,mtl); mtl=Trim(mtl);
-            Require(!mtl.empty(),context+": empty MTL path");
+            if (mtl.empty()) { return {}; }
             // 空白を含む単一のパスを優先。存在しなければ複数のMTL名として読む。
             std::vector<std::string> files;
             if (std::filesystem::exists(path.parent_path()/mtl)) { files.push_back(mtl); }
@@ -154,15 +149,26 @@ RunaEngine::ModelData ModelLoader::LoadObjFile(const std::string& directory, con
                 std::istringstream definition(token);
                 for(auto& part:parts) { std::getline(definition,part,'/'); }
                 std::string excess;
-                Require(!std::getline(definition,excess,'/'),context+": invalid face token");
+                if (std::getline(definition,excess,'/')) { return {}; }
                 VertexData vertex{};
-                vertex.position=positions[ResolveIndex(parts[0],positions.size(),context)];
-                if(!parts[1].empty()) { vertex.texCoord=uvs[ResolveIndex(parts[1],uvs.size(),context)]; }
-                if(!parts[2].empty()) { vertex.normal=normals[ResolveIndex(parts[2],normals.size(),context)]; }
+                const size_t positionIndex = ResolveIndex(parts[0], positions.size());
+                if (positionIndex == positions.size()) { return {}; }
+                vertex.position=positions[positionIndex];
+                if (!parts[1].empty()) {
+                    const size_t uvIndex = ResolveIndex(parts[1], uvs.size());
+                    if (uvIndex == uvs.size()) { return {}; }
+                    vertex.texCoord=uvs[uvIndex];
+                }
+                if (!parts[2].empty()) {
+                    const size_t normalIndex = ResolveIndex(parts[2], normals.size());
+                    if (normalIndex == normals.size()) { return {}; }
+                    vertex.normal=normals[normalIndex];
+                }
                 missingNormals.push_back(parts[2].empty()); face.push_back(vertex);
             }
-            const auto triangles=Triangulate(face,context);
-            Require(data.vertices.size()+triangles.size()*3 <= UINT32_MAX,context+": too many vertices");
+            const auto triangles=Triangulate(face);
+            if (triangles.empty()) { return {}; }
+            if (data.vertices.size()+triangles.size()*3 > UINT32_MAX) { return {}; }
             if(data.meshes.empty()) { data.meshes.push_back({meshName,{}}); }
             auto& mesh=data.meshes.back();
             if(mesh.subMeshes.empty() || mesh.subMeshes.back().materialName!=materialName) {
@@ -174,7 +180,7 @@ RunaEngine::ModelData ModelLoader::LoadObjFile(const std::string& directory, con
                 const auto& c=face[triangle[2]].position;
                 auto normal=Cross({b.x-a.x,b.y-a.y,b.z-a.z},{c.x-a.x,c.y-a.y,c.z-a.z});
                 const float length=normal.Length();
-                Require(length>0 && std::isfinite(length),context+": degenerate triangle normal");
+                if (length == 0) { return {}; }
                 normal={normal.x/length,normal.y/length,normal.z/length};
                 for(const size_t index:triangle) {
                     auto vertex=face[index];
@@ -186,11 +192,8 @@ RunaEngine::ModelData ModelLoader::LoadObjFile(const std::string& directory, con
         }
     }
     std::erase_if(data.meshes,[](const auto& mesh){return mesh.subMeshes.empty();});
-    Require(!data.vertices.empty(),"OBJ contains no faces: "+path.generic_string());
-    for(const auto& mesh:data.meshes) { for(const auto& sub:mesh.subMeshes) {
-        Require(sub.materialName.empty() || data.materials.contains(sub.materialName),
-            "Undefined OBJ material '"+sub.materialName+"': "+path.generic_string());
-    }}
+    if (data.vertices.empty()) { return {}; }
+
     return data;
 }
 
@@ -198,32 +201,30 @@ std::unordered_map<std::string,RunaEngine::MaterialData> ModelLoader::LoadMateri
     const std::string& directory,const std::string& filename) {
     const auto path=std::filesystem::path(directory)/filename;
     std::ifstream file(path);
-    Require(file.is_open(),"Cannot open MTL: "+path.generic_string());
+    if (!file.is_open()) { return {}; }
     std::unordered_map<std::string,RunaEngine::MaterialData> materials;
     RunaEngine::MaterialData* current=nullptr;
     std::string line;
-    size_t lineNumber=0;
+
     while(std::getline(file,line)) {
-        ++lineNumber; line=line.substr(0,line.find('#'));
+        line=line.substr(0,line.find('#'));
         std::istringstream stream(line); std::string type; stream>>type;
-        const auto context=path.generic_string()+":"+std::to_string(lineNumber);
         if(type=="newmtl") {
             std::string name; std::getline(stream,name); name=Trim(name);
-            Require(!name.empty(),context+": empty material name"); current=&materials[name];
+            if (name.empty()) { return {}; } current=&materials[name];
         } else if(current && type=="Kd") {
-            RunaEngine::Vector3 color{}; ReadVector(stream,color,context);
+            RunaEngine::Vector3 color{}; if (!ReadVector(stream,color)) { return {}; }
             current->color.x=color.x; current->color.y=color.y; current->color.z=color.z;
-        } else if(current && type=="Ks") { ReadVector(stream,current->specular,context);
+        } else if(current && type=="Ks") { if (!ReadVector(stream,current->specular)) { return {}; }
         } else if(current && type=="Ns") {
-            Require(bool(stream>>current->shininess) && std::isfinite(current->shininess) && current->shininess>=0,
-                context+": invalid shininess");
+            if (!(stream>>current->shininess)) { return {}; }
         } else if(current && (type=="d" || type=="Tr")) {
             float alpha=0;
-            Require(bool(stream>>alpha) && std::isfinite(alpha) && alpha>=0 && alpha<=1,context+": invalid opacity");
+            if (!(stream>>alpha)) { return {}; }
             current->color.w=type=="d"?alpha:1-alpha;
         } else if(current && type=="map_Kd") {
             std::string name; std::getline(stream,name); name=Trim(name);
-            Require(!name.empty() && name.front()!='-',context+": map_Kd options are not supported; use an image path");
+            if (name.empty() || name.front()=='-') { return {}; }
             current->textureFilePath=(path.parent_path()/name).lexically_normal().generic_string();
         }
     }

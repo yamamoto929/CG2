@@ -1,38 +1,37 @@
 #include "ShaderCompiler.h"
-#include "ConvertString.h"
-#include "EngineError.h"
-#include <filesystem>
-#include <format>
+#include <cassert>
 
 void ShaderCompiler::Initialize() {
-    CheckHR(DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&dxcUtils_)), "DxcCreateInstance(utils)");
-    CheckHR(DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&dxcCompiler_)), "DxcCreateInstance(compiler)");
-    CheckHR(dxcUtils_->CreateDefaultIncludeHandler(&includeHandler_), "CreateDefaultIncludeHandler");
+    HRESULT hr = DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&dxcUtils_));
+    assert(SUCCEEDED(hr));
+    hr = DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&dxcCompiler_));
+    assert(SUCCEEDED(hr));
+    hr = dxcUtils_->CreateDefaultIncludeHandler(&includeHandler_);
+    assert(SUCCEEDED(hr));
 }
 
 Microsoft::WRL::ComPtr<IDxcBlob> ShaderCompiler::Compile(const std::wstring& filePath, const wchar_t* profile) {
-    Require(dxcUtils_ && dxcCompiler_ && profile, "ShaderCompiler requires Initialize and a profile");
-    const std::string path = ConvertString(filePath);
-    Log("Compile shader: " + path);
     Microsoft::WRL::ComPtr<IDxcBlobEncoding> source;
-    CheckHR(dxcUtils_->LoadFile(filePath.c_str(), nullptr, &source),
-        "Load shader: " + path + " (working directory: " + std::filesystem::current_path().string() + ")");
+    HRESULT hr = dxcUtils_->LoadFile(filePath.c_str(), nullptr, &source);
+    assert(SUCCEEDED(hr));
+    if (FAILED(hr)) { return nullptr; }
+
     DxcBuffer input{source->GetBufferPointer(), source->GetBufferSize(), DXC_CP_UTF8};
-    LPCWSTR arguments[] = {filePath.c_str(), L"-E", L"main", L"-T", profile,
-        L"-Zi", L"-Qembed_debug", L"-Od", L"-Zpr"};
+    LPCWSTR arguments[] = {filePath.c_str(), L"-E", L"main", L"-T", profile, L"-Zpr"};
     Microsoft::WRL::ComPtr<IDxcResult> result;
-    CheckHR(dxcCompiler_->Compile(&input, arguments, _countof(arguments), includeHandler_.Get(),
-        IID_PPV_ARGS(&result)), "DXC Compile: " + path);
-    Microsoft::WRL::ComPtr<IDxcBlobUtf8> diagnostics;
-    CheckHR(result->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(&diagnostics), nullptr), "DXC diagnostics: " + path);
-    const std::string message = diagnostics && diagnostics->GetStringLength()
-        ? std::string(diagnostics->GetStringPointer(), diagnostics->GetStringLength()) : "";
-    if (!message.empty()) { Log(message); }
+    hr = dxcCompiler_->Compile(&input, arguments, _countof(arguments), includeHandler_.Get(), IID_PPV_ARGS(&result));
+    assert(SUCCEEDED(hr));
+    if (FAILED(hr)) { return nullptr; }
+
+    // Compileの成功と、HLSLの内容が正しいかは別の結果なので両方確認する。
     HRESULT status = E_FAIL;
-    CheckHR(result->GetStatus(&status), "DXC GetStatus: " + path);
-    Require(SUCCEEDED(status), "Shader compilation failed: " + path + "\n" + message);
+    hr = result->GetStatus(&status);
+    assert(SUCCEEDED(hr));
+    assert(SUCCEEDED(status));
+    if (FAILED(hr) || FAILED(status)) { return nullptr; }
+
     Microsoft::WRL::ComPtr<IDxcBlob> binary;
-    CheckHR(result->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(&binary), nullptr), "DXC object: " + path);
-    Require(binary != nullptr, "DXC returned no shader binary: " + path);
+    hr = result->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(&binary), nullptr);
+    assert(SUCCEEDED(hr));
     return binary;
 }

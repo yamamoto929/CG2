@@ -1,25 +1,27 @@
+#include <cassert>
 #include "Sprite.h"
 #include "SpriteDrawCommand.h"
 #include "AffineMatrix.h"
 #include "WVPMatrix.h"
-#include "EngineError.h"
 
 namespace RunaEngine {
     void Sprite::Initialize(ID3D12Device* device, TextureManager* textureManager,
         const std::string& texturePath) {
-        Require(device && textureManager, "Sprite::Initialize: missing device or texture manager");
+
         textureManager_ = textureManager;
         vertices_.Initialize(device);
         material_.Initialize(device);
         transformationMatrix_.Initialize(device);
         SetTextureHandle(textureManager->Load(texturePath));
+        if (textureHandle_ == 0) { return; }
         size_ = textureSize_;
         transform_ = {{1, 1, 1}, {0, 0, 0}, {0, 0, 0}};
         uvTransformMatrix_ = MakeIdentityMatrix();
         indexResource_ = CreateBufferResource(device, sizeof(uint32_t) * 6);
         indexBufferView_ = {indexResource_->GetGPUVirtualAddress(), sizeof(uint32_t) * 6, DXGI_FORMAT_R32_UINT};
         uint32_t* indices = nullptr;
-        CheckHR(indexResource_->Map(0, nullptr, reinterpret_cast<void**>(&indices)), "Sprite index buffer Map");
+        HRESULT hr = indexResource_->Map(0, nullptr, reinterpret_cast<void**>(&indices));
+        assert(SUCCEEDED(hr));
         const uint32_t values[] = {0, 1, 2, 1, 3, 2};
         for (size_t i = 0; i < 6; ++i) { indices[i] = values[i]; }
         indexResource_->Unmap(0, nullptr);
@@ -50,8 +52,9 @@ namespace RunaEngine {
     }
     void Sprite::Draw(ID3D12GraphicsCommandList* list, TextureManager* textures,
         const SpriteDrawCommand& command, int32_t width, int32_t height) {
-        Require(list && textures && width > 0 && height > 0,
-            "Sprite::Draw: call Update with a positive screen size first");
+        if (command.textureHandle == 0) { return; }
+        const auto texture = textures->GetSrvHandleGPU(command.textureHandle);
+        if (texture.ptr == 0) { return; }
         const auto vertexAddress = vertices_.Write(BuildVertices(command));
         const D3D12_VERTEX_BUFFER_VIEW vertexView{vertexAddress, sizeof(VertexData) * 4, sizeof(VertexData)};
         TransformationMatrix matrices{};
@@ -64,7 +67,7 @@ namespace RunaEngine {
         list->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
         list->SetGraphicsRootConstantBufferView(0, material_.Write(material));
         list->SetGraphicsRootConstantBufferView(1, transformationMatrix_.Write(matrices));
-        list->SetGraphicsRootDescriptorTable(2, textures->GetSrvHandleGPU(command.textureHandle));
+        list->SetGraphicsRootDescriptorTable(2, texture);
         list->DrawIndexedInstanced(6, 1, 0, 0, 0);
     }
     const Transform& Sprite::GetTransform() const { return transform_; }
@@ -77,13 +80,14 @@ namespace RunaEngine {
     void Sprite::SetDrawOrder(int32_t order) { drawOrder_ = order; }
     int32_t Sprite::GetDrawOrder() const { return drawOrder_; }
     void Sprite::SetTextureHandle(uint32_t handle) {
-        Require(textureManager_ != nullptr, "Sprite is not initialized");
+
         const auto size = textureManager_->GetTextureSize(handle);
+        if (size.width == 0 || size.height == 0) { return; }
         textureHandle_ = handle;
         textureSize_ = {float(size.width), float(size.height)};
     }
     void Sprite::SetTextureRect(float x, float y, float width, float height) {
-        Require(textureSize_.x > 0 && textureSize_.y > 0, "Sprite texture size is invalid");
+
         SetUVRect(x / textureSize_.x, y / textureSize_.y,
             (x + width) / textureSize_.x, (y + height) / textureSize_.y);
     }
@@ -111,8 +115,9 @@ namespace RunaEngine {
         desc.Height = 1; desc.DepthOrArraySize = 1; desc.MipLevels = 1;
         desc.SampleDesc.Count = 1; desc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
         Microsoft::WRL::ComPtr<ID3D12Resource> resource;
-        CheckHR(device->CreateCommittedResource(&heap, D3D12_HEAP_FLAG_NONE, &desc,
-            D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&resource)), "Sprite index buffer creation");
+        HRESULT hr = device->CreateCommittedResource(&heap, D3D12_HEAP_FLAG_NONE, &desc,
+            D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&resource));
+        assert(SUCCEEDED(hr));
         return resource;
     }
 }

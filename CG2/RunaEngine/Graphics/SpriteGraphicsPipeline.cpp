@@ -1,7 +1,5 @@
-#include "EngineError.h"
 #include "SpriteGraphicsPipeline.h"
 #include <cassert>
-#include "Log.h"
 void SpriteGraphicsPipeline::Initialize(
     ID3D12Device* device,
     ShaderCompiler* shaderCompiler,
@@ -13,9 +11,6 @@ void SpriteGraphicsPipeline::Initialize(
 }
 
 void SpriteGraphicsPipeline::Set(ID3D12GraphicsCommandList* commandList) {
-    Require(commandList != nullptr, "commandList is not initialized");
-    Require(rootSignature_ != nullptr, "rootSignature_ is not initialized");
-    Require(pipelineState_ != nullptr, "pipelineState_ is not initialized");
 
     commandList->SetGraphicsRootSignature(rootSignature_.Get());
     commandList->SetPipelineState(pipelineState_.Get());
@@ -26,7 +21,6 @@ ID3D12RootSignature* SpriteGraphicsPipeline::GetRootSignature() const {
 }
 
 void SpriteGraphicsPipeline::CreateRootSignature(ID3D12Device* device) {
-    Require(device != nullptr, "device is not initialized");
 
     D3D12_ROOT_SIGNATURE_DESC descriptionRootSignature{};
     descriptionRootSignature.Flags =
@@ -83,12 +77,7 @@ void SpriteGraphicsPipeline::CreateRootSignature(ID3D12Device* device) {
         &errorBlob
     );
 
-    if (FAILED(hr)) {
-        if (errorBlob) {
-            Log(reinterpret_cast<char*>(errorBlob->GetBufferPointer()));
-        }
-        CheckHR(hr, "D3D12SerializeRootSignature");
-    }
+    assert(SUCCEEDED(hr));
 
     hr = device->CreateRootSignature(
         0,
@@ -96,7 +85,7 @@ void SpriteGraphicsPipeline::CreateRootSignature(ID3D12Device* device) {
         signatureBlob->GetBufferSize(),
         IID_PPV_ARGS(&rootSignature_)
     );
-    CheckHR(hr, std::string(__FILE__) + ":" + std::to_string(__LINE__));
+    assert(SUCCEEDED(hr));
 }
 void SpriteGraphicsPipeline::CreatePipelineState(
     ID3D12Device* device,
@@ -104,9 +93,6 @@ void SpriteGraphicsPipeline::CreatePipelineState(
     DXGI_FORMAT rtvFormat,
     DXGI_FORMAT dsvFormat
 ) {
-    Require(device != nullptr, "device is not initialized");
-    Require(shaderCompiler != nullptr, "shaderCompiler is not initialized");
-    Require(rootSignature_ != nullptr, "rootSignature_ is not initialized");
 
     HRESULT hr;
 
@@ -178,5 +164,5 @@ void SpriteGraphicsPipeline::CreatePipelineState(
         &graphicsPipelineStateDesc,
         IID_PPV_ARGS(&pipelineState_)
     );
-    CheckHR(hr, std::string(__FILE__) + ":" + std::to_string(__LINE__));
+    assert(SUCCEEDED(hr));
 }

@@ -14,11 +14,9 @@ public:
 
 	D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescriptorHandle(uint32_t index);
 	D3D12_GPU_DESCRIPTOR_HANDLE GetGPUDescriptorHandle(uint32_t index);
-	void Reset() { descriptorHeap_.Reset(); numDescriptors_ = 0; }
+	void Reset() { descriptorHeap_.Reset(); }
 private:
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> descriptorHeap_;
 	uint32_t descriptorSize_ = 0;
-	uint32_t numDescriptors_ = 0;
-	bool shaderVisible_ = false;
 };
 

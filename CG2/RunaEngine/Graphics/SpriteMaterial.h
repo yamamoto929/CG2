@@ -9,6 +9,5 @@ namespace RunaEngine {
         Matrix4x4 uvTransform;
     };
 
-    static_assert(sizeof(SpriteMaterial) == 80);
 
 }

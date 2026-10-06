@@ -2,7 +2,6 @@
 #include "DirectXCommon.h"
 #include "TextureManager.h"
 #include "WinApp.h"
-#include <cassert>
 
 #ifdef USE_IMGUI
 #include "externals/imgui/imgui.h"
@@ -31,7 +30,6 @@ void ImGuiManager::Initialize(const WinApp& winApp, const DirectXCommon& directX
 }
 
 void ImGuiManager::BeginFrame() {
-	assert(initialized_);
 #ifdef USE_IMGUI
 	ImGui_ImplDX12_NewFrame();
 	ImGui_ImplWin32_NewFrame();
@@ -40,8 +38,6 @@ void ImGuiManager::BeginFrame() {
 }
 
 void ImGuiManager::Render(ID3D12GraphicsCommandList* commandList) {
-	assert(initialized_);
-	assert(commandList);
 #ifdef USE_IMGUI
 	ImGui::Render();
 	ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);

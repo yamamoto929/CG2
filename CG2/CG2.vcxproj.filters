@@ -54,19 +54,10 @@
     <ClCompile Include="RunaEngine\Core\ConvertString.cpp">
       <Filter>RunaEngine\Core</Filter>
     </ClCompile>
-    <ClCompile Include="RunaEngine\Core\CrashHandler.cpp">
-      <Filter>RunaEngine\Core</Filter>
-    </ClCompile>
     <ClCompile Include="RunaEngine\Core\DescriptorHeap.cpp">
       <Filter>RunaEngine\Core</Filter>
     </ClCompile>
     <ClCompile Include="RunaEngine\Core\DirectXCommon.cpp">
-      <Filter>RunaEngine\Core</Filter>
-    </ClCompile>
-    <ClCompile Include="RunaEngine\Core\DirectXDebug.cpp">
-      <Filter>RunaEngine\Core</Filter>
-    </ClCompile>
-    <ClCompile Include="RunaEngine\Core\Log.cpp">
       <Filter>RunaEngine\Core</Filter>
     </ClCompile>
     <ClCompile Include="RunaEngine\Core\ResourceManager.cpp">
@@ -173,22 +164,10 @@
     <ClInclude Include="RunaEngine\Core\ConvertString.h">
       <Filter>RunaEngine\Core</Filter>
     </ClInclude>
-    <ClInclude Include="RunaEngine\Core\CrashHandler.h">
-      <Filter>RunaEngine\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="RunaEngine\Core\D3DResourceLeakChecker.h">
-      <Filter>RunaEngine\Core</Filter>
-    </ClInclude>
     <ClInclude Include="RunaEngine\Core\DescriptorHeap.h">
       <Filter>RunaEngine\Core</Filter>
     </ClInclude>
     <ClInclude Include="RunaEngine\Core\DirectXCommon.h">
-      <Filter>RunaEngine\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="RunaEngine\Core\DirectXDebug.h">
-      <Filter>RunaEngine\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="RunaEngine\Core\Log.h">
       <Filter>RunaEngine\Core</Filter>
     </ClInclude>
     <ClInclude Include="RunaEngine\Core\ResourceManager.h">
@@ -363,8 +342,5 @@
     <ClCompile Include="RunaEngine\Graphics\TransformationMatrix.cpp">
       <Filter>RunaEngine\Graphics</Filter>
     </ClCompile>
-    <ClInclude Include="RunaEngine\Core\EngineError.h">
-      <Filter>RunaEngine\Core</Filter>
-    </ClInclude>
   </ItemGroup>
 </Project>

@@ -1,5 +1,4 @@
 #include "DirectionalLight.h"
-#include <cassert>
 #include <cmath>
 
 void DirectionalLight::Initialize(ID3D12Device* device) {
@@ -10,9 +9,7 @@ void DirectionalLight::Initialize(ID3D12Device* device) {
 }
 
 void DirectionalLight::SetCommand(ID3D12GraphicsCommandList* commandList, UINT rootParameterIndex) {
-	Require(commandList != nullptr, "DirectionalLight requires a command list");
 	SetDirection(data_.direction);
-	SetIntensity(data_.intensity);
 	commandList->SetGraphicsRootConstantBufferView(rootParameterIndex, buffer_.Write(data_));
 }
 
@@ -22,11 +19,11 @@ void DirectionalLight::SetColor(const RunaEngine::Vector4& color) {
 
 void DirectionalLight::SetDirection(const RunaEngine::Vector3& direction) {
 	const double length = std::sqrt(double(direction.x) * direction.x + double(direction.y) * direction.y + double(direction.z) * direction.z);
-	Require(std::isfinite(length) && length > 0.0, "Light direction must be finite and nonzero");
+	if (length == 0) { return; }
 	data_.direction = {float(direction.x / length), float(direction.y / length), float(direction.z / length)};
 }
 
 void DirectionalLight::SetIntensity(float intensity) {
-	Require(std::isfinite(intensity) && intensity >= 0.0f, "Light intensity must be finite and nonnegative");
+
 	data_.intensity = intensity;
 }

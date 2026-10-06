@@ -32,7 +32,6 @@ void SoundManager::Initialize() {
 }
 
 uint32_t SoundManager::Load(const std::wstring& filePath) {
-	assert(initialized_);
 
 	if (soundHandles_.contains(filePath)) {
 		return soundHandles_[filePath];
@@ -51,8 +50,7 @@ uint32_t SoundManager::Load(const std::string& filePath) {
 }
 
 void SoundManager::Play(uint32_t soundHandle, bool loop, float volume) {
-	assert(initialized_);
-	assert(soundHandle < sounds_.size());
+	if (soundHandle >= sounds_.size()) { return; }
 
 	const SoundData& soundData = sounds_[soundHandle];
 

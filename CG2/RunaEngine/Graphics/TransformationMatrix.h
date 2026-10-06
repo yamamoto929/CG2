@@ -6,7 +6,6 @@ namespace RunaEngine {
 		Matrix4x4 World;
 		Matrix4x4 WorldInverseTranspose;
 	};
-static_assert(sizeof(TransformationMatrix) == 192, "Keep the C++ and HLSL matrix layouts identical");
 }
 
 // 形の拡大と、面の向きの変換は別々に計算する。

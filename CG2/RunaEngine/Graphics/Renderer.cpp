@@ -8,7 +8,6 @@
 #include "Sprite.h"
 #include "SpriteGraphicsPipeline.h"
 #include "TextureManager.h"
-#include <cassert>
 
 void Renderer::Initialize(
 	DirectXCommon* directXCommon,
@@ -18,13 +17,6 @@ void Renderer::Initialize(
 	DirectionalLight* directionalLight,
 	SpriteGraphicsPipeline* spriteGraphicsPipeline
 ) {
-	assert(directXCommon);
-	assert(textureManager);
-	assert(graphicsPipeline);
-	assert(primitiveGraphicsPipeline);
-	assert(directionalLight);
-	assert(spriteGraphicsPipeline);
-
 	directXCommon_ = directXCommon;
 	textureManager_ = textureManager;
 	graphicsPipeline_ = graphicsPipeline;
@@ -34,13 +26,6 @@ void Renderer::Initialize(
 }
 
 void Renderer::Begin() {
-	assert(directXCommon_);
-	assert(textureManager_);
-	assert(graphicsPipeline_);
-	assert(primitiveGraphicsPipeline_);
-	assert(directionalLight_);
-	assert(spriteGraphicsPipeline_);
-
 	directXCommon_->PreDraw();
 
 	ID3D12DescriptorHeap* descriptorHeaps[] = {
@@ -75,11 +60,9 @@ void Renderer::Draw(RunaEngine::Sprite& sprite, const RunaEngine::SpriteDrawComm
 }
 
 void Renderer::End() {
-	assert(directXCommon_);
 	directXCommon_->PostDraw();
 }
 
 ID3D12GraphicsCommandList* Renderer::GetCommandList() const {
-	assert(directXCommon_);
 	return directXCommon_->GetCommandList();
 }

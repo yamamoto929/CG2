@@ -11,12 +11,17 @@ Visual Studioでプロジェクトを開き、`x64` の `Debug` を選んでビ�
 
 必要な環境は、このプロジェクトが指定しているVisual StudioのC++ツールセット `v145`、Windows SDK、DirectX 12対応のGPUです。
 DebugだけImGui（数値を画面上で変更するためのUI）が有効になります。
+`Development` はImGuiなしで `assert` を使う設定です。`Release` では `assert` が無効になります。
 
 最小の使用例です。`main.cpp` の `WinMain` 内で行います。
 
 ```cpp
 RunaEngine::Initialize(1280, 720, "My Game");
 auto* sprite = RunaEngine::CreateSprite("resources/sprite_test.png");
+if (!sprite) {
+    RunaEngine::Shutdown();
+    return 1; // 画像が読めなかった
+}
 sprite->SetSize(128.0f, 128.0f);
 
 while (RunaEngine::ProcessMessage()) {
@@ -90,7 +95,8 @@ RunaEngine::Transform transform{
 ```
 
 初期化を省いて `Transform transform{};` とすると倍率も0になります。
-描画に使う倍率は、まず `{1, 1, 1}` にしてください。3Dの倍率0はエラーにします。
+描画に使う倍率は、まず `{1, 1, 1}` にしてください。倍率0にすると形がつぶれます。
+倍率0などで面の向きを計算できない場合は、面の向きの変換を行わずに描きます。
 回転の単位はラジアンです。180度は約 `3.14159265f`、90度はその半分です。
 
 Spriteの位置は画面左上が `(0, 0)`、右がXのプラス、下がYのプラス。単位はピクセルです。
@@ -113,7 +119,7 @@ sprite->SetDrawOrder(10);
 
 | 操作 | 意味 |
 |---|---|
-| `CreateSprite(path)` | 画像付きのSpriteを作る。最初の表示サイズは画像と同じ |
+| `CreateSprite(path)` | 画像付きのSpriteを作る。最初の表示サイズは画像と同じ。読み込み失敗時は `nullptr` |
 | `DrawSprite(sprite, Vector2{x,y})` | 指定位置に描く。倍率1・回転0で描く |
 | `DrawSprite(sprite, Vector3{x,y,z})` | Zも指定できる。Spriteの前後順は描画順で決まる |
 | `DrawSprite(sprite, transform)` | 倍率・回転・位置をまとめて指定して描く |
@@ -180,6 +186,10 @@ Spriteを削除した後は、そのSpriteを使うAnimatorも使わないでく
 
 ```cpp
 auto* model = RE::CreateModel("resources/teapot.obj");
+if (!model) {
+    RE::Shutdown();
+    return 1; // モデルが読めなかった
+}
 auto* left = RE::CreateObject3D(model);
 auto* right = RE::CreateObject3D(model);
 left->GetTransform().translate = {-2, 0, 0};
@@ -195,8 +205,8 @@ RE::DrawObject3D(right);
 
 | 操作 | 意味 |
 |---|---|
-| `CreateModel(path)` | OBJを読み込む。同じファイルなら同じModelを返す |
-| `CreateObject3D(model)` | Modelを使う物体を作る |
+| `CreateModel(path)` | OBJを読み込む。同じファイルなら同じModelを返す。読み込み失敗・未対応形式は `nullptr` |
+| `CreateObject3D(model)` | Modelを使う物体を作る。Modelが `nullptr` なら `nullptr` を返す |
 | `DrawModel(model, position/transform)` | 指定位置またはTransformで描く |
 | `DrawModel(model, transform, parameters)` | 色・照明・画像なども指定して描く |
 | `DrawObject3D(object)` | 物体が持つTransformで描く |
@@ -245,7 +255,8 @@ OBJでは、正・負の頂点番号、通常の三角形、平面上の凹多�
 MTLからは画像、基本色 `Kd` を表示へ反映し、不透明度 `d`/`Tr` を出力色へ設定します。3Dの半透明合成は未実装です。
 鏡面色 `Ks`・光沢値 `Ns` も保存しますが、現在の描画では使いません。
 `map_Kd` の画像はMTLのあるフォルダーを基準に探します。
-`map_Kd -s ...` などの追加指定は未対応なので、理由を表示して停止します。
+`map_Kd -s ...` などの追加指定は未対応です。MTLを読めなかった場合、その材質の設定は使わず白画像で描きます。
+OBJ自体を読めなかった場合は `CreateModel` が `nullptr` を返します。ファイル名や行番号を知らせる仕組みはありません。
 自己交差する面や立体的にねじれた多角形は入力しないでください。三角形へ変換したOBJが確実です。
 
 ## 6. Primitive3D：三角形を表示する
@@ -342,9 +353,10 @@ RE::DestroyPrimitive3D(triangle);
 ```
 
 削除関数は、渡した変数を `nullptr` にします。
+ただし `DestroyModel` は、そのModelを使うObject3Dが残っている間は削除せず、変数もそのまま残します。
 別の変数へコピーしていたポインターまでは変更できません。コピーした方も使わないでください。
 描画の途中で削除を呼んでも、そのフレームで予約済みの描画は完了してから実体を解放します。
-削除後に新しい描画を予約するとエラーになります。
+削除後のポインターで新しい描画を呼ばないでください。誤った使い方を詳しく検出する仕組みは外しています。
 
 ### 画像だけを解放する
 
@@ -356,10 +368,10 @@ RE::UnloadTexture(handle);
 
 画像番号を `delete` してはいけません。
 画像はSpriteやModelを削除しても共有のため保持します。不要な画像は `UnloadTexture`、場面全体は `ClearScene` で解放します。
-使用中の画像の解放は拒否します。描画中に物体の削除も予約した場合は、`EndFrame` 後に画像を解放してください。
+使用中の画像は解放せず、そのまま残します。描画中に物体の削除も予約した場合は、`EndFrame` 後に画像を解放してください。
 解放後の画像番号を再利用してはいけません。読み込み直すと新しい番号が返ります。
 番号はGPU内の画像置き場の番号とは別なので、解放した置き場を再利用しても古い番号は無効のままです。
-画像番号0はImGui専用です。
+画像番号0のGPU上の置き場はImGui専用です。`LoadTexture` の戻り値が0なら、読み込み失敗か上限に達しています。
 
 ### 場面を丸ごと片付ける
 
@@ -381,6 +393,7 @@ triangle = nullptr;
 同時に保持できる通常の画像は最大127枚です。128個の置き場のうち1個をImGuiに使います。
 同じ画像を別の表記のパスで読み込んでも、同一のファイルなら1枚として扱います。
 画像の読み込みに失敗した場合、画像番号や置き場は消費しません。
+`SetSpriteTexture`・`SetModelTexture`・`SetObjectTexture` で新しい画像が読めなければ、現在の画像を維持します。
 
 ## 9. 内部を読むための地図
 
@@ -400,7 +413,6 @@ triangle = nullptr;
 | [Renderer.cpp](C:/Users/rukar/source/repos/CG2/CG2/RunaEngine/Graphics/Renderer.cpp) | 描く種類に合わせた設定の選択 |
 | [DirectXCommon.cpp](C:/Users/rukar/source/repos/CG2/CG2/RunaEngine/Core/DirectXCommon.cpp) | 画面の準備、描画命令の送信、完了待ち |
 | [ShaderCompiler.cpp](C:/Users/rukar/source/repos/CG2/CG2/RunaEngine/Core/ShaderCompiler.cpp) | GPUで動くプログラムを読み込む処理 |
-| [EngineRegressionTests.cpp](C:/Users/rukar/source/repos/CG2/CG2/tests/EngineRegressionTests.cpp) | 今回の問題が再発していないか確認するコード |
 
 全部を一度に理解しようとせず、`DrawSprite` 1回がどこを通るかを順に追ってください。
 次に三角形1枚、次にModelの順で追うと、共通部分が見えます。
@@ -427,14 +439,14 @@ HLSLの項目配置は基本16バイトの区切り、保存場所の大きさ�
 点の位置と面の向きでは、縦横の倍率が違うときの変換方法が違います。
 このエンジンは行の順に行列を保存し、シェーダーでは `mul(座標, 行列)` と計算します。
 
-## 10. 今回直した6つの問題
+## 10. 以前の6つの修正と現在の状態
 
 | 問題 | 修正した動き |
 |---|---|
 | 同じ物体を複数回描くと前の数値まで変わる | 描画1回ごとに別の場所へコピー。Spriteは呼んだ時点の状態を保存 |
-| 縦横の倍率が違うと照明がずれる | 面の向き専用の変換を追加。倍率0など計算できない設定を検出 |
-| 画像の置き場や番号の確認が足りない | 上限・存在・削除済み番号を確認。置き場の再利用と画像番号を分離 |
-| エラーをDebugのassertに頼りすぎる | 描画の作成・転送・シェーダー・読み込みなどの失敗をReleaseでも検出。ログと停止理由を表示 |
+| 縦横の倍率が違うと照明がずれる | 面の向き専用の変換を追加。計算できない場合はその変換を省く |
+| 画像の置き場や番号の確認が足りない | 上限と番号を普通の `if` で扱う。置き場の再利用と画像番号を分離 |
+| エラーをDebugのassertに頼りすぎる | 以前追加した独自の検出・記録機能は、理解してから使う方針に合わせて削除。必要な `assert` と普通の `if` を使う |
 | OBJ読み込みの扱える書き方が少ない | 負の番号、法線なし、凹多角形、MTLの色、MTL基準の画像パスなどへ対応 |
 | 読み込み・削除の管理が足りない | 転送用メモリを完了後に解放。削除API、ClearScene、モデル共有、物体固有の画像を追加 |
 
@@ -446,37 +458,58 @@ HLSLの項目配置は基本16バイトの区切り、保存場所の大きさ�
 毎フレーム増え続ける構造ではありませんが、過去に一度使った最大の描画数まで保持します。
 大量のパーティクルをこの方式で1個ずつ描くのは重いため、後述のまとめ描きを使う予定です。
 
-## 11. エラーを見る・自動確認を実行する
+## 11. 残した確認処理と、自分で確かめる方法
 
-通常実行で今回対象のエラーが起きると、理由を表示して停止します。
-詳細は `C:\Users\rukar\source\repos\CG2\CG2\logs` のログと、Visual Studioの「出力」欄を見ます。
-読み込み失敗ではファイル名、OBJ/MTLの内容のエラーでは行番号も確認してください。
+独自の `Require`・`CheckHR`、`throw`・`try/catch` を使ったエラー処理、ログ出力、クラッシュ記録、DirectXの追加の検出機能は外しました。
+自動確認の `EngineRegressionTests` も現在のプロジェクトにはありません。
+ImGuiやDirectXTexなど、借りているライブラリの内部は変更していません。
 
-Debugでは、DirectXの誤った使い方の検出機能を有効にし、重大なエラーで止まるようにしています。
-Windowsの「グラフィックスツール」がない環境では、その検出機能が使えない旨をログに出して続行します。
+残した `assert` は、主にDirectXなどの準備・メモリ作成・描画命令の送信が成功したかを確認するものです。
+例えば [DirectXCommon.cpp](C:/Users/rukar/source/repos/CG2/CG2/RunaEngine/Core/DirectXCommon.cpp) では、次のように書いています。
 
-ビルド後、PowerShellで次の確認を実行できます。
-
-```powershell
-Set-Location 'C:\Users\rukar\source\repos\CG2\CG2'
-Start-Process '.\x64\Debug\CG2.exe' -ArgumentList '--self-test' -Wait -WindowStyle Hidden
-Get-Content '.\logs\self-test.txt'
-
-Start-Process '.\x64\Debug\CG2.exe' -ArgumentList '--lifecycle-test' -Wait -WindowStyle Hidden
-Get-Content '.\logs\lifecycle-test.txt'
+```cpp
+HRESULT hr = commandList_->Close(); // 先に必要な処理を実行する
+assert(SUCCEEDED(hr));              // 結果だけを確認する
 ```
 
-`--self-test` は画面を作らず、GPUで描いた色を読み戻して比較します。
-WARPというCPUによるDirectX描画を使い、OBJ・画像管理・シェーダーも確認します。
-`--lifecycle-test` は非表示ウィンドウで本体を起動し、削除・場面切り替え・再起動を確認します。
-後者には通常実行と同じGPU・音の環境が必要です。
-Releaseでも確認するときは、exeのパスの `Debug` を `Release` に変えます。
-終了コード0が成功、1が失敗です。結果末尾の `ALL PASSED` または `FAILED` を見てください。
-テストが作るファイルはlogs内です。ゲームの元画像・元モデルは変更しません。
+`Debug` と `Development` では、失敗したときにこの行で止まります。
+`Release` では `assert` の確認がなくなりますが、上の `Close()` は実行されます。
+必要な処理を `assert(commandList_->Close() ...);` の中へ入れると、Releaseでは処理ごと消えるため、その書き方にはしていません。
+独自の失敗理由の表示はありません。DirectXの準備に失敗しても、Releaseでは原因を説明して終了することはできません。
 
-今回の最終版では、Debugの描画・読み込み確認51項目と終了処理の確認17項目、Releaseの50項目と17項目がすべて通りました。
-Releaseの1項目が少ないのは、Debug専用のDirectXエラー検出を使わないためです。
-実際の描画確認は、赤・青の色、位置、サイズ、画像の切り抜き、3D物体の複数描画、光の強さまで比較しています。
+普通の `if` は、画像がない、使用中なのでまだ削除できない、0で割れない、といった場面に使っています。
+読み込み結果は、次のように自分でも確認できます。
+
+```cpp
+auto* model = RE::CreateModel("resources/teapot.obj");
+if (!model) {
+    // ファイルの場所や内容を確認する。ここで描画を呼ばない。
+}
+
+uint32_t image = RE::LoadTexture("resources/checkerBoard.png");
+if (image == 0) {
+    // ファイルの場所と、画像を読み込みすぎていないかを確認する。
+}
+```
+
+GPUの完了待ち、描画中の物体をすぐ削除しない処理、転送用メモリの片付けは残しています。
+これらは描画を成立させるための処理です。[DirectXCommon.cpp](C:/Users/rukar/source/repos/CG2/CG2/RunaEngine/Core/DirectXCommon.cpp) の `WaitForIdle` と、[RunaEngine.cpp](C:/Users/rukar/source/repos/CG2/CG2/RunaEngine/RunaEngine.cpp) の `ReleasePendingResources` にあります。
+
+変更したら、まず次の小さな確認を手で行ってください。
+
+| 確かめること | 見る結果 |
+|---|---|
+| 同じSpriteを赤と青で2回描く | 2つの位置に別々の色で表示される |
+| 三角形やModelを1個描く | 元の形が表示され、位置や大きさを変えられる |
+| 縦横の倍率を変え、光の向きを動かす | 光の当たり方が変わる |
+| 使う物体を削除してから画像を解放する | その後も描画を続けられる |
+| ウィンドウを閉じる | 終了処理まで実行される |
+
+`Initialize` → `BeginFrame` → 描画 → `EndFrame` → 最後に `Shutdown` の順番を守ってください。
+呼び出し順の誤りや削除済みポインターの使用を、その都度知らせる仕組みはありません。
+
+今回の変更後は、Debug・Development・Releaseでビルドが通り、それぞれ現在の `main.cpp` で起動しました。
+5秒間の実行後、ウィンドウを閉じる操作で正常終了することを確認しています。上の表のすべての描画結果を確認したという意味ではありません。
 
 ## 12. 次の機能を自分で足すとき
 

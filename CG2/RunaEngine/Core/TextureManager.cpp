@@ -1,11 +1,10 @@
+#include <cassert>
 #include "TextureManager.h"
 #include "ConvertString.h"
-#include "EngineError.h"
 #include <filesystem>
 #include <algorithm>
 void TextureManager::Initialize(ID3D12Device* device, ID3D12GraphicsCommandList* commandList, uint32_t maxTextureCount) {
-	Require(device && commandList && maxTextureCount >= 2, "TextureManager: invalid device, list or capacity");
-	Require(device_ == nullptr, "TextureManager is already initialized; call Shutdown first");
+
 	// SRV用のディスクリプタヒープ
 	device_ = device;
 	commandList_ = commandList;
@@ -17,18 +16,20 @@ void TextureManager::Initialize(ID3D12Device* device, ID3D12GraphicsCommandList*
 }
 
 uint32_t TextureManager::Load(const std::string& filePath) {
-    Require(device_ && commandList_, "TextureManager requires Initialize");
+
     const auto key = std::filesystem::weakly_canonical(filePath).generic_string();
     if (textureHandles_.contains(key)) {
         return textureHandles_[key];
     }
-    Require(!freeDescriptorIndices_.empty() || nextDescriptorIndex_ < maxTextureCount_,
-        "Texture descriptor capacity exceeded (slot 0 is reserved): " + filePath);
-    Require(nextIndex_ != UINT32_MAX, "Texture handle space exhausted");
+    if (freeDescriptorIndices_.empty() && nextDescriptorIndex_ >= maxTextureCount_) {
+        return 0;
+    }
+    if (nextIndex_ == UINT32_MAX) { return 0; }
     const uint32_t descriptorIndex = freeDescriptorIndices_.empty() ? nextDescriptorIndex_ : freeDescriptorIndices_.back();
     uint32_t textureHandle = nextIndex_;
 
     DirectX::ScratchImage mipImages = LoadTexture(key);
+    if (mipImages.GetImageCount() == 0) { return 0; }
     const DirectX::TexMetadata& metadata = mipImages.GetMetadata();
 
     Microsoft::WRL::ComPtr<ID3D12Resource> textureResource =
@@ -63,8 +64,9 @@ uint32_t TextureManager::Load(const std::string& filePath) {
 
 D3D12_GPU_DESCRIPTOR_HANDLE TextureManager::GetSrvHandleGPU(uint32_t textureHandle) {
 	if (textureHandle == 0) { return srvDescriptorHeap_.GetGPUDescriptorHandle(0); }
-	Require(descriptorIndices_.contains(textureHandle), "Invalid or unloaded texture handle: " + std::to_string(textureHandle));
-	return srvDescriptorHeap_.GetGPUDescriptorHandle(descriptorIndices_.at(textureHandle));
+	const auto found = descriptorIndices_.find(textureHandle);
+	if (found == descriptorIndices_.end()) { return {}; }
+	return srvDescriptorHeap_.GetGPUDescriptorHandle(found->second);
 }
 
 ID3D12DescriptorHeap* TextureManager::GetSrvDescriptorHeap() const {
@@ -76,15 +78,17 @@ D3D12_CPU_DESCRIPTOR_HANDLE TextureManager::GetSrvHandleCPU(uint32_t index) {
 }
 
 TextureSize TextureManager::GetTextureSize(uint32_t textureHandle)const {
-	Require(textureSizes_.contains(textureHandle), "Invalid texture size handle: " + std::to_string(textureHandle));
-	return textureSizes_.at(textureHandle);
+	const auto found = textureSizes_.find(textureHandle);
+	if (found == textureSizes_.end()) { return {}; }
+	return found->second;
 }
 
 void TextureManager::ReleaseUploadResources() { intermediateResources_.clear(); }
 void TextureManager::Unload(uint32_t handle) {
-    Require(!HasPendingUploads(), "Finish GPU uploads before unloading textures");
-    Require(descriptorIndices_.contains(handle), "Invalid texture handle to unload");
-    const auto slot = descriptorIndices_.at(handle);
+    if (HasPendingUploads()) { return; }
+    const auto found = descriptorIndices_.find(handle);
+    if (found == descriptorIndices_.end()) { return; }
+    const auto slot = found->second;
     D3D12_SHADER_RESOURCE_VIEW_DESC nullView{};
     nullView.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
     nullView.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
@@ -98,7 +102,7 @@ void TextureManager::Unload(uint32_t handle) {
     std::erase_if(textureHandles_, [handle](const auto& entry) { return entry.second == handle; });
 }
 void TextureManager::Clear() {
-    Require(!HasPendingUploads(), "Finish GPU uploads before clearing textures");
+    if (HasPendingUploads()) { return; }
     textureHandles_.clear(); textureResources_.clear(); textureSizes_.clear(); descriptorIndices_.clear();
     freeDescriptorIndices_.clear(); nextDescriptorIndex_ = 1;
     // nextIndex_は戻さない。古い画像番号が新しい画像を指さないため。
@@ -129,7 +133,7 @@ Microsoft::WRL::ComPtr<ID3D12Resource> TextureManager::CreateTextureResource(con
 		D3D12_RESOURCE_STATE_COPY_DEST, // データ転送される設定
 		nullptr, // Clear最適値。使わないのでnullptr
 		IID_PPV_ARGS(&resource)); // 作成するResourceポインタへのポインタ
-	CheckHR(hr, "Create texture resource");
+	assert(SUCCEEDED(hr));
 	return resource;
 }
 
@@ -141,14 +145,15 @@ DirectX::ScratchImage TextureManager::LoadTexture(const std::string& filePath) {
 	DirectX::ScratchImage image{};
 	std::wstring filePathW = ConvertString(filePath);
 	HRESULT hr = DirectX::LoadFromWICFile(filePathW.c_str(), DirectX::WIC_FLAGS_FORCE_SRGB, nullptr, image);
-	CheckHR(hr, "Load image: " + filePath);
-	Require(image.GetMetadata().dimension == DirectX::TEX_DIMENSION_TEXTURE2D && image.GetMetadata().arraySize == 1,
-		"Only single 2D images are supported: " + filePath);
+	if (FAILED(hr)) { return {}; }
+	if (image.GetMetadata().dimension != DirectX::TEX_DIMENSION_TEXTURE2D || image.GetMetadata().arraySize != 1) {
+	    return {};
+	}
 
 	// ミップマップの作成
 	DirectX::ScratchImage mipImages{};
 	hr = DirectX::GenerateMipMaps(image.GetImages(), image.GetImageCount(), image.GetMetadata(), DirectX::TEX_FILTER_SRGB, 0, mipImages);
-	CheckHR(hr, "Generate image mipmaps: " + filePath);
+	if (FAILED(hr)) { return {}; }
 
 	// ミップマップ付きのデータを返す
 	return mipImages;
@@ -162,12 +167,14 @@ Microsoft::WRL::ComPtr<ID3D12Resource> TextureManager::UploadTextureData(
 	const DirectX::ScratchImage& mipImages) {
 
 	std::vector<D3D12_SUBRESOURCE_DATA> subresources;
-	CheckHR(DirectX::PrepareUpload(device_, mipImages.GetImages(), mipImages.GetImageCount(), mipImages.GetMetadata(), subresources), "Prepare texture upload");
+	HRESULT hr = DirectX::PrepareUpload(device_, mipImages.GetImages(), mipImages.GetImageCount(), mipImages.GetMetadata(), subresources);
+	assert(SUCCEEDED(hr));
 
 	uint64_t intermediateSize = GetRequiredIntermediateSize(texture.Get(), 0, UINT(subresources.size()));
 	Microsoft::WRL::ComPtr<ID3D12Resource> intermediateResource = CreateBufferResource(intermediateSize);
 
-	Require(UpdateSubresources(commandList_, texture.Get(), intermediateResource.Get(), 0, 0, UINT(subresources.size()), subresources.data()) != 0, "Texture upload failed");
+	UINT64 copiedBytes = UpdateSubresources(commandList_, texture.Get(), intermediateResource.Get(), 0, 0, UINT(subresources.size()), subresources.data());
+	assert(copiedBytes != 0);
 
 	// Textureへの転送後は利用できるよう、D3D12_RESOURCE_STATE_COPY_DESTからD3D12_RESOURCE_STATE_GENERIC_READへ変更する
 	D3D12_RESOURCE_BARRIER barrier{};
@@ -211,7 +218,7 @@ Microsoft::WRL::ComPtr<ID3D12Resource> TextureManager::CreateBufferResource(size
 		nullptr,
 		IID_PPV_ARGS(&resource)
 	);
-	CheckHR(hr, "Create texture upload buffer");
+	assert(SUCCEEDED(hr));
 
 	return resource;
 }

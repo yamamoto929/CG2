@@ -196,11 +196,8 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     </ClCompile>
     <ClCompile Include="RunaEngine\Audio\SoundManager.cpp" />
     <ClCompile Include="RunaEngine\Core\ConvertString.cpp" />
-    <ClCompile Include="RunaEngine\Core\CrashHandler.cpp" />
     <ClCompile Include="RunaEngine\Core\DescriptorHeap.cpp" />
     <ClCompile Include="RunaEngine\Core\DirectXCommon.cpp" />
-    <ClCompile Include="RunaEngine\Core\DirectXDebug.cpp" />
-    <ClCompile Include="RunaEngine\Core\Log.cpp" />
     <ClCompile Include="RunaEngine\Core\ResourceManager.cpp" />
     <ClCompile Include="RunaEngine\Core\ShaderCompiler.cpp" />
     <ClCompile Include="RunaEngine\Core\TextureManager.cpp" />
@@ -226,7 +223,6 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
   <ItemGroup>
     <ClInclude Include="RunaEngine\Audio\SoundManager.h" />
     <ClInclude Include="RunaEngine\Core\GameTimer.h" />
-    <ClInclude Include="RunaEngine\Core\EngineError.h" />
     <ClInclude Include="RunaEngine\Graphics\LightingMode.h" />
     <ClInclude Include="RunaEngine\Graphics\MeshData.h" />
     <ClInclude Include="RunaEngine\Graphics\ModelDrawParameters.h" />
@@ -238,12 +234,8 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="RunaEngine\Input\InputTypes.h" />
     <ClInclude Include="RunaEngine\RunaEngine.h" />
     <ClInclude Include="RunaEngine\Core\ConvertString.h" />
-    <ClInclude Include="RunaEngine\Core\CrashHandler.h" />
-    <ClInclude Include="RunaEngine\Core\D3DResourceLeakChecker.h" />
     <ClInclude Include="RunaEngine\Core\DescriptorHeap.h" />
     <ClInclude Include="RunaEngine\Core\DirectXCommon.h" />
-    <ClInclude Include="RunaEngine\Core\DirectXDebug.h" />
-    <ClInclude Include="RunaEngine\Core\Log.h" />
     <ClInclude Include="RunaEngine\Core\ResourceManager.h" />
     <ClInclude Include="RunaEngine\Core\ShaderCompiler.h" />
     <ClInclude Include="RunaEngine\Core\TextureManager.h" />

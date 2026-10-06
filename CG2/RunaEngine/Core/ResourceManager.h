@@ -18,7 +18,6 @@ public:
 		const std::string& fileName
 	);
 	void BeginFrame();
-	bool Contains(const RunaEngine::Model* model) const;
 	bool UsesTexture(uint32_t handle) const;
 	void DestroyModel(RunaEngine::Model* model);
 	void Clear();

@@ -3,7 +3,6 @@
 #include <cstddef>
 #include <d3d12.h>
 #include <wrl.h>
-#include "EngineError.h"
 #include <memory>
 #include <vector>
 #pragma comment(lib, "d3d12.lib")
@@ -12,18 +11,18 @@ template <class T>
 class ConstantBuffer {
 public:
 	void Initialize(ID3D12Device* device) {
-		Require(device != nullptr, "ConstantBuffer: device is null");
 
 		resource_ = CreateBufferResource(device, AlignConstantBufferSize(sizeof(T)));
 		const D3D12_RANGE readRange{0, 0};
-		CheckHR(resource_->Map(0, &readRange, reinterpret_cast<void**>(&data_)), "ConstantBuffer::Map");
+		HRESULT hr = resource_->Map(0, &readRange, reinterpret_cast<void**>(&data_));
+		assert(SUCCEEDED(hr));
 		*data_ = {};
 	}
 
 	T* GetData() const { return data_; }
 
 	D3D12_GPU_VIRTUAL_ADDRESS GetGPUVirtualAddress() const {
-		Require(resource_ != nullptr, "ConstantBuffer is not initialized");
+
 		return resource_->GetGPUVirtualAddress();
 	}
 
@@ -54,7 +53,7 @@ private:
 			nullptr,
 			IID_PPV_ARGS(&resource)
 		);
-		CheckHR(hr, "ConstantBuffer::CreateCommittedResource");
+		assert(SUCCEEDED(hr));
 		return resource;
 	}
 
@@ -67,13 +66,13 @@ template <class T>
 class FrameBuffer {
 public:
     void Initialize(ID3D12Device* device) {
-        Require(device != nullptr, "FrameBuffer: device is null");
+
         buffers_.clear(); next_ = 0; device_ = device;
     }
     void BeginFrame() { next_ = 0; }
     void Clear() { buffers_.clear(); next_ = 0; device_ = nullptr; }
     D3D12_GPU_VIRTUAL_ADDRESS Write(const T& value) {
-        Require(device_ != nullptr, "FrameBuffer is not initialized");
+
         if (next_ == buffers_.size()) {
             auto buffer = std::make_unique<ConstantBuffer<T>>();
             buffer->Initialize(device_);

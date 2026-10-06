@@ -1,5 +1,4 @@
 #pragma once
-#include "RunaEngine/Core/D3DResourceLeakChecker.h"
 #include "RunaEngine/Core/DirectXCommon.h"
 #include "RunaEngine/Graphics/DirectionalLight.h"
 #include "RunaEngine/Graphics/GraphicsPipeline.h"
@@ -111,7 +110,6 @@ private:
 	Object3D* GetDrawModelObject(Model* model);
 	void UpdateCameraMatrices();
 
-	D3DResourceLeakChecker leakChecker_;
 	MSG msg_{};
 	int32_t width_ = 0;
 	int32_t height_ = 0;

@@ -1,4 +1,3 @@
-#include "EngineError.h"
 #include "Model.h"
 #include <cassert>
 #include <cstring>
@@ -6,11 +5,7 @@
 
 namespace RunaEngine{
 	void Model::Initialize(ID3D12Device* device, TextureManager* textureManager, ModelData* modelData) {
-		Require(device != nullptr, "device is not initialized");
-		Require(textureManager != nullptr, "textureManager is not initialized");
-		Require(modelData != nullptr, "modelData is not initialized");
-		Require(!modelData->vertices.empty(), "Model contains no triangles");
-		Require(modelData->vertices.size() <= UINT_MAX / sizeof(VertexData), "Model vertex buffer is too large");
+
 		materials_ = modelData->materials;
 		materialBuffers_.Initialize(device);
 
@@ -22,7 +17,8 @@ namespace RunaEngine{
 
 		// 頂点リソースにデータを書き込む
 		VertexData* vertexData = nullptr;
-		CheckHR(vertexResource_->Map(0, nullptr, reinterpret_cast<void**>(&vertexData)), "Model vertex buffer Map");
+		HRESULT hr = vertexResource_->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));
+		assert(SUCCEEDED(hr));
 		std::memcpy(vertexData, modelData->vertices.data(), sizeof(VertexData) * modelData->vertices.size());
 		vertexResource_->Unmap(0, nullptr);
 
@@ -49,8 +45,6 @@ namespace RunaEngine{
 
 	void Model::Draw(ID3D12GraphicsCommandList* commandList, TextureManager* textureManager,
 		const ModelDrawParameters& parameters) {
-		Require(commandList != nullptr, "commandList is not initialized");
-		Require(textureManager != nullptr, "textureManager is not initialized");
 
 		commandList->IASetVertexBuffers(0, 1, &vertexBufferView_);
 		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -69,10 +63,12 @@ namespace RunaEngine{
 				commandList->SetGraphicsRootConstantBufferView(0, materialBuffers_.Write(material));
 				const uint32_t textureHandle =
 					parameters.textureOverride.value_or(ResolveTextureHandle(subMesh.materialName));
-				textureManager->GetTextureSize(textureHandle); // 0番はImGui専用。モデルの画像としては受け付けない。
+				if (textureHandle == 0) { continue; }
+				const auto texture = textureManager->GetSrvHandleGPU(textureHandle);
+				if (texture.ptr == 0) { continue; }
 				commandList->SetGraphicsRootDescriptorTable(
 					2,
-					textureManager->GetSrvHandleGPU(textureHandle)
+					texture
 				);
 				commandList->DrawInstanced(
 					subMesh.vertexCount,
@@ -146,7 +142,7 @@ namespace RunaEngine{
 			nullptr,
 			IID_PPV_ARGS(&resource)
 		);
-		CheckHR(hr, "Model::CreateCommittedResource");
+		assert(SUCCEEDED(hr));
 
 		return resource;
 	}

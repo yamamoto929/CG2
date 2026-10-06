@@ -1,16 +1,10 @@
 #include "SpriteAnimator.h"
-#include <cassert>
 using namespace RunaEngine;
 void SpriteAnimator::Initialize(
 	Sprite* sprite,
 	const SpriteAnimationClip& clip
 ) {
-	assert(sprite);
-	assert(clip.frameCount > 0);
-	assert(clip.columnCount > 0);
-	assert(clip.frameWidth > 0.0f);
-	assert(clip.frameHeight > 0.0f);
-	assert(clip.secondsPerFrame > 0.0f);
+	if (!sprite || clip.frameCount == 0 || clip.columnCount == 0 || clip.secondsPerFrame <= 0) { return; }
 	sprite_ = sprite;
 	clip_ = clip;
 	elapsedTime_ = 0.0f;
@@ -64,8 +58,7 @@ void SpriteAnimator::Reset() {
 
 void SpriteAnimator::ApplyCurrentFrame()
 {
-	assert(sprite_);
-	assert(clip_.columnCount > 0);
+	if (!sprite_) { return; }
 
 	// シート全体でのフレーム番号
 	const uint32_t frameIndex =

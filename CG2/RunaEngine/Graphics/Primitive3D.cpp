@@ -1,4 +1,3 @@
-#include "EngineError.h"
 #include "Primitive3D.h"
 #include "AffineMatrix.h"
 #include <cassert>
@@ -6,7 +5,6 @@
 
 namespace RunaEngine{
 	void Primitive3D::InitializeTriangle(ID3D12Device* device) {
-		Require(device != nullptr, "device is not initialized");
 
 		VertexData vertices[3] = {
 			{
@@ -32,7 +30,8 @@ namespace RunaEngine{
 		vertexBufferView_.StrideInBytes = sizeof(VertexData);
 
 		VertexData* vertexData = nullptr;
-		CheckHR(vertexResource_->Map(0, nullptr, reinterpret_cast<void**>(&vertexData)), "Primitive3D::Map");
+		HRESULT hr = vertexResource_->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));
+		assert(SUCCEEDED(hr));
 		std::memcpy(vertexData, vertices, sizeof(vertices));
 		vertexResource_->Unmap(0, nullptr);
 		vertexCount_ = 3;
@@ -61,7 +60,6 @@ namespace RunaEngine{
 	}
 
 	void Primitive3D::Draw(ID3D12GraphicsCommandList* commandList) {
-		Require(commandList != nullptr, "commandList is not initialized");
 
 		commandList->IASetVertexBuffers(0, 1, &vertexBufferView_);
 		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -106,7 +104,7 @@ namespace RunaEngine{
 			nullptr,
 			IID_PPV_ARGS(&resource)
 		);
-		CheckHR(hr, "Primitive3D::CreateCommittedResource");
+		assert(SUCCEEDED(hr));
 
 		return resource;
 	}

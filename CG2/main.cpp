@@ -1,16 +1,17 @@
 #include "RunaEngine/RunaEngine.h"
 #include "RunaEngine/Math/AffineMatrix.h"
-#include "ConvertString.h"
-#include "Log.h"
 
 
 void MoveCamera();
 using namespace RunaEngine;
-int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR commandLine, _In_ int) {
+int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 	RunaEngine::Initialize(1280, 720, "TITLE");
 	Sprite* sprite = CreateSprite("resources/sprite_test.png");
-	assert(false && "assertテスト");
+	if (!sprite) {
+		RunaEngine::Shutdown();
+		return 1;
+	}
 	while (RunaEngine::ProcessMessage()) {
 		RunaEngine::BeginFrame();
 

@@ -4,7 +4,6 @@
 #include <cstring>
 #include <algorithm>
 #include <cmath>
-#include "EngineError.h"
 void Input::Shutdown() {
 	if (keyboard_) { keyboard_->Unacquire(); }
 	if (mouse_) { mouse_->Unacquire(); }
@@ -17,25 +16,25 @@ void Input::Initialize(HINSTANCE hInstance, HWND hwnd) {
 	hwnd_ = hwnd;
 	// DirectInput
 	HRESULT hr = DirectInput8Create(hInstance, DIRECTINPUT_VERSION, IID_IDirectInput8, (void**)&directInput_, nullptr);
-	CheckHR(hr, "Input initialization");
+	assert(SUCCEEDED(hr));
 	// キーボード
 	hr = directInput_->CreateDevice(GUID_SysKeyboard, &keyboard_, NULL);
-	CheckHR(hr, "Input initialization");
+	assert(SUCCEEDED(hr));
 
 	hr = keyboard_->SetDataFormat(&c_dfDIKeyboard);
-	CheckHR(hr, "Input initialization");
+	assert(SUCCEEDED(hr));
 
 	hr = keyboard_->SetCooperativeLevel(hwnd, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE | DISCL_NOWINKEY);
-	CheckHR(hr, "Input initialization");
+	assert(SUCCEEDED(hr));
 	// マウス
 	hr = directInput_->CreateDevice(GUID_SysMouse, &mouse_, NULL);
-	CheckHR(hr, "Input initialization");
+	assert(SUCCEEDED(hr));
 
 	hr = mouse_->SetDataFormat(&c_dfDIMouse);
-	CheckHR(hr, "Input initialization");
+	assert(SUCCEEDED(hr));
 
 	hr = mouse_->SetCooperativeLevel(hwnd, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE);
-	CheckHR(hr, "Input initialization");
+	assert(SUCCEEDED(hr));
 }
 
 void Input::Update() {
