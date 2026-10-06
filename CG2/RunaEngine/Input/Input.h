@@ -17,6 +17,7 @@ struct MousePosition {
 };
 class Input {
 public:
+	~Input();
 	// 初期化
 	void Initialize(HINSTANCE hInstance, HWND hwnd);
 	void Shutdown();

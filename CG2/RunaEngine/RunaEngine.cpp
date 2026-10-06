@@ -33,7 +33,8 @@ namespace RunaEngine {
 		directXCommon_.Initialize(winApp_.GetHwnd(), width_, height_);
 
 		textureManager_.Initialize(directXCommon_.GetDevice(), directXCommon_.GetCommandList(), 128);
-		input_.Initialize(winApp_.GetHInstance(), winApp_.GetHwnd());
+		input_ = std::make_unique<Input>();
+		input_->Initialize(winApp_.GetHInstance(), winApp_.GetHwnd());
 		soundManager_.Initialize();
 
 		shaderCompiler_.Initialize();
@@ -88,7 +89,7 @@ namespace RunaEngine {
 		gameTimer_.Tick();
 		drawModelObjectIndex_ = 0;
 		imGuiManager_.BeginFrame();
-		input_.Update();
+		input_->Update();
 		soundManager_.Update();
 		UpdateCameraMatrices();
 		renderer_.Begin();
@@ -117,7 +118,7 @@ namespace RunaEngine {
 			ReleasePendingResources();
 			imGuiManager_.Shutdown();
 			soundManager_.Shutdown();
-			input_.Shutdown();
+			input_.reset();
 			directionalLight_.Shutdown();
 			graphicsPipeline_.Shutdown(); spriteGraphicsPipeline_.Shutdown(); primitiveGraphicsPipeline_.Shutdown();
 			textureManager_.Shutdown(); shaderCompiler_.Shutdown();
@@ -386,15 +387,15 @@ namespace RunaEngine {
 	}
 
 	bool Engine::IsPushKey(Key key) {
-		return input_.IsPushkey(key);
+		return input_->IsPushkey(key);
 	}
 
 	bool Engine::IsTriggerKey(Key key) {
-		return input_.IsTriggerkey(key);
+		return input_->IsTriggerkey(key);
 	}
 
 	Vector2 Engine::GetMousePosition() const {
-		const MousePosition position = input_.GetMousePosition();
+		const MousePosition position = input_->GetMousePosition();
 		return {
 			static_cast<float>(position.x),
 			static_cast<float>(position.y),
@@ -402,37 +403,37 @@ namespace RunaEngine {
 	}
 
 	bool Engine::IsButtonDown(GamepadButton button) {
-		return input_.IsGamepadButtonDown(button);
+		return input_->IsGamepadButtonDown(button);
 	}
 
 	bool Engine::IsButtonTriggered(GamepadButton button) {
-		return input_.IsGamepadButtonTriggered(button);
+		return input_->IsGamepadButtonTriggered(button);
 	}
 
 	bool Engine::IsButtonReleased(GamepadButton button) {
-		return input_.IsGamepadButtonReleased(button);
+		return input_->IsGamepadButtonReleased(button);
 	}
 
 	bool Engine::IsGamepadConnected() const {
-		return input_.IsGamepadConnected();
+		return input_->IsGamepadConnected();
 	}
 
 	Vector2 Engine::GetLeftStick() const {
-		const Input::StickState stick = input_.GetLeftStick();
+		const Input::StickState stick = input_->GetLeftStick();
 		return { stick.horizontal, stick.vertical };
 	}
 
 	Vector2 Engine::GetRightStick() const {
-		const Input::StickState stick = input_.GetRightStick();
+		const Input::StickState stick = input_->GetRightStick();
 		return { stick.horizontal, stick.vertical };
 	}
 
 	float Engine::GetLeftTrigger() const {
-		return input_.GetLeftTrigger();
+		return input_->GetLeftTrigger();
 	}
 
 	float Engine::GetRightTrigger() const {
-		return input_.GetRightTrigger();
+		return input_->GetRightTrigger();
 	}
 
 	void Engine::SetCameraTransform(const Transform& transform) {

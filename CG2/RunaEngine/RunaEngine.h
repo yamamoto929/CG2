@@ -128,7 +128,7 @@ private:
 	WinApp winApp_;
 	DirectXCommon directXCommon_;
 	TextureManager textureManager_;
-	Input input_;
+	std::unique_ptr<Input> input_;
 	SoundManager soundManager_;
 	ShaderCompiler shaderCompiler_;
 	SpriteGraphicsPipeline spriteGraphicsPipeline_;

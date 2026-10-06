@@ -4,6 +4,10 @@
 #include <cstring>
 #include <algorithm>
 #include <cmath>
+Input::	~Input() {
+	Shutdown();
+}
+
 void Input::Shutdown() {
 	if (keyboard_) { keyboard_->Unacquire(); }
 	if (mouse_) { mouse_->Unacquire(); }
