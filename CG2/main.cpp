@@ -8,10 +8,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 	RunaEngine::Initialize(1280, 720, "TITLE");
 	Sprite* sprite = CreateSprite("resources/sprite_test.png");
-	if (!sprite) {
-		RunaEngine::Shutdown();
-		return 1;
-	}
 	while (RunaEngine::ProcessMessage()) {
 		RunaEngine::BeginFrame();
 
