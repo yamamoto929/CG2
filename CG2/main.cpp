@@ -8,16 +8,30 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 	RunaEngine::Initialize(1280, 720, "TITLE");
 	Sprite* sprite = CreateSprite("resources/sprite_test.png");
+	Model* model = CreateModel("resources/plane.obj");
+	float intensity = 0.0f;
+	Transform transform = {
+		{1.0f,1.0f,1.0f},
+		{0.0f,3.14f,0.0f},
+		{0.0f,0.0f,0.0f}
+	};
+
+	ModelDrawParameters param;
+	param.lightingMode = LightingMode::LAMBERT;
+
 	while (RunaEngine::ProcessMessage()) {
 		RunaEngine::BeginFrame();
-
+#ifdef USE_IMGUI
+		ImGui::Begin("Model Parameters");
+		ImGui::DragFloat4("Color", &param.color.x, 0.01f);
+		ImGui::DragFloat("Intensity", &intensity, 0.01f);
+		GetDirectionalLight().SetIntensity(intensity);
+		ImGui::End();
+#endif // USE_IMGUI
 		// 更新
 		MoveCamera();
 
-		sprite->SetColor({ 1.0f, 0.0f, 0.0f, 1.0f });
-		DrawSprite(sprite, Vector2{ 40.0f,40.0f });
-		sprite->SetColor({ 0.0f, 0.0f, 1.0f, 1.0f });
-		DrawSprite(sprite, Vector2{ 552.0f,40.0f });
+		DrawModel(model, transform, param);
 		RunaEngine::EndFrame();
 	}
 	RunaEngine::Shutdown();
