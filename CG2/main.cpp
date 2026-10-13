@@ -17,7 +17,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	};
 
 	ModelDrawParameters param;
-	param.lightingMode = LightingMode::LAMBERT;
+	param.lightingMode = LightingMode::HALF_LAMBERT;
 
 	while (RunaEngine::ProcessMessage()) {
 		RunaEngine::BeginFrame();
