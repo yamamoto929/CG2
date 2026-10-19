@@ -9,7 +9,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	RunaEngine::Initialize(1280, 720, "TITLE");
 	Sprite* sprite = CreateSprite("resources/sprite_test.png");
 	Model* model = CreateModel("resources/plane.obj");
-	float intensity = 0.0f;
+	float intensity = 1.0f;
 	Transform transform = {
 		{1.0f,1.0f,1.0f},
 		{0.0f,3.14f,0.0f},
@@ -18,12 +18,26 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 	ModelDrawParameters param;
 	param.lightingMode = LightingMode::HALF_LAMBERT;
+	param.blendMode = BlendMode::NONE;
+#ifdef USE_IMGUI
+	const char* blendModeNames[] = { "None", "Normal", "Add", "Subtract", "Multiply", "Screen" };
+	constexpr BlendMode blendModes[] = {
+		BlendMode::NONE, BlendMode::NORMAL, BlendMode::ADD,
+		BlendMode::SUBTRACT, BlendMode::MULTIPLY, BlendMode::SCREEN
+	};
+	int selectedBlendMode = 0;
+#endif
+	GetDirectionalLight().SetIntensity(intensity);
 
 	while (RunaEngine::ProcessMessage()) {
 		RunaEngine::BeginFrame();
 #ifdef USE_IMGUI
 		ImGui::Begin("Model Parameters");
-		ImGui::DragFloat4("Color", &param.color.x, 0.01f);
+		if (ImGui::Combo("BlendMode", &selectedBlendMode, blendModeNames, IM_ARRAYSIZE(blendModeNames))) {
+			param.blendMode = blendModes[selectedBlendMode];
+		}
+		ImGui::ColorEdit3("Color", &param.color.x);
+		ImGui::SliderFloat("Alpha", &param.color.w, 0.0f, 1.0f);
 		ImGui::DragFloat("Intensity", &intensity, 0.01f);
 		GetDirectionalLight().SetIntensity(intensity);
 		ImGui::End();

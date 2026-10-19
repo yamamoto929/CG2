@@ -208,7 +208,7 @@ RE::DrawObject3D(right);
 | `CreateModel(path)` | OBJを読み込む。同じファイルなら同じModelを返す。読み込み失敗・未対応形式は `nullptr` |
 | `CreateObject3D(model)` | Modelを使う物体を作る。Modelが `nullptr` なら `nullptr` を返す |
 | `DrawModel(model, position/transform)` | 指定位置またはTransformで描く |
-| `DrawModel(model, transform, parameters)` | 色・照明・画像なども指定して描く |
+| `DrawModel(model, transform, parameters)` | 色・照明・画像・BlendModeなども指定して描く |
 | `DrawObject3D(object)` | 物体が持つTransformで描く |
 | `DrawObject3D(object, position/transform)` | 物体のTransformを設定して描く |
 | `DrawObject3D(object, parameters)` | 物体のTransformで、描画設定を指定して描く |
@@ -233,6 +233,7 @@ RE::ModelDrawParameters parameters{};
 parameters.color = {1, 0.5f, 0.5f, 1};
 parameters.lightingMode = LightingMode::LAMBERT;
 parameters.textureOverride = RE::LoadTexture("resources/checkerBoard.png");
+parameters.blendMode = RE::BlendMode::NORMAL;
 
 // 毎フレーム
 RE::DrawObject3D(left, parameters);
@@ -241,6 +242,13 @@ RE::DrawObject3D(left, parameters);
 画像指定の優先順は、`parameters.textureOverride` → Object3D固有 → Model共通 → MTLに書かれた画像 → 白画像です。
 引数で指定する画像はその描画だけに使い、物体の設定を書き換えません。
 最終的な色は、指定色 × MTLの色 × 画像の色を基に計算します。
+
+`parameters.blendMode` は、その描画だけの合成方法を指定します。
+`NONE`・`NORMAL`・`ADD`・`SUBTRACT`・`MULTIPLY`・`SCREEN` を選べます。
+`DrawModel(model, transform, parameters)` でも同じ設定を使えます。
+未指定ならObject3Dの設定を使い、`DrawModel` の既定値は `NONE` です。
+`DrawObject3D` では `object->SetBlendMode(...)` で設定した値より描画パラメータを優先します。
+`parameters.blendMode.reset()` で描画ごとの指定を解除できます。
 
 `DrawObject3D` と `DrawPrimitive3D` も、同じ物体を1フレーム中に複数回描けます。
 3Dの位置などは描画呼び出し時にコピーされ、後の変更で前の描画が書き換わりません。
@@ -252,7 +260,7 @@ OBJでは、正・負の頂点番号、通常の三角形、平面上の凹多�
 頂点の法線（面が向く方向）がない場合は、面の向きから作ります。
 法線のないモデルで角を滑らかに見せる処理はありません。滑らかな法線を持つOBJを書き出してください。
 
-MTLからは画像、基本色 `Kd` を表示へ反映し、不透明度 `d`/`Tr` を出力色へ設定します。3Dの半透明合成は未実装です。
+MTLからは画像、基本色 `Kd` を表示へ反映し、不透明度 `d`/`Tr` を出力色へ設定します。3Dの半透明合成には `BlendMode::NORMAL` を指定します。透明物体の描画順は自動で並べ替えません。
 鏡面色 `Ks`・光沢値 `Ns` も保存しますが、現在の描画では使いません。
 `map_Kd` の画像はMTLのあるフォルダーを基準に探します。
 `map_Kd -s ...` などの追加指定は未対応です。MTLを読めなかった場合、その材質の設定は使わず白画像で描きます。
@@ -513,12 +521,12 @@ GPUの完了待ち、描画中の物体をすぐ削除しない処理、転送�
 
 ## 12. 次の機能を自分で足すとき
 
-現在まだない機能は、BlendModeの選択・2値抜き、パーティクルのまとめ描き、Phong/Blinn-Phong、スポットライト、ポイントライト、Assimp読み込みです。
+現在まだない機能は、SpriteのBlendModeの選択・2値抜き、パーティクルのまとめ描き、Phong/Blinn-Phong、スポットライト、ポイントライト、Assimp読み込みです。
 今回の修正は、その前に既存の描画と管理を安定させる範囲です。
 
 | 追加する機能 | 最初に作る小さな例 | 主に触る場所・注意 |
 |---|---|---|
-| BlendMode | 四角2枚を重ね、通常合成と加算を切り替える | 各GraphicsPipelineの合成設定。設定ごとの描画用オブジェクトを作って切り替える |
+| SpriteのBlendMode | 四角2枚を重ね、通常合成と加算を切り替える | SpriteGraphicsPipelineの合成設定とSpriteDrawCommand。モードごとのPSOを作って描画直前に切り替える |
 | 2値抜き | 葉の画像1枚で、透明度の低い部分を描かない | PSの`clip`や`discard`。抜いた部分が奥の物体を隠さないことを確認する |
 | パーティクル | 板1枚→2枚→100枚へ増やす | 粒ごとの位置・色の配列をGPUへ渡し、1回の命令でまとめて描く。枚数の上限と完了前の上書きに注意 |
 | Phong/Blinn-Phong | 球1個・光1個・カメラ固定で光沢を見る | Object3dのVS/PS。面の向き、世界での位置、カメラ位置を同じ座標系で計算する |

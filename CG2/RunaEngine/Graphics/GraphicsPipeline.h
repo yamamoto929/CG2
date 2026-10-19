@@ -3,6 +3,7 @@
 #pragma comment(lib,"d3d12.lib")
 #include <wrl.h>
 #include "ShaderCompiler.h"
+#include "BlendMode.h"
 
 class GraphicsPipeline {
 public:
@@ -14,7 +15,16 @@ public:
     );
 
     void Set(ID3D12GraphicsCommandList* commandList);
-    void Shutdown() { pipelineState_.Reset(); rootSignature_.Reset(); }
+    void Set(ID3D12GraphicsCommandList* commandList, const RunaEngine::BlendMode& blendmode);
+    void Shutdown() {
+        pipelineState_.Reset();
+        normalPipelineState_.Reset();
+        addPipelineState_.Reset();
+        subtractPipelineState_.Reset();
+        multiplyPipelineState_.Reset();
+        screenPipelineState_.Reset();
+        rootSignature_.Reset();
+    }
 
     ID3D12RootSignature* GetRootSignature() const;
 
@@ -30,5 +40,10 @@ private:
 private:
     Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature_;
     Microsoft::WRL::ComPtr<ID3D12PipelineState> pipelineState_;
+    Microsoft::WRL::ComPtr<ID3D12PipelineState> normalPipelineState_;
+    Microsoft::WRL::ComPtr<ID3D12PipelineState> addPipelineState_;
+    Microsoft::WRL::ComPtr<ID3D12PipelineState> subtractPipelineState_;
+    Microsoft::WRL::ComPtr<ID3D12PipelineState> multiplyPipelineState_;
+    Microsoft::WRL::ComPtr<ID3D12PipelineState> screenPipelineState_;
 };
 
