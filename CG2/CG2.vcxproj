@@ -161,6 +161,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
       <WholeProgramOptimization Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</WholeProgramOptimization>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Development|x64'">_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
+    <ClCompile Include="Player.cpp" />
     <ClCompile Include="RunaEngine\Graphics\TransformationMatrix.cpp" />
     <ClCompile Include="RunaEngine\Core\GameTimer.cpp" />
     <ClCompile Include="RunaEngine\Graphics\SpriteAnimator.cpp" />
@@ -221,6 +222,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="RunaEngine\UI\ImGuiManager.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Player.h" />
     <ClInclude Include="RunaEngine\Audio\SoundManager.h" />
     <ClInclude Include="RunaEngine\Core\GameTimer.h" />
     <ClInclude Include="RunaEngine\Graphics\LightingMode.h" />
