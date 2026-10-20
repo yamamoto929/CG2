@@ -308,6 +308,8 @@ namespace RunaEngine {
 		const Transform& transform,
 		const ModelDrawParameters& parameters
 	) {
+		if (!model) { return; }
+
 		DrawObject3D(GetDrawModelObject(model), transform, parameters);
 	}
 
