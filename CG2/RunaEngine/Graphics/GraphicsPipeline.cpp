@@ -11,10 +11,38 @@ void GraphicsPipeline::Initialize(
 }
 
 void GraphicsPipeline::Set(ID3D12GraphicsCommandList* commandList) {
-
-    commandList->SetGraphicsRootSignature(rootSignature_.Get());
-    commandList->SetPipelineState(pipelineState_.Get());
+    Set(commandList, RunaEngine::BlendMode::NONE);
 }
+
+void GraphicsPipeline::Set(ID3D12GraphicsCommandList* commandList, const RunaEngine::BlendMode& blendmode) {
+    ID3D12PipelineState* pso = pipelineState_.Get();
+
+    switch (blendmode) {
+    case RunaEngine::BlendMode::NONE:
+        break;
+    case RunaEngine::BlendMode::NORMAL:
+        pso = normalPipelineState_.Get();
+        break;
+    case RunaEngine::BlendMode::ADD:
+        pso = addPipelineState_.Get();
+        break;
+    case RunaEngine::BlendMode::SUBTRACT:
+        pso = subtractPipelineState_.Get();
+        break;
+    case RunaEngine::BlendMode::MULTIPLY:
+        pso = multiplyPipelineState_.Get();
+        break;
+    case RunaEngine::BlendMode::SCREEN:
+        pso = screenPipelineState_.Get();
+        break;
+    default:
+        break;
+    }
+    assert(pso != nullptr);
+    commandList->SetGraphicsRootSignature(rootSignature_.Get());
+    commandList->SetPipelineState(pso);
+}
+
 
 ID3D12RootSignature* GraphicsPipeline::GetRootSignature() const {
     return rootSignature_.Get();
@@ -127,16 +155,71 @@ void GraphicsPipeline::CreatePipelineState(
     Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob =
         shaderCompiler->Compile(L"RunaEngine/Graphics/Object3d.PS.hlsl", L"ps_6_0");
 
-    D3D12_BLEND_DESC blendDesc{};
-    blendDesc.RenderTarget[0].RenderTargetWriteMask =
+    D3D12_BLEND_DESC noneBlendDesc{};
+    noneBlendDesc.RenderTarget[0].RenderTargetWriteMask =
         D3D12_COLOR_WRITE_ENABLE_ALL;
-    blendDesc.RenderTarget[0].BlendEnable = TRUE;
-    blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
-    blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
-    blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
-    blendDesc.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
-    blendDesc.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
-    blendDesc.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
+    noneBlendDesc.RenderTarget[0].BlendEnable = FALSE;
+    noneBlendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_ONE;
+    noneBlendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+    noneBlendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_ZERO;
+    noneBlendDesc.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
+    noneBlendDesc.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+    noneBlendDesc.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
+
+    D3D12_BLEND_DESC normalBlendDesc{};
+    normalBlendDesc.RenderTarget[0].RenderTargetWriteMask =
+        D3D12_COLOR_WRITE_ENABLE_ALL;
+    normalBlendDesc.RenderTarget[0].BlendEnable = TRUE;
+    normalBlendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
+    normalBlendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+    normalBlendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
+    normalBlendDesc.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
+    normalBlendDesc.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+    normalBlendDesc.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
+
+    D3D12_BLEND_DESC addBlendDesc{};
+    addBlendDesc.RenderTarget[0].RenderTargetWriteMask =
+        D3D12_COLOR_WRITE_ENABLE_ALL;
+    addBlendDesc.RenderTarget[0].BlendEnable = TRUE;
+    addBlendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
+    addBlendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+    addBlendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_ONE;
+    addBlendDesc.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
+    addBlendDesc.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+    addBlendDesc.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
+
+    D3D12_BLEND_DESC subtractBlendDesc{};
+    subtractBlendDesc.RenderTarget[0].RenderTargetWriteMask =
+        D3D12_COLOR_WRITE_ENABLE_ALL;
+    subtractBlendDesc.RenderTarget[0].BlendEnable = TRUE;
+    subtractBlendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
+    subtractBlendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_REV_SUBTRACT;
+    subtractBlendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_ONE;
+    subtractBlendDesc.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
+    subtractBlendDesc.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+    subtractBlendDesc.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
+
+    D3D12_BLEND_DESC multiplyBlendDesc{};
+    multiplyBlendDesc.RenderTarget[0].RenderTargetWriteMask =
+        D3D12_COLOR_WRITE_ENABLE_ALL;
+    multiplyBlendDesc.RenderTarget[0].BlendEnable = TRUE;
+    multiplyBlendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_ZERO;
+    multiplyBlendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+    multiplyBlendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_SRC_COLOR;
+    multiplyBlendDesc.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
+    multiplyBlendDesc.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+    multiplyBlendDesc.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
+
+    D3D12_BLEND_DESC screenBlendDesc{};
+    screenBlendDesc.RenderTarget[0].RenderTargetWriteMask =
+        D3D12_COLOR_WRITE_ENABLE_ALL;
+    screenBlendDesc.RenderTarget[0].BlendEnable = TRUE;
+    screenBlendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_INV_DEST_COLOR;
+    screenBlendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+    screenBlendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_ONE;
+    screenBlendDesc.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
+    screenBlendDesc.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+    screenBlendDesc.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
 
     D3D12_RASTERIZER_DESC rasterizerDesc{};
     rasterizerDesc.CullMode = D3D12_CULL_MODE_NONE;
@@ -159,7 +242,7 @@ void GraphicsPipeline::CreatePipelineState(
         pixelShaderBlob->GetBufferPointer(),
         pixelShaderBlob->GetBufferSize()
     };
-    graphicsPipelineStateDesc.BlendState = blendDesc;
+
     graphicsPipelineStateDesc.RasterizerState = rasterizerDesc;
     graphicsPipelineStateDesc.NumRenderTargets = 1;
     graphicsPipelineStateDesc.RTVFormats[0] = rtvFormat;
@@ -170,9 +253,45 @@ void GraphicsPipeline::CreatePipelineState(
     graphicsPipelineStateDesc.DepthStencilState = depthStencilDesc;
     graphicsPipelineStateDesc.DSVFormat = dsvFormat;
 
+    graphicsPipelineStateDesc.BlendState = noneBlendDesc;
     hr = device->CreateGraphicsPipelineState(
         &graphicsPipelineStateDesc,
         IID_PPV_ARGS(&pipelineState_)
+    );
+    assert(SUCCEEDED(hr));
+
+    graphicsPipelineStateDesc.BlendState = normalBlendDesc;
+    hr = device->CreateGraphicsPipelineState(
+        &graphicsPipelineStateDesc,
+        IID_PPV_ARGS(&normalPipelineState_)
+    );
+    assert(SUCCEEDED(hr));
+
+    graphicsPipelineStateDesc.BlendState = addBlendDesc;
+    hr = device->CreateGraphicsPipelineState(
+        &graphicsPipelineStateDesc,
+        IID_PPV_ARGS(&addPipelineState_)
+    );
+    assert(SUCCEEDED(hr));
+
+    graphicsPipelineStateDesc.BlendState = subtractBlendDesc;
+    hr = device->CreateGraphicsPipelineState(
+        &graphicsPipelineStateDesc,
+        IID_PPV_ARGS(&subtractPipelineState_)
+    );
+    assert(SUCCEEDED(hr));
+
+    graphicsPipelineStateDesc.BlendState = multiplyBlendDesc;
+    hr = device->CreateGraphicsPipelineState(
+        &graphicsPipelineStateDesc,
+        IID_PPV_ARGS(&multiplyPipelineState_)
+    );
+    assert(SUCCEEDED(hr));
+
+    graphicsPipelineStateDesc.BlendState = screenBlendDesc;
+    hr = device->CreateGraphicsPipelineState(
+        &graphicsPipelineStateDesc,
+        IID_PPV_ARGS(&screenPipelineState_)
     );
     assert(SUCCEEDED(hr));
 }

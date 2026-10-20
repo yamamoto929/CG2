@@ -7,10 +7,11 @@
 #include <d3d12.h>
 #pragma comment(lib,"d3d12.lib")
 #include "TransformationMatrix.h"
+#include "BlendMode.h"
 
 class TextureManager;
 
-namespace RunaEngine{
+namespace RunaEngine {
 	class Model;
 
 	class Object3D {
@@ -26,7 +27,7 @@ namespace RunaEngine{
 		Model* model_ = nullptr;
 		Matrix4x4 worldMatrix_{};
 		Matrix4x4 wvpMatrix_{};
-
+		BlendMode blendmode_ = BlendMode::NONE;
 	public:
 		void Initialize(ID3D12Device* device, Model* model);
 
@@ -49,7 +50,7 @@ namespace RunaEngine{
 			TextureManager* textureManager,
 			const ModelDrawParameters& parameters
 		);
-
-
+		void SetBlendMode(const BlendMode& blendmode) { blendmode_ = blendmode; }
+		BlendMode GetBlendMode() const{ return blendmode_; }
 	};
 }

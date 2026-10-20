@@ -38,7 +38,7 @@ void Renderer::Begin() {
 }
 
 void Renderer::Draw(RunaEngine::Object3D& object, const RunaEngine::ModelDrawParameters& parameters) {
-	graphicsPipeline_->Set(GetCommandList());
+	graphicsPipeline_->Set(GetCommandList(), parameters.blendMode.value_or(object.GetBlendMode()));
 	directionalLight_->SetCommand(GetCommandList(), 3);
 	object.Draw(GetCommandList(), textureManager_, parameters);
 }
