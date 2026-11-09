@@ -4,7 +4,7 @@ on:
     branches:
       - master
 env:
-  SOLUTION_FILE_PATH: CG2/CG2.slnx
+  SOLUTION_FILE_PATH: CG2.slnx
   CONFIGURATION: Debug
 jobs:
   build:
