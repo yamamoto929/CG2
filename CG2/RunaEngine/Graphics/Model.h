@@ -28,7 +28,7 @@ namespace RunaEngine{
 	public:
 		void Initialize(ID3D12Device* device, TextureManager* textureManager, ModelData* modelData);
 		void Draw(ID3D12GraphicsCommandList* commandList, TextureManager* textureManager,
-			const ModelDrawParameters& parameters = {});
+			const ModelDrawParameters& parameters = {}, UINT instanceCount = 1);
 		void BeginFrame() { materialBuffers_.BeginFrame(); }
 		bool UsesTexture(uint32_t handle) const;
 		uint32_t GetTextureHandle() const { return textureOverride_.value_or(fallbackTextureHandle_); }

@@ -29,7 +29,6 @@ namespace RunaEngine {
 		comInitialized_ = true;
 
 		winApp_.CreateNewWindow(width_, height_, title);
-
 		directXCommon_.Initialize(winApp_.GetHwnd(), width_, height_);
 
 		textureManager_.Initialize(directXCommon_.GetDevice(), directXCommon_.GetCommandList(), 128);
@@ -60,7 +59,28 @@ namespace RunaEngine {
 		directionalLight_.Initialize(directXCommon_.GetDevice());
 		renderer_.Initialize(&directXCommon_, &textureManager_, &graphicsPipeline_, &primitiveGraphicsPipeline_, &directionalLight_, &spriteGraphicsPipeline_);
 		imGuiManager_.Initialize(winApp_, directXCommon_, textureManager_);
+		buffer_ = CreateBufferResource(
+			directXCommon_.GetDevice(),
+			sizeof(TransformationMatrix) * 10
+		);
+		assert(buffer_.Get() != nullptr);
 
+		const HRESULT mapResult =
+			buffer_->Map(0, nullptr, reinterpret_cast<void**>(&instancingData_));
+		assert(SUCCEEDED(mapResult));
+		D3D12_SHADER_RESOURCE_VIEW_DESC srv{};
+		srv.Format = DXGI_FORMAT_UNKNOWN;
+		srv.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+		srv.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		srv.Buffer.FirstElement = 0;
+		srv.Buffer.NumElements = 10;
+		srv.Buffer.StructureByteStride = static_cast<UINT>(sizeof(TransformationMatrix));
+		srv.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
+
+		directXCommon_.GetDevice()->CreateShaderResourceView(
+			buffer_.Get(), &srv, textureManager_.GetInstancingSrvCpuHandle());
+
+		instancingSrvGpuHandle_ = textureManager_.GetInstancingSrvGpuHandle();
 		UpdateCameraMatrices();
 		gameTimer_.Reset();
 		initialized_ = true;
@@ -504,6 +524,40 @@ namespace RunaEngine {
 
 	float Engine::GetDeltaTime()const {
 		return gameTimer_.GetDeltaTime();
+	}
+
+	// =========================================================
+	// CreateBufferResource
+	// =========================================================
+	Microsoft::WRL::ComPtr<ID3D12Resource> Engine::CreateBufferResource(ID3D12Device* device, size_t sizeInBytes) {
+		// 頂点リソース用のヒープの設定
+		D3D12_HEAP_PROPERTIES uploadHeapProperties{};
+		uploadHeapProperties.Type = D3D12_HEAP_TYPE_UPLOAD; // UploadHeapを使う
+		// 頂点リソースの設定
+		D3D12_RESOURCE_DESC resourceDesc{};
+		// バッファリソース。テクスチャの場合はまた別の設定をする
+		resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+		resourceDesc.Width = sizeInBytes; // リソースのサイズ
+		// バッファの場合はこれらを1にする決まり
+		resourceDesc.Height = 1;
+		resourceDesc.DepthOrArraySize = 1;
+		resourceDesc.MipLevels = 1;
+		resourceDesc.SampleDesc.Count = 1;
+		// バッファの場合はこれにする決まり
+		resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+		// 実際にリソースを作る
+		Microsoft::WRL::ComPtr<ID3D12Resource> resource;
+		HRESULT hr = device->CreateCommittedResource(
+			&uploadHeapProperties,
+			D3D12_HEAP_FLAG_NONE,
+			&resourceDesc,
+			D3D12_RESOURCE_STATE_GENERIC_READ,
+			nullptr,
+			IID_PPV_ARGS(&resource)
+		);
+		assert(SUCCEEDED(hr));
+
+		return resource;
 	}
 
 	//=================================================================================

@@ -43,6 +43,10 @@ void GraphicsPipeline::Set(ID3D12GraphicsCommandList* commandList, const RunaEng
     commandList->SetPipelineState(pso);
 }
 
+void GraphicsPipeline::SetParticle(ID3D12GraphicsCommandList* commandList) const {
+    commandList->SetGraphicsRootSignature(particleRootSignature_.Get());
+    commandList->SetPipelineState(particlePipelineState_.Get());
+}
 
 ID3D12RootSignature* GraphicsPipeline::GetRootSignature() const {
     return rootSignature_.Get();
@@ -63,6 +67,12 @@ void GraphicsPipeline::CreateRootSignature(ID3D12Device* device) {
     descriptorRange[0].OffsetInDescriptorsFromTableStart =
         D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
+    D3D12_DESCRIPTOR_RANGE descriptorRangeForInstancing[1] = {};
+    descriptorRangeForInstancing[0].BaseShaderRegister = 0;
+    descriptorRangeForInstancing[0].NumDescriptors = 1;
+    descriptorRangeForInstancing[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+    descriptorRangeForInstancing[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
     D3D12_ROOT_PARAMETER rootParameters[4] = {};
 
     rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
@@ -72,7 +82,7 @@ void GraphicsPipeline::CreateRootSignature(ID3D12Device* device) {
     rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
     rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
     rootParameters[1].Descriptor.ShaderRegister = 0;
-
+   
     rootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
     rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
     rootParameters[2].DescriptorTable.pDescriptorRanges = descriptorRange;
@@ -81,6 +91,21 @@ void GraphicsPipeline::CreateRootSignature(ID3D12Device* device) {
     rootParameters[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
     rootParameters[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
     rootParameters[3].Descriptor.ShaderRegister = 1;
+
+    D3D12_ROOT_PARAMETER particleRootParameters[3] = {};
+    particleRootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+    particleRootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+    particleRootParameters[0].Descriptor.ShaderRegister = 0;
+    
+    particleRootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+    particleRootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+    particleRootParameters[1].DescriptorTable.pDescriptorRanges = descriptorRangeForInstancing;
+    particleRootParameters[1].DescriptorTable.NumDescriptorRanges = _countof(descriptorRangeForInstancing);
+    
+    particleRootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+    particleRootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+    particleRootParameters[2].DescriptorTable.pDescriptorRanges = descriptorRange;
+    particleRootParameters[2].DescriptorTable.NumDescriptorRanges = _countof(descriptorRange);
 
     descriptionRootSignature.pParameters = rootParameters;
     descriptionRootSignature.NumParameters = _countof(rootParameters);
@@ -115,6 +140,29 @@ void GraphicsPipeline::CreateRootSignature(ID3D12Device* device) {
         signatureBlob->GetBufferPointer(),
         signatureBlob->GetBufferSize(),
         IID_PPV_ARGS(&rootSignature_)
+    );
+    assert(SUCCEEDED(hr));
+
+    D3D12_ROOT_SIGNATURE_DESC particleRootDesc = descriptionRootSignature;
+    particleRootDesc.pParameters = particleRootParameters;
+    particleRootDesc.NumParameters = _countof(particleRootParameters);
+
+    Microsoft::WRL::ComPtr<ID3DBlob> particleSignatureBlob;
+    Microsoft::WRL::ComPtr<ID3DBlob> particleErrorBlob;
+
+    hr = D3D12SerializeRootSignature(
+        &particleRootDesc,
+        D3D_ROOT_SIGNATURE_VERSION_1,
+        &particleSignatureBlob,
+        &particleErrorBlob
+    );
+    assert(SUCCEEDED(hr));
+
+    hr = device->CreateRootSignature(
+        0,
+        particleSignatureBlob->GetBufferPointer(),
+        particleSignatureBlob->GetBufferSize(),
+        IID_PPV_ARGS(&particleRootSignature_)
     );
     assert(SUCCEEDED(hr));
 }
@@ -292,6 +340,24 @@ void GraphicsPipeline::CreatePipelineState(
     hr = device->CreateGraphicsPipelineState(
         &graphicsPipelineStateDesc,
         IID_PPV_ARGS(&screenPipelineState_)
+    );
+    assert(SUCCEEDED(hr));
+
+    Microsoft::WRL::ComPtr<IDxcBlob> particleVS = shaderCompiler->Compile(
+        L"RunaEngine/Graphics/Particle.VS.hlsl", L"vs_6_0");
+    Microsoft::WRL::ComPtr<IDxcBlob> particlePS = shaderCompiler->Compile(
+        L"RunaEngine/Graphics/Particle.PS.hlsl", L"ps_6_0");
+    assert(particleVS.Get() && particlePS.Get());
+
+    D3D12_GRAPHICS_PIPELINE_STATE_DESC particlePsoDesc = graphicsPipelineStateDesc;
+    particlePsoDesc.pRootSignature = particleRootSignature_.Get();
+    particlePsoDesc.VS = { particleVS->GetBufferPointer(), particleVS->GetBufferSize() };
+    particlePsoDesc.PS = { particlePS->GetBufferPointer(), particlePS->GetBufferSize() };
+    particlePsoDesc.BlendState = noneBlendDesc;
+
+    hr = device->CreateGraphicsPipelineState(
+        &particlePsoDesc,
+        IID_PPV_ARGS(&particlePipelineState_)
     );
     assert(SUCCEEDED(hr));
 }
