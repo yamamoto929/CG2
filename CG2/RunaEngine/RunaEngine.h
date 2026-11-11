@@ -1,4 +1,5 @@
 #pragma once
+#include "RunaEngine/Graphics/TransformationMatrix.h"
 #include "RunaEngine/Core/DirectXCommon.h"
 #include "RunaEngine/Graphics/DirectionalLight.h"
 #include "RunaEngine/Graphics/GraphicsPipeline.h"
@@ -102,10 +103,23 @@ public:
 	ImGuiManager& GetImGuiManager() { return imGuiManager_; }
 	TextureManager& GetTextureManager() { return textureManager_; }
 	Renderer& GetRenderer() { return renderer_; }
+	TransformationMatrix* GetInstancingData() {
+		return instancingData_;
+	}
+
+	D3D12_GPU_DESCRIPTOR_HANDLE GetInstancingSrvGpuHandle() const {
+		return instancingSrvGpuHandle_;
+	}
+
+	Matrix4x4 GetViewProjectionMatrix() const {
+		return Multiply(viewMatrix_, projectionMatrix_);
+	}
 	DirectionalLight& GetDirectionalLight() { return directionalLight_; }
 	// deltaTime取得
 	float GetDeltaTime()const;
-
+	void SetParticlePipeline() {
+		graphicsPipeline_.SetParticle(renderer_.GetCommandList());
+	}
 private:
 	Object3D* GetDrawModelObject(Model* model);
 	void UpdateCameraMatrices();
@@ -159,6 +173,13 @@ private:
 	void FlushSprites();
 	// deltaTime用
 	GameTimer gameTimer_;
+	Microsoft::WRL::ComPtr<ID3D12Resource> buffer_;
+	TransformationMatrix* instancingData_ = nullptr;
+	D3D12_GPU_DESCRIPTOR_HANDLE instancingSrvGpuHandle_{};
+	// =========================================================
+	// CreateBufferResource
+	// =========================================================
+	Microsoft::WRL::ComPtr<ID3D12Resource> CreateBufferResource(ID3D12Device* device, size_t sizeInBytes);
 };
 
 Engine& GetEngine();

@@ -44,7 +44,7 @@ namespace RunaEngine{
 	}
 
 	void Model::Draw(ID3D12GraphicsCommandList* commandList, TextureManager* textureManager,
-		const ModelDrawParameters& parameters) {
+		const ModelDrawParameters& parameters, UINT instanceCount) {
 
 		commandList->IASetVertexBuffers(0, 1, &vertexBufferView_);
 		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -72,7 +72,7 @@ namespace RunaEngine{
 				);
 				commandList->DrawInstanced(
 					subMesh.vertexCount,
-					1,
+					instanceCount,
 					subMesh.firstVertex,
 					0
 				);

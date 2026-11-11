@@ -25,8 +25,15 @@ public:
 	void Unload(uint32_t handle); // GPU完了後、参照がなくなった画像だけ
 	void Clear(); // 0番のImGui用ディスクリプタは残す
 	void Shutdown() { Clear(); srvDescriptorHeap_.Reset(); device_ = nullptr; commandList_ = nullptr; }
-	size_t GetLoadedTextureCount() const { return textureResources_.size(); }
+	size_t GetLoadedTextureCount() const { return textureResources_.size(); }	
 	size_t GetPendingUploadCount() const { return intermediateResources_.size(); }
+	D3D12_CPU_DESCRIPTOR_HANDLE GetInstancingSrvCpuHandle() {
+		return srvDescriptorHeap_.GetCPUDescriptorHandle(maxTextureCount_);
+	}
+
+	D3D12_GPU_DESCRIPTOR_HANDLE GetInstancingSrvGpuHandle() {
+		return srvDescriptorHeap_.GetGPUDescriptorHandle(maxTextureCount_);
+	}
 private:
 
 	DescriptorHeap srvDescriptorHeap_;

@@ -40,6 +40,9 @@
     <None Include="RunaEngine\Graphics\Object3d.hlsli">
       <Filter>RunaEngine\Graphics</Filter>
     </None>
+    <None Include="RunaEngine\Graphics\Particle.hlsli">
+      <Filter>RunaEngine\Graphics</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -335,6 +338,12 @@
       <Filter>RunaEngine\Graphics</Filter>
     </FxCompile>
     <FxCompile Include="RunaEngine\Graphics\Sprite.VS.hlsl">
+      <Filter>RunaEngine\Graphics</Filter>
+    </FxCompile>
+    <FxCompile Include="RunaEngine\Graphics\Particle.PS.hlsl">
+      <Filter>RunaEngine\Graphics</Filter>
+    </FxCompile>
+    <FxCompile Include="RunaEngine\Graphics\Particle.VS.hlsl">
       <Filter>RunaEngine\Graphics</Filter>
     </FxCompile>
   </ItemGroup>

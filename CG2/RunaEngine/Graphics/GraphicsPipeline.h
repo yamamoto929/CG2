@@ -24,10 +24,12 @@ public:
         multiplyPipelineState_.Reset();
         screenPipelineState_.Reset();
         rootSignature_.Reset();
+        particlePipelineState_.Reset();
+        particleRootSignature_.Reset();
     }
 
     ID3D12RootSignature* GetRootSignature() const;
-
+    void SetParticle(ID3D12GraphicsCommandList* commandList) const;
 private:
     void CreateRootSignature(ID3D12Device* device);
     void CreatePipelineState(
@@ -40,6 +42,8 @@ private:
 private:
     Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature_;
     Microsoft::WRL::ComPtr<ID3D12PipelineState> pipelineState_;
+    Microsoft::WRL::ComPtr<ID3D12RootSignature> particleRootSignature_;
+    Microsoft::WRL::ComPtr<ID3D12PipelineState> particlePipelineState_;
     Microsoft::WRL::ComPtr<ID3D12PipelineState> normalPipelineState_;
     Microsoft::WRL::ComPtr<ID3D12PipelineState> addPipelineState_;
     Microsoft::WRL::ComPtr<ID3D12PipelineState> subtractPipelineState_;

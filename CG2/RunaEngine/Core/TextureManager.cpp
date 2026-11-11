@@ -8,7 +8,7 @@ void TextureManager::Initialize(ID3D12Device* device, ID3D12GraphicsCommandList*
 	// SRV用のディスクリプタヒープ
 	device_ = device;
 	commandList_ = commandList;
-	srvDescriptorHeap_.Initialize(device_, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, maxTextureCount, true);
+	srvDescriptorHeap_.Initialize(device_, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, maxTextureCount+1, true);
 	// 0番はImGui用に予約
 	// 再初期化しても画像番号は戻さない。古い番号を新しい画像へ使い回さない。
 	maxTextureCount_ = maxTextureCount;

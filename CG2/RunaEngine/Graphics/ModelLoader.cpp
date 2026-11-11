@@ -112,14 +112,17 @@ RunaEngine::ModelData ModelLoader::LoadObjFile(const std::string& directory, con
 		std::istringstream stream(line);
 		std::string type; stream >> type;
 		if (type == "v") {
-			Vector3 p{}; if (!ReadVector(stream, p)) { return {}; }
-			positions.push_back({ -p.x,p.y,p.z,1 });
+			Vector3 p{};
+			if (!ReadVector(stream, p)) { return {}; }
+			positions.push_back({ p.x,p.y,p.z,1 });
 		} else if (type == "vt") {
 			Vector2 uv{};
 			if (!(stream >> uv.x >> uv.y)) { return {}; }
 			uvs.push_back({ uv.x,1 - uv.y });
 		} else if (type == "vn") {
-			Vector3 n{}; if (!ReadVector(stream, n)) { return {}; } n.x = -n.x;
+			Vector3 n{};
+			if (!ReadVector(stream, n)) { return {}; } 
+			n.x = -n.x;
 			if (n.Length() == 0) { return {}; }
 			const auto length = n.Length(); n = { n.x / length,n.y / length,n.z / length }; normals.push_back(n);
 		} else if (type == "o" || type == "g") {
