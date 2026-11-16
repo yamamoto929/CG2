@@ -235,9 +235,10 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="RunaEngine\UI\ImGuiManager.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="BlendMode.h" />
     <ClInclude Include="RunaEngine\Audio\SoundManager.h" />
     <ClInclude Include="RunaEngine\Core\GameTimer.h" />
+    <ClInclude Include="RunaEngine\Core\TextureSize.h" />
+    <ClInclude Include="RunaEngine\Graphics\BlendMode.h" />
     <ClInclude Include="RunaEngine\Graphics\LightingMode.h" />
     <ClInclude Include="RunaEngine\Graphics\MeshData.h" />
     <ClInclude Include="RunaEngine\Graphics\ModelDrawParameters.h" />
@@ -291,7 +292,6 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="RunaEngine\Math\Vector4.h" />
     <ClInclude Include="RunaEngine\Math\WVPMatrix.h" />
     <ClInclude Include="RunaEngine\UI\ImGuiManager.h" />
-    <ClInclude Include="TextureSize.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="RunaEngine\Graphics\Object3d.PS.hlsl">
