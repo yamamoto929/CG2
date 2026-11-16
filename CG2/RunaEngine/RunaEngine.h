@@ -35,6 +35,15 @@
 #endif
 
 namespace RunaEngine {
+	inline constexpr uint32_t kMaxParticleInstances = 100;
+
+	struct ParticleForGPU {
+		Matrix4x4 WVP;
+		Matrix4x4 World;
+		Vector4 color;
+	};
+
+	static_assert(sizeof(ParticleForGPU) == 144);
 class Engine {
 public:
 	Engine();
@@ -103,7 +112,7 @@ public:
 	ImGuiManager& GetImGuiManager() { return imGuiManager_; }
 	TextureManager& GetTextureManager() { return textureManager_; }
 	Renderer& GetRenderer() { return renderer_; }
-	TransformationMatrix* GetInstancingData() {
+	ParticleForGPU* GetInstancingData() {
 		return instancingData_;
 	}
 
@@ -174,7 +183,7 @@ private:
 	// deltaTime用
 	GameTimer gameTimer_;
 	Microsoft::WRL::ComPtr<ID3D12Resource> buffer_;
-	TransformationMatrix* instancingData_ = nullptr;
+	ParticleForGPU* instancingData_ = nullptr;
 	D3D12_GPU_DESCRIPTOR_HANDLE instancingSrvGpuHandle_{};
 	// =========================================================
 	// CreateBufferResource

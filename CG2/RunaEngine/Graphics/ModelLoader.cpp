@@ -1,4 +1,5 @@
 #include "ModelLoader.h"
+#include "ConvertString.h"
 #include <array>
 #include <algorithm>
 #include <charconv>
@@ -98,7 +99,7 @@ namespace {
 
 RunaEngine::ModelData ModelLoader::LoadObjFile(const std::string& directory, const std::string& filename) {
 	using namespace RunaEngine;
-	const auto path = std::filesystem::path(directory) / filename;
+	const auto path = std::filesystem::path(ConvertString(directory)) / ConvertString(filename);
 	std::ifstream file(path);
 	if (!file.is_open()) { return {}; }
 	ModelData data;
@@ -137,10 +138,11 @@ RunaEngine::ModelData ModelLoader::LoadObjFile(const std::string& directory, con
 			if (mtl.empty()) { return {}; }
 			// 空白を含む単一のパスを優先。存在しなければ複数のMTL名として読む。
 			std::vector<std::string> files;
-			if (std::filesystem::exists(path.parent_path() / mtl)) { files.push_back(mtl); } else { std::istringstream names(mtl); while (names >> mtl) { files.push_back(mtl); } }
+			if (std::filesystem::exists(path.parent_path() / ConvertString(mtl))) { files.push_back(mtl); } else { std::istringstream names(mtl); while (names >> mtl) { files.push_back(mtl); } }
 			for (const auto& name : files) {
-				const auto mtlPath = path.parent_path() / name;
-				auto materials = LoadMaterialTemplateFile(mtlPath.parent_path().generic_string(), mtlPath.filename().generic_string());
+				const auto mtlPath = path.parent_path() / ConvertString(name);
+				auto materials = LoadMaterialTemplateFile(
+					ConvertString(mtlPath.parent_path().generic_wstring()), ConvertString(mtlPath.filename().generic_wstring()));
 				for (auto& entry : materials) { data.materials.insert_or_assign(entry.first, std::move(entry.second)); }
 			}
 		} else if (type == "f") {
@@ -202,7 +204,7 @@ RunaEngine::ModelData ModelLoader::LoadObjFile(const std::string& directory, con
 
 std::unordered_map<std::string, RunaEngine::MaterialData> ModelLoader::LoadMaterialTemplateFile(
 	const std::string& directory, const std::string& filename) {
-	const auto path = std::filesystem::path(directory) / filename;
+	const auto path = std::filesystem::path(ConvertString(directory)) / ConvertString(filename);
 	std::ifstream file(path);
 	if (!file.is_open()) { return {}; }
 	std::unordered_map<std::string, RunaEngine::MaterialData> materials;
@@ -229,7 +231,7 @@ std::unordered_map<std::string, RunaEngine::MaterialData> ModelLoader::LoadMater
 		} else if (current && type == "map_Kd") {
 			std::string name; std::getline(stream, name); name = Trim(name);
 			if (name.empty() || name.front() == '-') { return {}; }
-			current->textureFilePath = (path.parent_path() / name).lexically_normal().generic_string();
+			current->textureFilePath = ConvertString((path.parent_path() / ConvertString(name)).lexically_normal().generic_wstring());
 		}
 	}
 	return materials;

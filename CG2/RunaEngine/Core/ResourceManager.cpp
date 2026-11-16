@@ -1,4 +1,5 @@
 #include "ResourceManager.h"
+#include "ConvertString.h"
 #include "TextureManager.h"
 #include <filesystem>
 #include <algorithm>
@@ -10,11 +11,13 @@ RunaEngine::Model* ResourceManager::LoadModel(
 	const std::string& fileName
 ) {
 
-	const auto path = std::filesystem::weakly_canonical(std::filesystem::path(directoryPath) / fileName);
-	const auto key = path.generic_string();
+	const auto path = std::filesystem::weakly_canonical(
+		std::filesystem::path(ConvertString(directoryPath)) / ConvertString(fileName));
+	const auto key = ConvertString(path.generic_wstring());
 	if (const auto found = modelCache_.find(key); found != modelCache_.end()) { return found->second; }
 	if (path.extension() != ".obj" && path.extension() != ".OBJ") { return nullptr; }
-	RunaEngine::ModelData modelData = modelLoader_.LoadObjFile(path.parent_path().generic_string(), path.filename().generic_string());
+	RunaEngine::ModelData modelData = modelLoader_.LoadObjFile(
+		ConvertString(path.parent_path().generic_wstring()), ConvertString(path.filename().generic_wstring()));
 	if (modelData.vertices.empty()) { return nullptr; }
 	std::unique_ptr<RunaEngine::Model> model = std::make_unique<RunaEngine::Model>();
 	model->Initialize(device, textureManager, &modelData);

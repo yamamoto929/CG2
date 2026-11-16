@@ -1,5 +1,6 @@
 #include "RunaEngine.h"
 #include "AffineMatrix.h"
+#include "ConvertString.h"
 #include "WVPMatrix.h"
 #include <cassert>
 #include <filesystem>
@@ -61,7 +62,7 @@ namespace RunaEngine {
 		imGuiManager_.Initialize(winApp_, directXCommon_, textureManager_);
 		buffer_ = CreateBufferResource(
 			directXCommon_.GetDevice(),
-			sizeof(TransformationMatrix) * 10
+			sizeof(ParticleForGPU) * kMaxParticleInstances
 		);
 		assert(buffer_.Get() != nullptr);
 
@@ -73,8 +74,8 @@ namespace RunaEngine {
 		srv.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
 		srv.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 		srv.Buffer.FirstElement = 0;
-		srv.Buffer.NumElements = 10;
-		srv.Buffer.StructureByteStride = static_cast<UINT>(sizeof(TransformationMatrix));
+		srv.Buffer.NumElements = kMaxParticleInstances;
+		srv.Buffer.StructureByteStride = static_cast<UINT>(sizeof(ParticleForGPU));
 		srv.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
 
 		directXCommon_.GetDevice()->CreateShaderResourceView(
@@ -164,10 +165,10 @@ namespace RunaEngine {
 	}
 
 	Model* Engine::CreateModel(const std::string& filePath) {
-		std::filesystem::path path(filePath);
+		std::filesystem::path path(ConvertString(filePath));
 
-		std::string directoryPath = path.parent_path().generic_string();
-		std::string fileName = path.filename().generic_string();
+		std::string directoryPath = ConvertString(path.parent_path().generic_wstring());
+		std::string fileName = ConvertString(path.filename().generic_wstring());
 		if (directoryPath.empty()) {
 			directoryPath = ".";
 		}

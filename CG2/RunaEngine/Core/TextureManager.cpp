@@ -17,7 +17,8 @@ void TextureManager::Initialize(ID3D12Device* device, ID3D12GraphicsCommandList*
 
 uint32_t TextureManager::Load(const std::string& filePath) {
 
-    const auto key = std::filesystem::weakly_canonical(filePath).generic_string();
+    const auto path = std::filesystem::weakly_canonical(std::filesystem::path(ConvertString(filePath)));
+    const auto key = ConvertString(path.generic_wstring());
     if (textureHandles_.contains(key)) {
         return textureHandles_[key];
     }

@@ -353,7 +353,9 @@ void GraphicsPipeline::CreatePipelineState(
     particlePsoDesc.pRootSignature = particleRootSignature_.Get();
     particlePsoDesc.VS = { particleVS->GetBufferPointer(), particleVS->GetBufferSize() };
     particlePsoDesc.PS = { particlePS->GetBufferPointer(), particlePS->GetBufferSize() };
-    particlePsoDesc.BlendState = noneBlendDesc;
+    particlePsoDesc.BlendState = addBlendDesc;
+    particlePsoDesc.DepthStencilState.DepthEnable = TRUE;
+    particlePsoDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
 
     hr = device->CreateGraphicsPipelineState(
         &particlePsoDesc,

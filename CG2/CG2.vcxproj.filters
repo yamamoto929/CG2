@@ -156,6 +156,9 @@
     <ClCompile Include="RunaEngine\externals\imgui\imgui_widgets.cpp">
       <Filter>RunaEngine\UI</Filter>
     </ClCompile>
+    <ClCompile Include="RunaEngine\Math\RandomNumberGenerator.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="RunaEngine\Audio\SoundManager.h">
@@ -238,6 +241,9 @@
     </ClInclude>
     <ClInclude Include="RunaEngine\Input\Input.h">
       <Filter>RunaEngine\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="RunaEngine\Math\AABB.h">
+      <Filter>RunaEngine\Math</Filter>
     </ClInclude>
     <ClInclude Include="RunaEngine\Math\AffineMatrix.h">
       <Filter>RunaEngine\Math</Filter>
@@ -322,6 +328,9 @@
     </ClInclude>
     <ClInclude Include="BlendMode.h">
       <Filter>RunaEngine\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="RunaEngine\Math\RandomNumberGenerator.h">
+      <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

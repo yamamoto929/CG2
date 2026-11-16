@@ -166,6 +166,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="RunaEngine\Core\GameTimer.cpp" />
     <ClCompile Include="RunaEngine\Graphics\SpriteAnimator.cpp" />
     <ClCompile Include="RunaEngine\Graphics\SpriteGraphicsPipeline.cpp" />
+    <ClCompile Include="RunaEngine\Math\RandomNumberGenerator.cpp" />
     <ClCompile Include="RunaEngine\RunaEngine.cpp" />
     <ClCompile Include="RunaEngine\externals\imgui\imgui.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
@@ -234,6 +235,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="RunaEngine\Graphics\SpriteGraphicsPipeline.h" />
     <ClInclude Include="RunaEngine\Graphics\SpriteMaterial.h" />
     <ClInclude Include="RunaEngine\Input\InputTypes.h" />
+    <ClInclude Include="RunaEngine\Math\RandomNumberGenerator.h" />
     <ClInclude Include="RunaEngine\RunaEngine.h" />
     <ClInclude Include="RunaEngine\Core\ConvertString.h" />
     <ClInclude Include="RunaEngine\Core\DescriptorHeap.h" />
@@ -268,6 +270,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="RunaEngine\Graphics\VertexData.h" />
     <ClInclude Include="RunaEngine\Input\DebugCamera.h" />
     <ClInclude Include="RunaEngine\Input\Input.h" />
+    <ClInclude Include="RunaEngine\Math\AABB.h" />
     <ClInclude Include="RunaEngine\Math\AffineMatrix.h" />
     <ClInclude Include="RunaEngine\Math\Matrix4x4.h" />
     <ClInclude Include="RunaEngine\Math\Transform.h" />
