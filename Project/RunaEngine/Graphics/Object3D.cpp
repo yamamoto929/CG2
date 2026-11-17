@@ -1,6 +1,7 @@
 #include "Object3D.h"
 #include "AffineMatrix.h"
 #include "Model.h"
+#include "Camera.h"
 #include <cassert>
 
 namespace RunaEngine {
@@ -19,7 +20,12 @@ namespace RunaEngine {
 	void Object3D::Update(const Matrix4x4& viewMatrix, const Matrix4x4& projectionMatrix) {
 
 		worldMatrix_ = MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
-		wvpMatrix_ = Multiply(worldMatrix_, Multiply(viewMatrix, projectionMatrix));
+		if (camera_) {
+			const Matrix4x4& viewProjectionMatrix = camera_->GetViewProjectionMatrix();
+			wvpMatrix_ = Multiply(worldMatrix_, viewProjectionMatrix);
+		} else {
+			wvpMatrix_ = Multiply(worldMatrix_, Multiply(viewMatrix, projectionMatrix));
+		}
 
 		transformationMatrixData_.World = worldMatrix_;
 		transformationMatrixData_.WVP = wvpMatrix_;

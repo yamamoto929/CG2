@@ -13,7 +13,7 @@ class TextureManager;
 
 namespace RunaEngine {
 	class Model;
-
+	class Camera;
 	class Object3D {
 	private:
 		Transform transform_{
@@ -28,6 +28,7 @@ namespace RunaEngine {
 		Matrix4x4 worldMatrix_{};
 		Matrix4x4 wvpMatrix_{};
 		BlendMode blendmode_ = BlendMode::NONE;
+		Camera* camera_ = nullptr;
 	public:
 		void Initialize(ID3D12Device* device, Model* model);
 
@@ -52,5 +53,7 @@ namespace RunaEngine {
 		);
 		void SetBlendMode(const BlendMode& blendmode) { blendmode_ = blendmode; }
 		BlendMode GetBlendMode() const{ return blendmode_; }
+
+		void SetCamera(Camera* camera) { this->camera_ = camera; }
 	};
 }

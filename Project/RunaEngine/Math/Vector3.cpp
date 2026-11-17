@@ -34,7 +34,7 @@ RunaEngine::Vector3 operator-(const RunaEngine::Vector3& lhs, const RunaEngine::
 //============================================
 // かけざん
 //============================================
-RunaEngine::Vector3 operator*(const RunaEngine::Vector3& v, const float& s) {
+RunaEngine::Vector3 operator*(const RunaEngine::Vector3& v, float s) {
 	RunaEngine::Vector3 result = v;
 	result.x *= s;
 	result.y *= s;
@@ -42,7 +42,7 @@ RunaEngine::Vector3 operator*(const RunaEngine::Vector3& v, const float& s) {
 	return result;
 }
 
-RunaEngine::Vector3 operator*(const float& s, const RunaEngine::Vector3& v) {
+RunaEngine::Vector3 operator*(float s, const RunaEngine::Vector3& v) {
 	RunaEngine::Vector3 result = v;
 	result.x *= s;
 	result.y *= s;
@@ -53,7 +53,7 @@ RunaEngine::Vector3 operator*(const float& s, const RunaEngine::Vector3& v) {
 //============================================
 // わりざん
 //============================================
-RunaEngine::Vector3 operator/(const RunaEngine::Vector3& v, const float& s) {
+RunaEngine::Vector3 operator/(const RunaEngine::Vector3& v, float s) {
 	RunaEngine::Vector3 result = v;
 	result.x /= s;
 	result.y /= s;
@@ -61,7 +61,7 @@ RunaEngine::Vector3 operator/(const RunaEngine::Vector3& v, const float& s) {
 	return result;
 }
 
-RunaEngine::Vector3 operator/(const float& s, const RunaEngine::Vector3& v) {
+RunaEngine::Vector3 operator/(float s, const RunaEngine::Vector3& v) {
 	RunaEngine::Vector3 result = v;
 	result.x /= s;
 	result.y /= s;

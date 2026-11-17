@@ -71,9 +71,9 @@ namespace RunaEngine {
         list->DrawIndexedInstanced(6, 1, 0, 0, 0);
     }
     const Transform& Sprite::GetTransform() const { return transform_; }
-    void Sprite::SetSize(const float& x, const float& y) { SetSize(Vector2{x, y}); }
+    void Sprite::SetSize(float x, float y) { SetSize(Vector2{x, y}); }
     void Sprite::SetSize(const Vector2& size) { size_ = size; }
-    void Sprite::SetPivot(const float& x, const float& y) { SetPivot(Vector2{x, y}); }
+    void Sprite::SetPivot(float x, float y) { SetPivot(Vector2{x, y}); }
     void Sprite::SetPivot(const Vector2& pivot) { pivot_ = pivot; }
     void Sprite::SetColor(const Vector4& color) { color_ = color; }
     void Sprite::SetUVTransform(const Matrix4x4& uvTransform) { uvTransformMatrix_ = uvTransform; }

@@ -35,9 +35,9 @@ namespace RunaEngine {
 		Transform& GetTransform() { return transform_; }
 		void SetTransform(const Transform& transform) { transform_ = transform; }
 		const Transform& GetTransform() const;
-		void SetSize(const float& sizeX, const float& sizeY);
+		void SetSize(float sizeX, float sizeY);
 		void SetSize(const RunaEngine::Vector2& size);
-		void SetPivot(const float& pivotX, const float& pivotY);
+		void SetPivot(float pivotX, float pivotY);
 		void SetPivot(const RunaEngine::Vector2& pivot);
 		void SetColor(const RunaEngine::Vector4& color);
 		void SetUVTransform(const RunaEngine::Matrix4x4& uvTransform);

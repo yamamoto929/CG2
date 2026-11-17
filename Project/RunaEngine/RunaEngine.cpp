@@ -82,7 +82,8 @@ namespace RunaEngine {
 			buffer_.Get(), &srv, textureManager_.GetInstancingSrvCpuHandle());
 
 		instancingSrvGpuHandle_ = textureManager_.GetInstancingSrvGpuHandle();
-		UpdateCameraMatrices();
+		defaultCamera_ = new Camera();
+		defaultCamera_->Update();
 		gameTimer_.Reset();
 		initialized_ = true;
 	}
@@ -112,7 +113,7 @@ namespace RunaEngine {
 		imGuiManager_.BeginFrame();
 		input_->Update();
 		soundManager_.Update();
-		UpdateCameraMatrices();
+		defaultCamera_->Update();
 		renderer_.Begin();
 	}
 
@@ -145,6 +146,7 @@ namespace RunaEngine {
 			textureManager_.Shutdown(); shaderCompiler_.Shutdown();
 			if (IsWindow(winApp_.GetHwnd())) { DestroyWindow(winApp_.GetHwnd()); }
 			directXCommon_.Shutdown();
+			delete defaultCamera_;
 			initialized_ = false;
 		}
 
@@ -361,7 +363,7 @@ namespace RunaEngine {
 	}
 
 	void Engine::DrawObject3D(Object3D* object, const ModelDrawParameters& parameters) {
-		object->Update(viewMatrix_, projectionMatrix_);
+		object->Update(defaultCamera_->GetViewMatrix(), defaultCamera_->GetProjectionMatrix());
 		renderer_.Draw(*object, parameters);
 	}
 
@@ -380,7 +382,7 @@ namespace RunaEngine {
 	}
 
 	void Engine::DrawPrimitive3D(Primitive3D* primitive) {
-		primitive->Update(viewMatrix_, projectionMatrix_);
+		primitive->Update(defaultCamera_->GetViewMatrix(), defaultCamera_->GetProjectionMatrix());
 		renderer_.Draw(*primitive);
 	}
 
@@ -460,13 +462,15 @@ namespace RunaEngine {
 	}
 
 	void Engine::SetCameraTransform(const Transform& transform) {
-		cameraTransform_ = transform;
-		UpdateCameraMatrices();
+		defaultCamera_->SetTranslate(transform.translate);
+		defaultCamera_->SetRotate(transform.rotate);
+		defaultCamera_->Update();
 	}
 
 	void Engine::MoveCamera(const Vector3& move) {
-		cameraTransform_.translate += move;
-		UpdateCameraMatrices();
+		Vector3 beforePos = defaultCamera_->GetTranslate();
+		defaultCamera_->SetTranslate(beforePos + move);
+		defaultCamera_->Update();
 	}
 
 	Object3D* Engine::GetDrawModelObject(Model* model) {
@@ -480,21 +484,6 @@ namespace RunaEngine {
 		object->SetModel(model);
 		++drawModelObjectIndex_;
 		return object;
-	}
-
-	void Engine::UpdateCameraMatrices() {
-		Matrix4x4 cameraMatrix = MakeAffineMatrix(
-			cameraTransform_.scale,
-			cameraTransform_.rotate,
-			cameraTransform_.translate
-		);
-		viewMatrix_ = Inverse(cameraMatrix);
-		projectionMatrix_ = MakePerspectiveFovMatrix(
-			0.45f,
-			float(width_) / float(height_),
-			0.1f,
-			100.0f
-		);
 	}
 
 	void Engine::FlushSprites()
@@ -610,7 +599,7 @@ namespace RunaEngine {
 		return GetEngine().CreateTriangle3D(color);
 	}
 
-	void DrawSprite(Sprite* sprite, const float& posX, const float& posY) {
+	void DrawSprite(Sprite* sprite, float posX, float posY) {
 		GetEngine().DrawSprite(sprite, Vector2{ posX,posY });
 	}
 
@@ -652,15 +641,15 @@ namespace RunaEngine {
 
 	void DrawModel(
 		Model* model,
-		const float& scaleX,
-		const float& scaleY,
-		const float& scaleZ,
-		const float& rotateX,
-		const float& rotateY,
-		const float& rotateZ,
-		const float& translateX,
-		const float& translateY,
-		const float& translateZ
+		float scaleX,
+		float scaleY,
+		float scaleZ,
+		float rotateX,
+		float rotateY,
+		float rotateZ,
+		float translateX,
+		float translateY,
+		float translateZ
 	) {
 		Transform transform{
 			{ scaleX, scaleY, scaleZ },
@@ -792,10 +781,6 @@ namespace RunaEngine {
 
 	float GetRightTrigger() {
 		return GetEngine().GetRightTrigger();
-	}
-
-	Transform& GetCameraTransform() {
-		return GetEngine().GetCameraTransform();
 	}
 
 	void SetCameraTransform(const Transform& transform) {

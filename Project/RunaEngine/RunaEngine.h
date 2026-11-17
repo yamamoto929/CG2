@@ -24,6 +24,7 @@
 #include "RunaEngine/Core/WinApp.h"
 #include "RunaEngine/Graphics/SpriteDrawCommand.h"
 #include "RunaEngine/Core/GameTimer.h"
+#include "RunaEngine/Graphics/Camera.h"
 #include <Windows.h>
 #include <cstdint>
 #include <cstddef>
@@ -104,8 +105,13 @@ public:
 	float GetLeftTrigger() const;
 	float GetRightTrigger() const;
 
-	Transform& GetCameraTransform() { return cameraTransform_; }
-	const Transform& GetCameraTransform() const { return cameraTransform_; }
+	Transform GetCameraTransform() const {
+		Transform transform{};
+		transform.translate = defaultCamera_->GetTranslate();
+		transform.rotate = defaultCamera_->GetRotate();
+		transform.scale = Vector3{ 1.0f,1.0f,1.0f };
+		return transform; 
+	}
 	void SetCameraTransform(const Transform& transform);
 	void MoveCamera(const Vector3& move);
 
@@ -121,7 +127,7 @@ public:
 	}
 
 	Matrix4x4 GetViewProjectionMatrix() const {
-		return Multiply(viewMatrix_, projectionMatrix_);
+		return defaultCamera_->GetViewProjectionMatrix();
 	}
 	DirectionalLight& GetDirectionalLight() { return directionalLight_; }
 	// deltaTime取得
@@ -131,7 +137,6 @@ public:
 	}
 private:
 	Object3D* GetDrawModelObject(Model* model);
-	void UpdateCameraMatrices();
 
 	MSG msg_{};
 	int32_t width_ = 0;
@@ -162,14 +167,6 @@ private:
 	Renderer renderer_;
 	ImGuiManager imGuiManager_;
 
-	Transform cameraTransform_{
-		{ 1.0f, 1.0f, 1.0f },
-		{ 0.0f, 0.0f, 0.0f },
-		{ 0.0f, 0.0f, -10.0f },
-	};
-	Matrix4x4 viewMatrix_{};
-	Matrix4x4 projectionMatrix_{};
-
 	std::vector<std::unique_ptr<Sprite>> sprites_;
 	std::vector<std::unique_ptr<Object3D>> object3Ds_;
 	std::vector<std::unique_ptr<Primitive3D>> primitive3Ds_;
@@ -189,6 +186,7 @@ private:
 	// CreateBufferResource
 	// =========================================================
 	Microsoft::WRL::ComPtr<ID3D12Resource> CreateBufferResource(ID3D12Device* device, size_t sizeInBytes);
+	Camera* defaultCamera_ = nullptr;
 };
 
 Engine& GetEngine();
@@ -212,7 +210,7 @@ void UnloadTexture(uint32_t handle);
 void ClearScene();
 void SetObjectTexture(Object3D* object, const std::string& texturePath);
 
-void DrawSprite(Sprite* sprite, const float& posX, const float& posY);
+void DrawSprite(Sprite* sprite, float posX, float posY);
 void DrawSprite(Sprite* sprite, const Vector2& position);
 void DrawSprite(Sprite* sprite, const Vector3& translate);
 void DrawSprite(Sprite* sprite, const Transform& transform);
@@ -222,15 +220,15 @@ void DrawModel(Model* model, const Transform& transform);
 void DrawModel(Model* model, const Transform& transform, const ModelDrawParameters& parameters);
 void DrawModel(
 	Model* model,
-	const float& scaleX,
-	const float& scaleY,
-	const float& scaleZ,
-	const float& rotateX,
-	const float& rotateY,
-	const float& rotateZ,
-	const float& translateX,
-	const float& translateY,
-	const float& translateZ
+	float scaleX,
+	float scaleY,
+	float scaleZ,
+	float rotateX,
+	float rotateY,
+	float rotateZ,
+	float translateX,
+	float translateY,
+	float translateZ
 	);
 void DrawObject3D(Object3D* object, const Vector3& translate);
 void DrawObject3D(Object3D* object, const Transform& transform);
@@ -272,8 +270,6 @@ Vector2 GetLeftStick();
 Vector2 GetRightStick();
 float GetLeftTrigger();
 float GetRightTrigger();
-
-Transform& GetCameraTransform();
 void SetCameraTransform(const Transform& transform);
 void MoveCamera(const Vector3& move);
 

@@ -169,7 +169,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <None Include="RunaEngine\Graphics\Particle.hlsli" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="RunaEngine\Graphics\Camera.cpp" />
     <ClCompile Include="main.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Development|x64'">MaxSpeed</Optimization>
       <WholeProgramOptimization Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</WholeProgramOptimization>
@@ -211,7 +211,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     </ClCompile>
     <ClCompile Include="RunaEngine\Audio\SoundManager.cpp" />
     <ClCompile Include="RunaEngine\Core\ConvertString.cpp" />
-    <ClCompile Include="RunaEngine\Core\DescriptorHeap.cpp" />
+    <ClCompile Include="RunaEngine\Graphics\DescriptorHeap.cpp" />
     <ClCompile Include="RunaEngine\Core\DirectXCommon.cpp" />
     <ClCompile Include="RunaEngine\Core\ResourceManager.cpp" />
     <ClCompile Include="RunaEngine\Core\ShaderCompiler.cpp" />
@@ -236,7 +236,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="RunaEngine\UI\ImGuiManager.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Camera.h" />
+    <ClInclude Include="RunaEngine\Graphics\Camera.h" />
     <ClInclude Include="RunaEngine\Audio\SoundManager.h" />
     <ClInclude Include="RunaEngine\Core\GameTimer.h" />
     <ClInclude Include="RunaEngine\Core\TextureSize.h" />

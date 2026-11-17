@@ -424,7 +424,22 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			ImGui::PopID();
 
 			Transform camera = engine.GetCameraTransform();
-			if (ImGui::DragFloat("Camera Yaw (rad)", &camera.rotate.y, 0.01f, -0.35f, 0.35f)) {
+
+			float positions[3] = {
+				camera.translate.x, camera.translate.y, camera.translate.z
+			};
+			float rotation[3] = {
+				camera.rotate.x, camera.rotate.y, camera.rotate.z
+			};
+
+			const bool positionChanged =
+				ImGui::DragFloat3("Camera Position", &position.x, 0.05f);
+			const bool rotationChanged =
+				ImGui::DragFloat3("Camera Rotation (rad)", rotation, 0.01f);
+
+			if (positionChanged || rotationChanged) {
+				camera.translate = { positions[0], positions[1], positions[2] };
+				camera.rotate = { rotation[0], rotation[1], rotation[2] };
 				engine.SetCameraTransform(camera);
 			}
 			if (ImGui::Button("Save Presets")) {
