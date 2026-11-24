@@ -1,15 +1,18 @@
 #include "GraphicsPipeline.h"
 #include <cassert>
-void GraphicsPipeline::Initialize(
-    ID3D12Device* device,
-    ShaderCompiler* shaderCompiler,
-    DXGI_FORMAT rtvFormat,
-    DXGI_FORMAT dsvFormat
-) {
-    CreateRootSignature(device);
-    CreatePipelineState(device, shaderCompiler, rtvFormat, dsvFormat);
+void GraphicsPipeline::Initialize(ID3D12Device* device, ShaderCompiler* shaderCompiler,
+    DXGI_FORMAT rtvFormat, DXGI_FORMAT dsvFormat) {
+    CreateRootSignature(device, false);
+    CreatePipelineState(device, shaderCompiler, rtvFormat, dsvFormat, false);
 }
 
+void GraphicsPipeline::InitializeParticle(ID3D12Device* device,
+    ShaderCompiler* shaderCompiler,
+    DXGI_FORMAT rtvFormat,
+    DXGI_FORMAT dsvFormat) {
+    CreateRootSignature(device, true);
+    CreatePipelineState(device, shaderCompiler, rtvFormat, dsvFormat, true);
+}
 void GraphicsPipeline::Set(ID3D12GraphicsCommandList* commandList) {
     Set(commandList, RunaEngine::BlendMode::NONE);
 }
@@ -52,7 +55,7 @@ ID3D12RootSignature* GraphicsPipeline::GetRootSignature() const {
     return rootSignature_.Get();
 }
 
-void GraphicsPipeline::CreateRootSignature(ID3D12Device* device) {
+void GraphicsPipeline::CreateRootSignature(ID3D12Device* device, bool forParticles) {
 
     HRESULT hr;
 
@@ -107,8 +110,13 @@ void GraphicsPipeline::CreateRootSignature(ID3D12Device* device) {
     particleRootParameters[2].DescriptorTable.pDescriptorRanges = descriptorRange;
     particleRootParameters[2].DescriptorTable.NumDescriptorRanges = _countof(descriptorRange);
 
-    descriptionRootSignature.pParameters = rootParameters;
-    descriptionRootSignature.NumParameters = _countof(rootParameters);
+    if (forParticles) {
+        descriptionRootSignature.pParameters = particleRootParameters;
+        descriptionRootSignature.NumParameters = _countof(particleRootParameters);
+    } else {
+        descriptionRootSignature.pParameters = rootParameters;
+        descriptionRootSignature.NumParameters = _countof(rootParameters);
+    }
 
     D3D12_STATIC_SAMPLER_DESC staticSamplers[1] = {};
     staticSamplers[0].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
@@ -135,35 +143,20 @@ void GraphicsPipeline::CreateRootSignature(ID3D12Device* device) {
 
     assert(SUCCEEDED(hr));
 
-    hr = device->CreateRootSignature(
-        0,
-        signatureBlob->GetBufferPointer(),
-        signatureBlob->GetBufferSize(),
-        IID_PPV_ARGS(&rootSignature_)
-    );
-    assert(SUCCEEDED(hr));
+    if (FAILED(hr)) {
+        return;
+    }
 
-    D3D12_ROOT_SIGNATURE_DESC particleRootDesc = descriptionRootSignature;
-    particleRootDesc.pParameters = particleRootParameters;
-    particleRootDesc.NumParameters = _countof(particleRootParameters);
-
-    Microsoft::WRL::ComPtr<ID3DBlob> particleSignatureBlob;
-    Microsoft::WRL::ComPtr<ID3DBlob> particleErrorBlob;
-
-    hr = D3D12SerializeRootSignature(
-        &particleRootDesc,
-        D3D_ROOT_SIGNATURE_VERSION_1,
-        &particleSignatureBlob,
-        &particleErrorBlob
-    );
-    assert(SUCCEEDED(hr));
+    ID3D12RootSignature** target = nullptr;
+    if (forParticles) {
+        target = particleRootSignature_.ReleaseAndGetAddressOf();
+    } else {
+        target = rootSignature_.ReleaseAndGetAddressOf();
+    }
 
     hr = device->CreateRootSignature(
-        0,
-        particleSignatureBlob->GetBufferPointer(),
-        particleSignatureBlob->GetBufferSize(),
-        IID_PPV_ARGS(&particleRootSignature_)
-    );
+        0, signatureBlob->GetBufferPointer(), signatureBlob->GetBufferSize(),
+        IID_PPV_ARGS(target));
     assert(SUCCEEDED(hr));
 }
 
@@ -171,7 +164,8 @@ void GraphicsPipeline::CreatePipelineState(
     ID3D12Device* device,
     ShaderCompiler* shaderCompiler,
     DXGI_FORMAT rtvFormat,
-    DXGI_FORMAT dsvFormat
+    DXGI_FORMAT dsvFormat,
+    bool forParticles
 ) {
 
     HRESULT hr;
@@ -197,11 +191,23 @@ void GraphicsPipeline::CreatePipelineState(
     inputLayoutDesc.pInputElementDescs = inputElementDescs;
     inputLayoutDesc.NumElements = _countof(inputElementDescs);
 
-    Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob =
-        shaderCompiler->Compile(L"RunaEngine/Graphics/Object3d.VS.hlsl", L"vs_6_0");
+    const wchar_t* vertexShaderPath = L"RunaEngine/Graphics/Object3d.VS.hlsl";
+    const wchar_t* pixelShaderPath = L"RunaEngine/Graphics/Object3d.PS.hlsl";
+    ID3D12RootSignature* rootSignature = rootSignature_.Get();
 
-    Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob =
-        shaderCompiler->Compile(L"RunaEngine/Graphics/Object3d.PS.hlsl", L"ps_6_0");
+    if (forParticles) {
+        vertexShaderPath = L"RunaEngine/Graphics/Particle.VS.hlsl";
+        pixelShaderPath = L"RunaEngine/Graphics/Particle.PS.hlsl";
+        rootSignature = particleRootSignature_.Get();
+    }
+
+    const auto vertexShaderBlob = shaderCompiler->Compile(vertexShaderPath, L"vs_6_0");
+    const auto pixelShaderBlob = shaderCompiler->Compile(pixelShaderPath, L"ps_6_0");
+
+    assert(vertexShaderBlob.Get() && pixelShaderBlob.Get());
+    if (!vertexShaderBlob || !pixelShaderBlob) {
+        return;
+    }
 
     D3D12_BLEND_DESC noneBlendDesc{};
     noneBlendDesc.RenderTarget[0].RenderTargetWriteMask =
@@ -280,7 +286,7 @@ void GraphicsPipeline::CreatePipelineState(
     depthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
 
     D3D12_GRAPHICS_PIPELINE_STATE_DESC graphicsPipelineStateDesc{};
-    graphicsPipelineStateDesc.pRootSignature = rootSignature_.Get();
+    graphicsPipelineStateDesc.pRootSignature = rootSignature;
     graphicsPipelineStateDesc.InputLayout = inputLayoutDesc;
     graphicsPipelineStateDesc.VS = {
         vertexShaderBlob->GetBufferPointer(),
@@ -300,7 +306,16 @@ void GraphicsPipeline::CreatePipelineState(
     graphicsPipelineStateDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
     graphicsPipelineStateDesc.DepthStencilState = depthStencilDesc;
     graphicsPipelineStateDesc.DSVFormat = dsvFormat;
+    if (forParticles) {
+        graphicsPipelineStateDesc.BlendState = addBlendDesc;
+        graphicsPipelineStateDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
 
+        hr = device->CreateGraphicsPipelineState(
+            &graphicsPipelineStateDesc,
+            IID_PPV_ARGS(particlePipelineState_.ReleaseAndGetAddressOf()));
+        assert(SUCCEEDED(hr));
+        return;
+    }
     graphicsPipelineStateDesc.BlendState = noneBlendDesc;
     hr = device->CreateGraphicsPipelineState(
         &graphicsPipelineStateDesc,
@@ -340,26 +355,6 @@ void GraphicsPipeline::CreatePipelineState(
     hr = device->CreateGraphicsPipelineState(
         &graphicsPipelineStateDesc,
         IID_PPV_ARGS(&screenPipelineState_)
-    );
-    assert(SUCCEEDED(hr));
-
-    Microsoft::WRL::ComPtr<IDxcBlob> particleVS = shaderCompiler->Compile(
-        L"RunaEngine/Graphics/Particle.VS.hlsl", L"vs_6_0");
-    Microsoft::WRL::ComPtr<IDxcBlob> particlePS = shaderCompiler->Compile(
-        L"RunaEngine/Graphics/Particle.PS.hlsl", L"ps_6_0");
-    assert(particleVS.Get() && particlePS.Get());
-
-    D3D12_GRAPHICS_PIPELINE_STATE_DESC particlePsoDesc = graphicsPipelineStateDesc;
-    particlePsoDesc.pRootSignature = particleRootSignature_.Get();
-    particlePsoDesc.VS = { particleVS->GetBufferPointer(), particleVS->GetBufferSize() };
-    particlePsoDesc.PS = { particlePS->GetBufferPointer(), particlePS->GetBufferSize() };
-    particlePsoDesc.BlendState = addBlendDesc;
-    particlePsoDesc.DepthStencilState.DepthEnable = TRUE;
-    particlePsoDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
-
-    hr = device->CreateGraphicsPipelineState(
-        &particlePsoDesc,
-        IID_PPV_ARGS(&particlePipelineState_)
     );
     assert(SUCCEEDED(hr));
 }

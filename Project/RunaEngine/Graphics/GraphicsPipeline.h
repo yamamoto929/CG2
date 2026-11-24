@@ -13,6 +13,8 @@ public:
         DXGI_FORMAT rtvFormat,
         DXGI_FORMAT dsvFormat
     );
+    void InitializeParticle(ID3D12Device* device, ShaderCompiler* shaderCompiler,
+        DXGI_FORMAT rtvFormat, DXGI_FORMAT dsvFormat);
 
     void Set(ID3D12GraphicsCommandList* commandList);
     void Set(ID3D12GraphicsCommandList* commandList, const RunaEngine::BlendMode& blendmode);
@@ -31,13 +33,10 @@ public:
     ID3D12RootSignature* GetRootSignature() const;
     void SetParticle(ID3D12GraphicsCommandList* commandList) const;
 private:
-    void CreateRootSignature(ID3D12Device* device);
-    void CreatePipelineState(
-        ID3D12Device* device,
-        ShaderCompiler* shaderCompiler,
-        DXGI_FORMAT rtvFormat,
-        DXGI_FORMAT dsvFormat
-    );
+    void CreateRootSignature(ID3D12Device* device, bool forParticles);
+    void CreatePipelineState(ID3D12Device* device, ShaderCompiler* shaderCompiler,
+        DXGI_FORMAT rtvFormat, DXGI_FORMAT dsvFormat,
+        bool forParticles);
 
 private:
     Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature_;

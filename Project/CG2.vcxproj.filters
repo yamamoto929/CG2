@@ -57,9 +57,6 @@
     <ClCompile Include="RunaEngine\Core\ConvertString.cpp">
       <Filter>RunaEngine\Core</Filter>
     </ClCompile>
-    <ClCompile Include="RunaEngine\Core\DescriptorHeap.cpp">
-      <Filter>RunaEngine\Core</Filter>
-    </ClCompile>
     <ClCompile Include="RunaEngine\Core\DirectXCommon.cpp">
       <Filter>RunaEngine\Core</Filter>
     </ClCompile>
@@ -158,6 +155,15 @@
     </ClCompile>
     <ClCompile Include="RunaEngine\Math\RandomNumberGenerator.cpp">
       <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="RunaEngine\Graphics\Camera.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="RunaEngine\Graphics\DescriptorHeap.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="RunaEngine\Graphics\ParticleManager.cpp">
+      <Filter>RunaEngine\Graphics</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -296,9 +302,6 @@
     <ClInclude Include="RunaEngine\Graphics\SpriteMaterial.h">
       <Filter>RunaEngine\Graphics</Filter>
     </ClInclude>
-    <ClInclude Include="TextureSize.h">
-      <Filter>RunaEngine\Graphics</Filter>
-    </ClInclude>
     <ClInclude Include="RunaEngine\Input\InputTypes.h">
       <Filter>RunaEngine\Graphics</Filter>
     </ClInclude>
@@ -326,11 +329,20 @@
     <ClInclude Include="RunaEngine\externals\imgui\imstb_truetype.h">
       <Filter>RunaEngine\UI</Filter>
     </ClInclude>
-    <ClInclude Include="BlendMode.h">
-      <Filter>RunaEngine\Graphics</Filter>
-    </ClInclude>
     <ClInclude Include="RunaEngine\Math\RandomNumberGenerator.h">
       <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="RunaEngine\Graphics\Camera.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="RunaEngine\Core\TextureSize.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="RunaEngine\Graphics\BlendMode.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="RunaEngine\Graphics\ParticleManager.h">
+      <Filter>RunaEngine\Graphics</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

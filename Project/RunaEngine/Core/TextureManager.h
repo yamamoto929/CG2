@@ -1,8 +1,9 @@
 #pragma once
+#include <vector>
 #include <d3d12.h>
 #pragma comment(lib,"d3d12.lib")
 #include <wrl.h>
-#include<cstdint>
+#include <cstdint>
 #include <unordered_map>
 #include <string>
 #include "externals\DirectXTex\DirectXTex.h"
@@ -34,6 +35,11 @@ public:
 	D3D12_GPU_DESCRIPTOR_HANDLE GetInstancingSrvGpuHandle() {
 		return srvDescriptorHeap_.GetGPUDescriptorHandle(maxTextureCount_);
 	}
+
+	uint32_t AllocateInstancingSrvIndex();
+	void ReleaseInstancingSrvIndex(uint32_t index);
+	D3D12_GPU_DESCRIPTOR_HANDLE GetSrvHandleGPUByIndex(uint32_t index);
+	uint32_t GetTextureSrvIndex(uint32_t textureHandle) const;
 private:
 
 	DescriptorHeap srvDescriptorHeap_;
@@ -59,6 +65,8 @@ private:
 
 	// テクスチャサイズのデータ
 	std::unordered_map<uint32_t, TextureSize> textureSizes_;
-
+	static constexpr uint32_t kInstancingSrvCount = 32;
+	uint32_t nextInstancingSrv_ = 0;
+	std::vector<uint32_t> freeInstancingSrvs_;
 };
 

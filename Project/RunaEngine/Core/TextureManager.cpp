@@ -8,11 +8,12 @@ void TextureManager::Initialize(ID3D12Device* device, ID3D12GraphicsCommandList*
 	// SRV用のディスクリプタヒープ
 	device_ = device;
 	commandList_ = commandList;
-	srvDescriptorHeap_.Initialize(device_, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, maxTextureCount+1, true);
+	srvDescriptorHeap_.Initialize(device_, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
+		maxTextureCount + kInstancingSrvCount, true);
 	// 0番はImGui用に予約
 	// 再初期化しても画像番号は戻さない。古い番号を新しい画像へ使い回さない。
-	maxTextureCount_ = maxTextureCount;
-	nextDescriptorIndex_ = 1;
+	nextInstancingSrv_ = 0;
+	freeInstancingSrvs_.clear();
 }
 
 uint32_t TextureManager::Load(const std::string& filePath) {
@@ -26,7 +27,10 @@ uint32_t TextureManager::Load(const std::string& filePath) {
         return 0;
     }
     if (nextIndex_ == UINT32_MAX) { return 0; }
-    const uint32_t descriptorIndex = freeDescriptorIndices_.empty() ? nextDescriptorIndex_ : freeDescriptorIndices_.back();
+	uint32_t descriptorIndex = nextDescriptorIndex_;
+	if (!freeDescriptorIndices_.empty()) {
+		descriptorIndex = freeDescriptorIndices_.back();
+	}
     uint32_t textureHandle = nextIndex_;
 
     DirectX::ScratchImage mipImages = LoadTexture(key);
@@ -222,5 +226,36 @@ Microsoft::WRL::ComPtr<ID3D12Resource> TextureManager::CreateBufferResource(size
 	assert(SUCCEEDED(hr));
 
 	return resource;
+}
+
+uint32_t TextureManager::GetTextureSrvIndex(uint32_t textureHandle) const {
+	const auto it = descriptorIndices_.find(textureHandle);
+	if (it == descriptorIndices_.end()) {
+		return 0;
+	}
+	return it->second;
+}
+uint32_t TextureManager::AllocateInstancingSrvIndex() {
+	if (!freeInstancingSrvs_.empty()) {
+		const uint32_t index = freeInstancingSrvs_.back();
+		freeInstancingSrvs_.pop_back();
+		return index;
+	}
+
+	if (nextInstancingSrv_ >= kInstancingSrvCount) {
+		return 0;
+	}
+
+	return maxTextureCount_ + nextInstancingSrv_++;
+}
+
+void TextureManager::ReleaseInstancingSrvIndex(uint32_t index) {
+	assert(index >= maxTextureCount_ &&
+		index - maxTextureCount_ < kInstancingSrvCount);
+	freeInstancingSrvs_.push_back(index);
+}
+
+D3D12_GPU_DESCRIPTOR_HANDLE TextureManager::GetSrvHandleGPUByIndex(uint32_t index) {
+	return srvDescriptorHeap_.GetGPUDescriptorHandle(index);
 }
 

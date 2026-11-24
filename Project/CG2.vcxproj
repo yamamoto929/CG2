@@ -169,6 +169,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <None Include="RunaEngine\Graphics\Particle.hlsli" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="RunaEngine\Graphics\ParticleManager.cpp" />
     <ClCompile Include="RunaEngine\Graphics\Camera.cpp" />
     <ClCompile Include="main.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Development|x64'">MaxSpeed</Optimization>
@@ -236,6 +237,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="RunaEngine\UI\ImGuiManager.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="RunaEngine\Graphics\ParticleManager.h" />
     <ClInclude Include="RunaEngine\Graphics\Camera.h" />
     <ClInclude Include="RunaEngine\Audio\SoundManager.h" />
     <ClInclude Include="RunaEngine\Core\GameTimer.h" />

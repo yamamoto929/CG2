@@ -2,6 +2,7 @@
 #include "AffineMatrix.h"
 #include "ConvertString.h"
 #include "WVPMatrix.h"
+#include "RunaEngine/Graphics/ParticleManager.h"
 #include <cassert>
 #include <filesystem>
 #include <algorithm>
@@ -60,28 +61,8 @@ namespace RunaEngine {
 		directionalLight_.Initialize(directXCommon_.GetDevice());
 		renderer_.Initialize(&directXCommon_, &textureManager_, &graphicsPipeline_, &primitiveGraphicsPipeline_, &directionalLight_, &spriteGraphicsPipeline_);
 		imGuiManager_.Initialize(winApp_, directXCommon_, textureManager_);
-		buffer_ = CreateBufferResource(
-			directXCommon_.GetDevice(),
-			sizeof(ParticleForGPU) * kMaxParticleInstances
-		);
-		assert(buffer_.Get() != nullptr);
-
-		const HRESULT mapResult =
-			buffer_->Map(0, nullptr, reinterpret_cast<void**>(&instancingData_));
-		assert(SUCCEEDED(mapResult));
-		D3D12_SHADER_RESOURCE_VIEW_DESC srv{};
-		srv.Format = DXGI_FORMAT_UNKNOWN;
-		srv.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
-		srv.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-		srv.Buffer.FirstElement = 0;
-		srv.Buffer.NumElements = kMaxParticleInstances;
-		srv.Buffer.StructureByteStride = static_cast<UINT>(sizeof(ParticleForGPU));
-		srv.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
-
-		directXCommon_.GetDevice()->CreateShaderResourceView(
-			buffer_.Get(), &srv, textureManager_.GetInstancingSrvCpuHandle());
-
-		instancingSrvGpuHandle_ = textureManager_.GetInstancingSrvGpuHandle();
+		ParticleManager::GetInstance().Initialize(
+			&directXCommon_, &textureManager_, &graphicsPipeline_, &shaderCompiler_);
 		defaultCamera_ = new Camera();
 		defaultCamera_->Update();
 		gameTimer_.Reset();
@@ -118,6 +99,9 @@ namespace RunaEngine {
 	}
 
 	void Engine::EndFrame() {
+		auto& particleManager = ParticleManager::GetInstance();
+		particleManager.Update(gameTimer_.GetDeltaTime(), *defaultCamera_);
+		particleManager.Draw();
 		FlushSprites();
 		imGuiManager_.Render(renderer_.GetCommandList());
 		renderer_.End();
@@ -142,8 +126,12 @@ namespace RunaEngine {
 			soundManager_.Shutdown();
 			input_.reset();
 			directionalLight_.Shutdown();
-			graphicsPipeline_.Shutdown(); spriteGraphicsPipeline_.Shutdown(); primitiveGraphicsPipeline_.Shutdown();
-			textureManager_.Shutdown(); shaderCompiler_.Shutdown();
+			graphicsPipeline_.Shutdown(); 
+			spriteGraphicsPipeline_.Shutdown(); 
+			primitiveGraphicsPipeline_.Shutdown();
+			ParticleManager::GetInstance().Shutdown();
+			textureManager_.Shutdown(); 
+			shaderCompiler_.Shutdown();
 			if (IsWindow(winApp_.GetHwnd())) { DestroyWindow(winApp_.GetHwnd()); }
 			directXCommon_.Shutdown();
 			delete defaultCamera_;
@@ -254,7 +242,8 @@ namespace RunaEngine {
 	bool Engine::IsTextureInUse(uint32_t handle) const {
 		return resourceManager_.UsesTexture(handle)
 			|| std::any_of(sprites_.begin(), sprites_.end(), [handle](const auto& sprite) { return sprite->GetTextureHandle() == handle; })
-			|| std::any_of(object3Ds_.begin(), object3Ds_.end(), [handle](const auto& object) { return object->GetTextureOverride() == handle; });
+			|| std::any_of(object3Ds_.begin(), object3Ds_.end(), [handle](const auto& object) { return object->GetTextureOverride() == handle; })
+			|| ParticleManager::GetInstance().UsesTexture(handle);
 	}
 	void Engine::ReleasePendingResources() {
 		if (frameActive_) { return; }
@@ -270,6 +259,7 @@ namespace RunaEngine {
 			spriteDrawCommands_.clear();
 			sprites_.clear(); object3Ds_.clear(); primitive3Ds_.clear(); drawModelObjects_.clear();
 			resourceManager_.Clear();
+			ParticleManager::GetInstance().ClearGroups();
 			textureManager_.Clear();
 			drawModelObjectIndex_ = 0; spriteSubmissionIndex_ = 0;
 			sceneClearRequested_ = false;
@@ -553,7 +543,6 @@ namespace RunaEngine {
 	//=================================================================================
 	// Engine
 	//=================================================================================
-
 	Engine& GetEngine() {
 		static Engine engine;
 		return engine;
